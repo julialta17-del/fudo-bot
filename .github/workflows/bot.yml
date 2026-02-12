@@ -6,27 +6,26 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-bot:
+  ejecutar-bot:
     runs-on: ubuntu-latest
 
-    
-      env:
-  GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-  FUDO_USER: ${{ secrets.FUDO_USER }}
-  FUDO_PASS: ${{ secrets.FUDO_PASS }}
-
+    env:
+      GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      FUDO_USER: ${{ secrets.FUDO_USER }}
+      FUDO_PASS: ${{ secrets.FUDO_PASS }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repositorio
         uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: Instalar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
 
       - name: Ejecutar bot
         run: python fudo_bot.py
