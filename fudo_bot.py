@@ -13,7 +13,12 @@ from google.oauth2.service_account import Credentials
 # GOOGLE SHEETS
 # =====================
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
+import os
+import json
+
+creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+
 client = gspread.authorize(creds)
 sheet = client.open("Prueba clientes PEYA").get_worksheet(0)
 
@@ -116,4 +121,5 @@ for fila in filas:
 
 
 print("PROCESO TERMINADO")
+
 
