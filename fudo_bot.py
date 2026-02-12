@@ -1,142 +1,119 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
 import time
-import os
-import json
-from webdriver_manager.chrome import ChromeDriverManager
+import re
 import gspread
-from google.oauth2.service_account import Credentials
+from oauth2client.service_account import ServiceAccountCredentials
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
-# =====================
-# VARIABLES SEGURAS (GITHUB SECRETS)
-# =====================
-FUDO_USER = os.environ["FUDO_USER"]
-FUDO_PASS = os.environ["FUDO_PASS"]
-GOOGLE_CREDS_JSON = os.environ["GOOGLE_CREDENTIALS"]
-
-# =====================
-# CREAR credentials.json DESDE SECRET
-# =====================
-with open("credentials.json", "w") as f:
-    f.write(GOOGLE_CREDS_JSON)
-
-# =====================
+# ==============================
 # GOOGLE SHEETS
-# =====================
-SCOPES = [
-    "https://www.googleapis.com/auth/spreadsheets",
+# ==============================
+
+scope = [
+    "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds = Credentials.from_service_account_file(
-    "credentials.json",
-    scopes=SCOPES
+creds = ServiceAccountCredentials.from_json_keyfile_name(
+    "credenciales.json", scope
 )
-
 client = gspread.authorize(creds)
-sheet = client.open("Prueba clientes PEYA").get_worksheet(0)
+sheet = client.open("Pedidos Fudo").sheet1
 
-print("✅ Conectado a Google Sheets")
+print("Conectado a Google Sheets OK")
 
-# =====================
-# CHROME (GITHUB READY)
-# =====================
+# ==============================
+# SELENIUM
+# ==============================
+
 chrome_options = Options()
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--window-size=1920,1080")
+chrome_options.add_argument("--start-maximized")
 
-service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=chrome_options)
-wait = WebDriverWait(driver, 30)
+driver = webdriver.Chrome(
+    service=Service(ChromeDriverManager().install()),
+    options=chrome_options
+)
 
-# =====================
-# 1. LOGIN
-# =====================
-driver.get("https://app-v2.fu.do/app/")
+driver.get("https://panel.fudo.com.ar/login")
 
-user_input = wait.until(EC.presence_of_element_located((By.ID, "user")))
-pass_input = driver.find_element(By.ID, "password")
+time.sleep(3)
 
-user_input.send_keys(FUDO_USER)
-pass_input.send_keys(FUDO_PASS)
-pass_input.submit()
+# LOGIN
+driver.find_element(By.NAME, "email").send_keys("TU_MAIL")
+driver.find_element(By.NAME, "password").send_keys("TU_PASSWORD")
+driver.find_element(By.NAME, "password").send_keys(Keys.RETURN)
 
-print("✅ Login enviado")
-time.sleep(8)
+time.sleep(5)
+print("Login OK")
 
-# =====================
-# 2. IR A DELIVERY Y ACTUALIZAR
-# =====================
-driver.get("https://app-v2.fu.do/app/#!/delivery")
-time.sleep(8)
+# Ir a ENTREGADOS
+driver.get("https://panel.fudo.com.ar/orders?status=delivered")
 
-print("🔄 Actualizando...")
+time.sleep(5)
+
+print("Actualizando página...")
 driver.refresh()
-time.sleep(12)
+time.sleep(5)
 
-# =====================
-# 3. SCROLL HASTA ENTREGADOS Y CLICK
-# =====================
-print("🔍 Buscando pestaña ENTREGADOS...")
+# ==============================
+# SCROLL HASTA QUE NO CARGUE MÁS
+# ==============================
 
-encontrado = False
-for i in range(10):
-    elementos = driver.find_elements(By.XPATH, "//*[contains(text(),'ENTREGADOS')]")
-    if elementos:
-        entregados = elementos[0]
-        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", entregados)
-        time.sleep(2)
-        driver.execute_script("arguments[0].click();", entregados)
-        print("✅ Click en ENTREGADOS")
-        encontrado = True
-        break
-    else:
-        driver.execute_script("window.scrollBy(0, 800);")
-        time.sleep(2)
-
-if not encontrado:
-    print("❌ No se encontró ENTREGADOS")
-
-time.sleep(8)
-
-# =====================
-# 4. CLIC EN "MOSTRAR MÁS" HASTA QUE NO EXISTA
-# =====================
-print("🔄 Cargando todos los pedidos...")
+last_height = driver.execute_script("return document.body.scrollHeight")
 
 while True:
-    botones = driver.find_elements(By.XPATH, "//*[contains(text(),'Mostrar más')]")
-    if botones and botones[0].is_displayed():
-        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", botones[0])
-        time.sleep(2)
-        driver.execute_script("arguments[0].click();", botones[0])
-        print("➕ Click en Mostrar más")
-        time.sleep(6)
-    else:
-        print("✅ No hay más resultados para cargar")
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(3)
+    new_height = driver.execute_script("return document.body.scrollHeight")
+    if new_height == last_height:
         break
+    last_height = new_height
 
-# =====================
-# 5. BUSCAR TODOS LOS +54 VISIBLES
-# =====================
-print("📞 Buscando teléfonos +54...")
+print("Scroll completo.")
 
-elementos_tel = driver.find_elements(By.XPATH, "//*[contains(text(),'+54')]")
-print(f"📦 Teléfonos encontrados: {len(elementos_tel)}")
+# ==============================
+# BUSCAR PEDIDOS
+# ==============================
 
-for tel in elementos_tel:
-    telefono = tel.text.strip()
-    if telefono:
-        sheet.append_row(["", "", telefono, "", ""])
-        print(f"✅ Guardado: {telefono}")
+pedidos = driver.find_elements(By.XPATH, "//div[contains(@class,'order-card')]")
 
-print("🏁 PROCESO TERMINADO")
+print(f"Pedidos detectados: {len(pedidos)}")
 
+for pedido in pedidos:
+    try:
+        texto = pedido.text
 
+        # Buscar cualquier número largo
+        match = re.search(r'\d{10,13}', texto)
+
+        telefono = "No encontrado"
+
+        if match:
+            numero = match.group()
+
+            # Normalizar a +54
+            if not numero.startswith("54"):
+                numero = "54" + numero
+
+            telefono = "+" + numero
+
+        # Buscar fecha simple
+        fecha_match = re.search(r'\d{1,2}/\d{1,2}/\d{2,4}', texto)
+        fecha = fecha_match.group() if fecha_match else "Sin fecha"
+
+        sheet.append_row([fecha, telefono])
+
+        print(f"Guardado | Fecha: {fecha} | Tel: {telefono}")
+
+    except Exception as e:
+        print("Error en pedido:", e)
+
+driver.quit()
+print("Proceso terminado.")
