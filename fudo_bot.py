@@ -21,10 +21,14 @@ sheet = client.open("Prueba clientes PEYA").get_worksheet(0)
 # CHROME
 # =====================
 chrome_options = Options()
-chrome_options.add_experimental_option("detach", True) 
-service = Service(ChromeDriverManager().install()) 
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--disable-gpu")
+
+service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=chrome_options)
-wait = WebDriverWait(driver, 30)
+
 
 # =====================
 # 1. INICIAR SESIÓN
@@ -107,5 +111,6 @@ for fila in filas:
             
     except Exception as e:
         print(f"Error en fila: {e}")
+
 
 print("PROCESO TERMINADO")
