@@ -57,9 +57,9 @@ driver = webdriver.Chrome(service=service, options=chrome_options)
 wait = WebDriverWait(driver, 30)
 
 # =====================
-# 1. INICIAR SESIÓN
+# 1. LOGIN
 # =====================
-driver.get("https://app-v2.fu.do/app/#!/delivery")
+driver.get("https://app-v2.fu.do/app/")
 
 user_input = wait.until(EC.presence_of_element_located((By.ID, "user")))
 pass_input = driver.find_element(By.ID, "password")
@@ -68,81 +68,75 @@ user_input.send_keys(FUDO_USER)
 pass_input.send_keys(FUDO_PASS)
 pass_input.submit()
 
-print("✅ Login OK")
+print("✅ Login enviado")
+time.sleep(8)
 
 # =====================
-# 2. ACTUALIZAR PÁGINA
+# 2. IR A DELIVERY Y ACTUALIZAR
 # =====================
-time.sleep(5)
-print("🔄 Actualizando página...")
+driver.get("https://app-v2.fu.do/app/#!/delivery")
+time.sleep(8)
+
+print("🔄 Actualizando...")
 driver.refresh()
-time.sleep(15)
+time.sleep(12)
 
 # =====================
-# 3. SCROLL Y CLIC EN ENTREGADOS
+# 3. SCROLL HASTA ENTREGADOS Y CLICK
 # =====================
-try:
-    entregados = driver.find_element(By.XPATH, "//*[contains(text(),'ENTREGADOS')]")
-    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", entregados)
-    time.sleep(2)
-    driver.execute_script("arguments[0].click();", entregados)
-    print("✅ Pestaña ENTREGADOS abierta.")
-    time.sleep(8)
-except Exception as e:
-    print("⚠️ No se pudo clickear ENTREGADOS:", e)
+print("🔍 Buscando pestaña ENTREGADOS...")
 
-# =====================
-# 4. MOSTRAR MÁS RESULTADOS
-# =====================
-try:
-    btn_mas = driver.find_elements(By.XPATH, "//*[contains(text(), 'Mostrar más')]")
-    if btn_mas and btn_mas[0].is_displayed():
-        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn_mas[0])
+encontrado = False
+for i in range(10):
+    elementos = driver.find_elements(By.XPATH, "//*[contains(text(),'ENTREGADOS')]")
+    if elementos:
+        entregados = elementos[0]
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", entregados)
         time.sleep(2)
-        driver.execute_script("arguments[0].click();", btn_mas[0])
-        print("✅ Botón 'Mostrar más' presionado.")
-        time.sleep(8)
-except:
-    print("ℹ️ No se encontró botón de carga extra.")
+        driver.execute_script("arguments[0].click();", entregados)
+        print("✅ Click en ENTREGADOS")
+        encontrado = True
+        break
+    else:
+        driver.execute_script("window.scrollBy(0, 800);")
+        time.sleep(2)
+
+if not encontrado:
+    print("❌ No se encontró ENTREGADOS")
+
+time.sleep(8)
 
 # =====================
-# 5. TRANSCRIBIR DATOS
+# 4. CLIC EN "MOSTRAR MÁS" HASTA QUE NO EXISTA
 # =====================
-print("📝 Iniciando transcripción...")
+print("🔄 Cargando todos los pedidos...")
 
-filas = driver.find_elements(By.XPATH, "//tr[td]")
-print(f"📦 Pedidos detectados: {len(filas)}")
+while True:
+    botones = driver.find_elements(By.XPATH, "//*[contains(text(),'Mostrar más')]")
+    if botones and botones[0].is_displayed():
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", botones[0])
+        time.sleep(2)
+        driver.execute_script("arguments[0].click();", botones[0])
+        print("➕ Click en Mostrar más")
+        time.sleep(6)
+    else:
+        print("✅ No hay más resultados para cargar")
+        break
 
-for fila in filas:
-    try:
-        celdas = fila.find_elements(By.TAG_NAME, "td")
+# =====================
+# 5. BUSCAR TODOS LOS +54 VISIBLES
+# =====================
+print("📞 Buscando teléfonos +54...")
 
-        if len(celdas) >= 5:
+elementos_tel = driver.find_elements(By.XPATH, "//*[contains(text(),'+54')]")
+print(f"📦 Teléfonos encontrados: {len(elementos_tel)}")
 
-            id_p = celdas[0].text.strip()
-            hora = celdas[1].text.strip()
-            cli = celdas[4].text.strip()
-            tot = celdas[-1].text.strip()
-
-            telefono = "No encontrado"
-
-            for celda in celdas:
-                texto_celda = celda.text.strip()
-                if "+54" in texto_celda:
-                    telefono = texto_celda
-                    break
-
-            if id_p.lower() == "id" or id_p == "":
-                continue
-
-            sheet.append_row([id_p, hora, telefono, cli, tot])
-            print(f"✅ Guardado pedido {id_p} | Tel: {telefono}")
-
-    except Exception as e:
-        print(f"❌ Error en fila: {e}")
+for tel in elementos_tel:
+    telefono = tel.text.strip()
+    if telefono:
+        sheet.append_row(["", "", telefono, "", ""])
+        print(f"✅ Guardado: {telefono}")
 
 print("🏁 PROCESO TERMINADO")
-
-driver.quit()
 
 
