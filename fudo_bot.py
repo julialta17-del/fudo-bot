@@ -63,59 +63,51 @@ print("✅ Login OK")
 
 
 # =====================
-# ESPERAR CARGA
+# ESPERAR CARGA COMPLETA
 # =====================
-time.sleep(5)
-driver.refresh()
+print("⏳ Esperando carga de pedidos...")
 time.sleep(15)
 
 
 # =====================
-# CLICK ENTREGADOS
+# ESPERAR TABLA
 # =====================
-try:
-    entregados = driver.find_element(By.XPATH, "//*[contains(text(),'ENTREGADOS')]")
-    driver.execute_script("arguments[0].click();", entregados)
-    print("✅ Pestaña ENTREGADOS abierta")
-except:
-    print("⚠️ No se pudo abrir ENTREGADOS")
+wait.until(
+    EC.presence_of_element_located((By.XPATH, "//table"))
+)
 
-time.sleep(8)
+time.sleep(5)
 
 
 # =====================
 # OBTENER FILAS
 # =====================
-filas = driver.find_elements(By.XPATH, "//table//tbody//tr")
-print(f"📦 Pedidos detectados: {len(filas)}")
+filas = driver.find_elements(By.XPATH, "//table//tr")
+
+print(f"📦 Filas detectadas: {len(filas)}")
 
 
 # =====================
-# TRANSCRIBIR
+# TRANSCRIBIR PEDIDOS
 # =====================
 for fila in filas:
     try:
         celdas = fila.find_elements(By.TAG_NAME, "td")
 
-        if len(celdas) >= 5:
+        # Saltar encabezado
+        if len(celdas) < 5:
+            continue
 
-            id_p = celdas[0].text.strip()
-            hora = celdas[1].text.strip()
-            total = celdas[-1].text.strip()
+        id_p = celdas[0].text.strip()
+        hora = celdas[1].text.strip()
+        telefono = celdas[3].text.strip()  # En tu imagen es la 4ta columna
+        total = celdas[6].text.strip()     # En tu imagen es la última columna
 
-            telefono = "No encontrado"
+        if id_p.lower() == "id" or id_p == "":
+            continue
 
-            for celda in celdas:
-                texto = celda.text.strip()
-                if "+54" in texto:
-                    telefono = texto
-                    break
-
-            if id_p.lower() == "id" or id_p == "":
-                continue
-
-            sheet.append_row([id_p, hora, telefono, total])
-            print(f"✅ Guardado: {id_p} | {telefono}")
+        sheet.append_row([id_p, hora, telefono, total])
+        print(f"✅ Guardado: {id_p} | {telefono}")
 
     except Exception as e:
         print(f"❌ Error en fila: {e}")
