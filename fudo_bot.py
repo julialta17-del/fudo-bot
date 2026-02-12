@@ -1,119 +1,133 @@
-import time
-import re
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
+import time
 from webdriver_manager.chrome import ChromeDriverManager
+import gspread
+from google.oauth2.service_account import Credentials
 
-# ==============================
+# =====================
 # GOOGLE SHEETS
-# ==============================
-
-scope = [
-    "https://spreadsheets.google.com/feeds",
+# =====================
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    "credenciales.json", scope
+creds = Credentials.from_service_account_file(
+    "credentials.json",
+    scopes=SCOPES
 )
+
 client = gspread.authorize(creds)
-sheet = client.open("Pedidos Fudo").sheet1
+sheet = client.open("Prueba clientes PEYA").get_worksheet(0)
 
 print("Conectado a Google Sheets OK")
 
-# ==============================
-# SELENIUM
-# ==============================
-
+# =====================
+# CHROME (APTO GITHUB)
+# =====================
 chrome_options = Options()
-chrome_options.add_argument("--headless")
+chrome_options.add_argument("--headless=new")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--start-maximized")
+chrome_options.add_argument("--disable-gpu")
 
-driver = webdriver.Chrome(
-    service=Service(ChromeDriverManager().install()),
-    options=chrome_options
-)
+service = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=service, options=chrome_options)
 
-driver.get("https://panel.fudo.com.ar/login")
+wait = WebDriverWait(driver, 40)
 
-time.sleep(3)
+# =====================
+# 1. LOGIN
+# =====================
+driver.get("https://app-v2.fu.do/app/#!/delivery")
 
-# LOGIN
-driver.find_element(By.NAME, "email").send_keys("TU_MAIL")
-driver.find_element(By.NAME, "password").send_keys("TU_PASSWORD")
-driver.find_element(By.NAME, "password").send_keys(Keys.RETURN)
+user_input = wait.until(EC.presence_of_element_located((By.ID, "user")))
+pass_input = driver.find_element(By.ID, "password")
 
-time.sleep(5)
+user_input.send_keys("admin@bigsaladssexta")
+pass_input.send_keys("bigsexta")
+pass_input.submit()
+
 print("Login OK")
 
-# Ir a ENTREGADOS
-driver.get("https://panel.fudo.com.ar/orders?status=delivered")
-
-time.sleep(5)
-
+# =====================
+# 2. REFRESH
+# =====================
+time.sleep(6)
 print("Actualizando página...")
 driver.refresh()
-time.sleep(5)
+time.sleep(12)
 
-# ==============================
-# SCROLL HASTA QUE NO CARGUE MÁS
-# ==============================
+# =====================
+# 3. IR A ENTREGADOS
+# =====================
+try:
+    entregados = wait.until(
+        EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'ENTREGADOS')]"))
+    )
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", entregados)
+    time.sleep(2)
+    driver.execute_script("arguments[0].click();", entregados)
+    print("Pestaña ENTREGADOS abierta.")
+    time.sleep(6)
+except:
+    print("No se pudo clickear ENTREGADOS, continuando...")
 
-last_height = driver.execute_script("return document.body.scrollHeight")
+# =====================
+# 4. MOSTRAR MÁS (1 CLIC)
+# =====================
+try:
+    btn_mas = driver.find_elements(By.XPATH, "//*[contains(text(),'Mostrar más')]")
+    if btn_mas and btn_mas[0].is_displayed():
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn_mas[0])
+        time.sleep(2)
+        driver.execute_script("arguments[0].click();", btn_mas[0])
+        print("Botón 'Mostrar más' presionado.")
+        time.sleep(10)
+except:
+    print("No se encontró botón extra.")
 
-while True:
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(3)
-    new_height = driver.execute_script("return document.body.scrollHeight")
-    if new_height == last_height:
-        break
-    last_height = new_height
+# =====================
+# 5. TRANSCRIPCIÓN
+# =====================
+print("Iniciando transcripción reforzada...")
 
-print("Scroll completo.")
+filas = driver.find_elements(By.XPATH, "//tr[td]")
+print(f"Pedidos detectados: {len(filas)}")
 
-# ==============================
-# BUSCAR PEDIDOS
-# ==============================
-
-pedidos = driver.find_elements(By.XPATH, "//div[contains(@class,'order-card')]")
-
-print(f"Pedidos detectados: {len(pedidos)}")
-
-for pedido in pedidos:
+for fila in filas:
     try:
-        texto = pedido.text
+        celdas = fila.find_elements(By.TAG_NAME, "td")
+        if len(celdas) >= 5:
 
-        # Buscar cualquier número largo
-        match = re.search(r'\d{10,13}', texto)
+            id_p = celdas[0].text.strip()
+            hora = celdas[1].text.strip()
+            cli = celdas[4].text.strip()
+            tot = celdas[-1].text.strip()
 
-        telefono = "No encontrado"
+            telefono = "No encontrado"
 
-        if match:
-            numero = match.group()
+            # Buscar +54 en cualquier celda
+            for celda in celdas:
+                texto_celda = celda.text.strip()
+                if "+54" in texto_celda:
+                    telefono = texto_celda
+                    break
 
-            # Normalizar a +54
-            if not numero.startswith("54"):
-                numero = "54" + numero
+            if id_p.lower() == "id" or id_p == "":
+                continue
 
-            telefono = "+" + numero
-
-        # Buscar fecha simple
-        fecha_match = re.search(r'\d{1,2}/\d{1,2}/\d{2,4}', texto)
-        fecha = fecha_match.group() if fecha_match else "Sin fecha"
-
-        sheet.append_row([fecha, telefono])
-
-        print(f"Guardado | Fecha: {fecha} | Tel: {telefono}")
+            sheet.append_row([id_p, hora, telefono, cli, tot])
+            print(f"ÉXITO: Guardado pedido {id_p} | Tel: {telefono}")
 
     except Exception as e:
-        print("Error en pedido:", e)
+        print(f"Error en fila: {e}")
 
 driver.quit()
-print("Proceso terminado.")
+print("PROCESO TERMINADO")
