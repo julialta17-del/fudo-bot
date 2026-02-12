@@ -1,0 +1,36 @@
+name: Fudo Bot Automatico
+
+on:
+  schedule:
+    - cron: "0 19 * * *"     # 16:00 Argentina
+    - cron: "30 2 * * *"     # 23:30 Argentina
+  workflow_dispatch:
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar repo
+        uses: actions/checkout@v3
+
+      - name: Instalar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+
+      - name: Instalar Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Ejecutar bot
+        run: python fudo_bot.py
+
+      - name: Instalar Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Ejecutar bot
+        run: python fudo_bot.py
