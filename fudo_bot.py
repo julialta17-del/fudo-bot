@@ -88,7 +88,10 @@ time.sleep(5)
 # =====================
 # TRANSCRIBIR SOLO TELÉFONO
 # =====================
-filas = driver.find_elements(By.XPATH, "//tr[td]")
+filas = wait.until(
+    EC.presence_of_all_elements_located((By.XPATH, "//table//tr"))
+)
+
 print(f"📦 Pedidos detectados: {len(filas)}")
 
 for fila in filas:
@@ -103,11 +106,18 @@ for fila in filas:
 
             telefono = "No encontrado"
 
-            for celda in celdas:
-                texto = celda.text.strip()
-                if "+54" in texto:
-                    telefono = texto
-                    break
+           import re
+
+for celda in celdas:
+    texto = celda.text.strip()
+
+    # Buscar números de 8 o más dígitos
+    numeros = re.sub(r"\D", "", texto)
+
+    if len(numeros) >= 8:
+        telefono = texto
+        break
+
 
             if id_p.lower() == "id" or id_p == "":
                 continue
@@ -121,3 +131,4 @@ for fila in filas:
 
 print("🏁 PROCESO TERMINADO")
 driver.quit()
+
