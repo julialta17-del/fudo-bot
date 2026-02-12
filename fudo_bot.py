@@ -4,7 +4,6 @@
 import os
 import json
 import time
-import re
 import gspread
 
 from selenium import webdriver
@@ -85,22 +84,14 @@ time.sleep(8)
 
 
 # =====================
-# ESPERAR TABLA
+# OBTENER FILAS
 # =====================
-print("⏳ Esperando tabla...")
-
-wait.until(
-    EC.presence_of_element_located((By.XPATH, "//table"))
-)
-
-time.sleep(5)
-
 filas = driver.find_elements(By.XPATH, "//table//tbody//tr")
 print(f"📦 Pedidos detectados: {len(filas)}")
 
 
 # =====================
-# TRANSCRIBIR SOLO TELÉFONO
+# TRANSCRIBIR
 # =====================
 for fila in filas:
     try:
@@ -116,12 +107,8 @@ for fila in filas:
 
             for celda in celdas:
                 texto = celda.text.strip()
-
-                # Extraer solo números
-                numeros = re.sub(r"\D", "", texto)
-
-                if len(numeros) >= 8:
-                    telefono = numeros
+                if "+54" in texto:
+                    telefono = texto
                     break
 
             if id_p.lower() == "id" or id_p == "":
