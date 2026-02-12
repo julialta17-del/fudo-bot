@@ -17,10 +17,16 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds = Credentials.from_service_account_file(
-    "credentials.json",
+import os
+import json
+
+creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+
+creds = Credentials.from_service_account_info(
+    creds_dict,
     scopes=SCOPES
 )
+
 
 client = gspread.authorize(creds)
 sheet = client.open("Prueba clientes PEYA").get_worksheet(0)
@@ -131,3 +137,4 @@ for fila in filas:
 
 driver.quit()
 print("PROCESO TERMINADO")
+
