@@ -9,8 +9,12 @@ jobs:
   run-bot:
     runs-on: ubuntu-latest
 
-    env:
-      GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+    
+      env:
+  GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+  FUDO_USER: ${{ secrets.FUDO_USER }}
+  FUDO_PASS: ${{ secrets.FUDO_PASS }}
+
 
     steps:
       - name: Checkout repository
