@@ -4,6 +4,7 @@
 import os
 import json
 import time
+import re
 import gspread
 
 from selenium import webdriver
@@ -17,7 +18,7 @@ from google.oauth2.service_account import Credentials
 
 
 # =====================
-# GOOGLE SHEETS (SEGURO)
+# GOOGLE SHEETS
 # =====================
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -55,7 +56,6 @@ driver.get("https://app-v2.fu.do/app/#!/delivery")
 user_input = wait.until(EC.presence_of_element_located((By.ID, "user")))
 pass_input = driver.find_element(By.ID, "password")
 
-# 🔐 Credenciales desde Secrets
 user_input.send_keys(os.environ["FUDO_USER"])
 pass_input.send_keys(os.environ["FUDO_PASS"])
 pass_input.submit()
@@ -64,7 +64,7 @@ print("✅ Login OK")
 
 
 # =====================
-# REFRESH
+# ESPERAR CARGA
 # =====================
 time.sleep(5)
 driver.refresh()
@@ -81,19 +81,27 @@ try:
 except:
     print("⚠️ No se pudo abrir ENTREGADOS")
 
+time.sleep(8)
+
+
+# =====================
+# ESPERAR TABLA
+# =====================
+print("⏳ Esperando tabla...")
+
+wait.until(
+    EC.presence_of_element_located((By.XPATH, "//table"))
+)
 
 time.sleep(5)
+
+filas = driver.find_elements(By.XPATH, "//table//tbody//tr")
+print(f"📦 Pedidos detectados: {len(filas)}")
 
 
 # =====================
 # TRANSCRIBIR SOLO TELÉFONO
 # =====================
-filas = wait.until(
-    EC.presence_of_all_elements_located((By.XPATH, "//table//tr"))
-)
-
-print(f"📦 Pedidos detectados: {len(filas)}")
-
 for fila in filas:
     try:
         celdas = fila.find_elements(By.TAG_NAME, "td")
@@ -106,18 +114,15 @@ for fila in filas:
 
             telefono = "No encontrado"
 
-           import re
+            for celda in celdas:
+                texto = celda.text.strip()
 
-for celda in celdas:
-    texto = celda.text.strip()
+                # Extraer solo números
+                numeros = re.sub(r"\D", "", texto)
 
-    # Buscar números de 8 o más dígitos
-    numeros = re.sub(r"\D", "", texto)
-
-    if len(numeros) >= 8:
-        telefono = texto
-        break
-
+                if len(numeros) >= 8:
+                    telefono = numeros
+                    break
 
             if id_p.lower() == "id" or id_p == "":
                 continue
@@ -131,4 +136,3 @@ for celda in celdas:
 
 print("🏁 PROCESO TERMINADO")
 driver.quit()
-
