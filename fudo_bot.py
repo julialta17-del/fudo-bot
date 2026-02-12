@@ -28,6 +28,8 @@ chrome_options.add_argument("--disable-gpu")
 
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=chrome_options)
+wait = WebDriverWait(driver, 30)
+
 
 
 # =====================
@@ -114,3 +116,4 @@ for fila in filas:
 
 
 print("PROCESO TERMINADO")
+
