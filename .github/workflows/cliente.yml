@@ -1,4 +1,4 @@
-name: Ejecutar bot
+name: Ejecutar cliente
 
 on:
   schedule:
