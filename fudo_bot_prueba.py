@@ -8,9 +8,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# --- Configuración de Rutas con formato 'raw' para Windows ---
-base_path = r"C:\fudo_bot\descargas"
-temp_excel_path = r"C:\fudo_bot\descargas\temp_excel"
+# --- Configuración de Rutas Universales (Funcionan en Windows y GitHub) ---
+# Usamos el directorio actual del script para no depender de C:
+base_path = os.path.join(os.getcwd(), "descargas")
+temp_excel_path = os.path.join(base_path, "temp_excel")
 nombre_final = "ventas.xls"
 
 # Asegurar que las carpetas existan
@@ -18,6 +19,12 @@ os.makedirs(base_path, exist_ok=True)
 os.makedirs(temp_excel_path, exist_ok=True)
 
 chrome_options = Options()
+# --- CONFIGURACIÓN PARA GITHUB ACTIONS ---
+chrome_options.add_argument('--headless') # Navegador invisible
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument('--window-size=1920,1080')
+
 chrome_options.add_experimental_option("prefs", {
     "download.default_directory": base_path,
     "download.prompt_for_download": False,
@@ -25,56 +32,59 @@ chrome_options.add_experimental_option("prefs", {
     "safebrowsing.enabled": True
 })
 
+# Inicializar Driver
 driver = webdriver.Chrome(options=chrome_options)
-wait = WebDriverWait(driver, 20)
+wait = WebDriverWait(driver, 25)
 
 try:
-    # 1. LOGIN Y EXPORTAR (Tu lógica de Fudo)
+    print(f"Iniciando sesión en Fudo... Guardando en: {base_path}")
     driver.get("https://app-v2.fu.do/app/#!/sales")
+    
+    # Login
     user_input = wait.until(EC.presence_of_element_located((By.ID, "user")))
     pass_input = driver.find_element(By.ID, "password")
     user_input.send_keys("admin@bigsaladssexta")
     pass_input.send_keys("bigsexta")
     pass_input.submit()
     
+    # Esperar y Click en Exportar
     exportar_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[ert-download-file='downloadSales()']")))
     exportar_btn.click()
-    print("Exportación iniciada. Esperando 5 segundos...")
+    print("Exportación iniciada. Esperando descarga...")
     
-    time.sleep(5) # Tiempo de gracia para que el ZIP aparezca
+    # Esperar a que el archivo aparezca (máximo 30 segundos)
+    timeout = 30
+    seconds = 0
+    zip_file = None
+    
+    while seconds < timeout:
+        archivos = [f for f in os.listdir(base_path) if f.lower().endswith(".zip")]
+        if archivos:
+            zip_file = os.path.join(base_path, max(archivos, key=lambda f: os.path.getctime(os.path.join(base_path, f))))
+            break
+        time.sleep(1)
+        seconds += 1
 
-    # 2. LOCALIZAR EL ZIP
-    archivos_zip = [os.path.join(base_path, f) for f in os.listdir(base_path) if f.lower().endswith(".zip")]
-    
-    if not archivos_zip:
-        print(f"Error: No se encontró el ZIP en {base_path}")
+    if not zip_file:
+        print(f"Error: El tiempo de espera terminó y no se encontró el ZIP en {base_path}")
     else:
-        # El más reciente
-        zip_file = max(archivos_zip, key=os.path.getctime)
         print(f"Extrayendo: {zip_file}")
-
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
             nombres = zip_ref.namelist()
             if nombres:
                 archivo_interno = nombres[0]
-                # Extraemos temporalmente en la carpeta base
                 zip_ref.extract(archivo_interno, base_path)
                 
                 ruta_extraida = os.path.join(base_path, archivo_interno)
                 ruta_destino_final = os.path.join(temp_excel_path, nombre_final)
 
-                # --- LÓGICA DE REEMPLAZO FORZADO ---
                 if os.path.exists(ruta_destino_final):
                     os.remove(ruta_destino_final)
-                    print("Archivo anterior eliminado para reemplazo.")
-
-                # Movemos y renombramos al mismo tiempo
+                
                 shutil.move(ruta_extraida, ruta_destino_final)
                 print(f"¡ÉXITO! Archivo guardado en: {ruta_destino_final}")
 
-        # Limpieza del ZIP
         os.remove(zip_file)
-        print("ZIP temporal borrado.")
 
 except Exception as e:
     print(f"Error crítico: {e}")
