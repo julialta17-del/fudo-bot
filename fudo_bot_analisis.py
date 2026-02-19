@@ -4,8 +4,9 @@ from google.oauth2.service_account import Credentials
 import os
 import json
 import numpy as np
+from datetime import datetime
 
-# --- CONFIGURACIÓN DE RUTAS RELATIVAS ---
+# --- CONFIGURACIÓN DE RUTAS ---
 ruta_excel = os.path.join("descargas", "temp_excel", "ventas.xls")
 
 def procesar_y_analizar():
@@ -18,53 +19,60 @@ def procesar_y_analizar():
     df_v = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
     df_v.columns = df_v.columns.str.strip()
     
-    # Procesamiento de fechas (mantenemos tu lógica)
+    # Procesamiento de fecha original de Fudo
     if not pd.api.types.is_datetime64_any_dtype(df_v['Creación']):
         df_v['Fecha_DT'] = pd.to_datetime(df_v['Creación'], unit='D', origin='1899-12-30', errors='coerce')
     else:
         df_v['Fecha_DT'] = df_v['Creación']
     
+    # --- FILTRO DE SEGURIDAD: SOLO HOY (Formato Día/Mes/Año) ---
+    # Creamos la fecha de hoy con el mismo formato que tu ejemplo: 19/02/2026
+    fecha_hoy_str = datetime.now().strftime('%d/%m/%Y')
+    print(f"Fecha del servidor hoy: {fecha_hoy_str}")
+
+    # Creamos la columna Fecha_Texto para comparar
     df_v['Fecha_Texto'] = df_v['Fecha_DT'].dt.strftime('%d/%m/%Y')
+    
+    # Aplicamos el filtro
+    print(f"Filtrando filas que coincidan con: {fecha_hoy_str}")
+    df_v = df_v[df_v['Fecha_Texto'] == fecha_hoy_str].copy()
+    
+    if df_v.empty:
+        print(f"⚠️ Alerta: No se encontraron ventas para hoy ({fecha_hoy_str}) en el archivo.")
+        # Opcional: Si quieres que el bot NO borre la Hoja 1 si no hay nada hoy, usa 'return'
+        # return 
+
+    print(f"Se conservaron {len(df_v)} ventas del día de hoy.")
+
+    # 2. CONTINUAR PROCESAMIENTO
     df_v['Hora_Exacta'] = df_v['Fecha_DT'].dt.strftime('%H:%M')
     df_v['Hora_Int'] = df_v['Fecha_DT'].dt.hour 
 
     def asignar_turno(h):
-        if h < 15: return "Mañana"
-        elif h >= 19: return "Noche"
-        else: return "Tarde/Intermedio"
+        return "Mañana" if h < 16 else "Noche"
 
     df_v['Turno'] = df_v['Hora_Int'].apply(asignar_turno)
 
-    # Cargar hojas secundarias
-    df_p = pd.read_excel(ruta_excel, sheet_name='Pagos')
-    df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
-    df_d = pd.read_excel(ruta_excel, sheet_name='Descuentos')
-    df_e = pd.read_excel(ruta_excel, sheet_name='Costos de Envío')
+    # Detalle de productos (Adiciones)
+    try:
+        df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
+        prod_resumen = df_a.groupby('Id. Venta')['Producto'].apply(lambda x: ', '.join(x.astype(str))).reset_index()
+        prod_resumen.columns = ['Id', 'Detalle_Productos']
+        consolidado = df_v.merge(prod_resumen, on='Id', how='left')
+    except:
+        consolidado = df_v.copy()
+        consolidado['Detalle_Productos'] = "Sin detalle"
 
-    # 2. PROCESAR MÉTRICAS
-    prod_resumen = df_a.groupby('Id. Venta').agg({
-        'Producto': lambda x: ', '.join(x.astype(str)),
-        'Precio': 'sum'
-    }).reset_index().rename(columns={'Id. Venta': 'Id', 'Producto': 'Detalle_Productos', 'Precio': 'Total_Productos_Bruto'})
+    # Seleccionar columnas finales para Hoja 1
+    columnas_finales = ['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago', 'Detalle_Productos']
+    # Nos aseguramos de que solo suban las columnas que existen
+    columnas_existentes = [c for c in columnas_finales if c in consolidado.columns]
+    consolidado = consolidado[columnas_existentes]
 
-    desc_resumen = df_d.groupby('Id. Venta')['Valor'].sum().reset_index().rename(columns={'Id. Venta': 'Id', 'Valor': 'Descuento_Total'})
-    envio_resumen = df_e.groupby('Id. Venta')['Valor'].sum().reset_index().rename(columns={'Id. Venta': 'Id', 'Valor': 'Costo_Envio'})
+    # 3. SUBIR A GOOGLE SHEETS
+    subir_a_google(consolidado)
 
-    columnas_interes = ['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago']
-    consolidado = df_v[columnas_interes].merge(prod_resumen, on='Id', how='left')
-    consolidado = consolidado.merge(desc_resumen, on='Id', how='left')
-    consolidado = consolidado.merge(envio_resumen, on='Id', how='left')
-    consolidado[['Total_Productos_Bruto', 'Descuento_Total', 'Costo_Envio']] = consolidado[['Total_Productos_Bruto', 'Descuento_Total', 'Costo_Envio']].fillna(0)
-
-    # Métricas Resumen
-    ventas_turno = consolidado.groupby('Turno').agg({'Id': 'count', 'Total': 'sum'}).reset_index()
-    top_5 = df_a['Producto'].value_counts().head(5).reset_index()
-    pagos_resumen = df_p.groupby('Medio de Pago')['Monto'].sum().reset_index().sort_values(by='Monto', ascending=False)
-
-    # 3. SUBIR A GOOGLE
-    subir_a_google(consolidado, top_5, ventas_turno, pagos_resumen)
-
-def subir_a_google(consolidado, top5, turnos, pagos):
+def subir_a_google(consolidado):
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds_json = os.getenv("GOOGLE_CREDENTIALS")
     
@@ -75,12 +83,13 @@ def subir_a_google(consolidado, top5, turnos, pagos):
     
     client = gspread.authorize(creds)
     spreadsheet = client.open("Analisis Fudo")
-
-    sheet_data = spreadsheet.get_worksheet(0)
+    sheet_data = spreadsheet.worksheet("Hoja 1")
+    
     sheet_data.clear()
-    sheet_data.update([consolidado.columns.values.tolist()] + consolidado.fillna("").astype(str).values.tolist(), 'A1')
+    datos_finales = [consolidado.columns.values.tolist()] + consolidado.fillna("").astype(str).values.tolist()
+    sheet_data.update(range_name='A1', values=datos_finales)
 
-    print("✅ Análisis subido a Google Sheets.")
+    print("✅ Hoja 1 limpia y actualizada solo con registros de hoy.")
 
 if __name__ == "__main__":
     procesar_y_analizar()
