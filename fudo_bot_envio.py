@@ -8,8 +8,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import numpy as np
 
-# --- 1. CONFIGURACIÓN (Rutas relativas para GitHub) ---
-ruta_excel = os.path.join("descargas", "temp_excel", "ventas.xls")
+# --- 1. CONFIGURACIÓN ---
 URL_DASHBOARD = "https://docs.google.com/spreadsheets/d/1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8/edit#gid=487122359"
 
 MAIL_REMITENTE = "julialta17@gmail.com"
@@ -65,17 +64,7 @@ def enviar_resumen_email(total, ticket, mejor_prod, top5_df, origen_perc_str, pa
         print(f"❌ Error al enviar mail: {e}")
 
 def ejecutar_sistema_envio():
-    if not os.path.exists(ruta_excel):
-        print(f"Error: No se encontró el archivo Excel en {ruta_excel}")
-        return
-
-    print("1. Procesando datos para el reporte...")
-    # Leemos ventas y adiciones del Excel descargado en el Paso 1
-    df_v = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
-    df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
-    df_v.columns = [str(c).strip() for c in df_v.columns]
-    
-    # 2. CONEXIÓN A GOOGLE (Para actualización de histórico final si es necesario)
+    print("1. Conectando a Google Sheets para leer el Resumen...")
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds_json = os.getenv("GOOGLE_CREDENTIALS")
     if creds_json:
@@ -85,34 +74,51 @@ def ejecutar_sistema_envio():
     
     client = gspread.authorize(creds)
     spreadsheet = client.open("Analisis Fudo")
+    
+    # 2. LEER DATOS DE LA HOJA RESUMEN (No del Excel)
+    try:
+        sheet_res = spreadsheet.worksheet("Resumen")
+        data = sheet_res.get_all_values()
+    except Exception as e:
+        print(f"❌ Error: No se encontró la hoja 'Resumen'. {e}")
+        return
 
-    # 3. CÁLCULOS PARA EL EMAIL
-    df_v['Total_Num'] = pd.to_numeric(df_v['Total'], errors='coerce').fillna(0)
-    total_v = df_v['Total_Num'].sum()
-    ticket_p = total_v / len(df_v) if len(df_v) > 0 else 0
+    # 3. EXTRAER MÉTRICAS DESDE LAS CELDAS DEL RESUMEN
+    # Asumiendo la estructura que crea el bot de análisis en el Resumen:
+    # A2:A7 -> Top 5 Productos | E2:F... -> Ventas por Turno | etc.
     
-    top_5 = df_a['Producto'].value_counts().head(5).reset_index()
-    top_5.columns = ['Producto', 'Cant']
-    mejor_p = top_5.iloc[0]['Producto'] if not top_5.empty else "N/A"
+    df_resumen = pd.DataFrame(data)
     
+    # Top 5 Productos (A2:B7 aprox)
+    top_5 = pd.DataFrame(data[2:7], columns=data[1][0:2])
+    mejor_p = top_5.iloc[0, 0] if not top_5.empty else "N/A"
+
+    # Para los totales, ticket y origen, los tomaremos de la Hoja 1 
+    # (ya que el Resumen es visual y la Hoja 1 es la base limpia)
+    sheet_h1 = spreadsheet.worksheet("Hoja 1")
+    df_h1 = pd.DataFrame(sheet_h1.get_all_records())
+    df_h1.columns = [str(c).strip() for c in df_h1.columns]
+
+    df_h1['Total'] = pd.to_numeric(df_h1['Total'], errors='coerce').fillna(0)
+    total_v = df_h1['Total'].sum()
+    ticket_p = total_v / len(df_h1) if len(df_h1) > 0 else 0
+
     # Cálculo de Origen
     origen_perc_str = "Sin datos"
-    if 'Origen' in df_v.columns and total_v > 0:
-        stats_o = df_v.groupby('Origen')['Total_Num'].sum()
+    if 'Origen' in df_h1.columns and total_v > 0:
+        stats_o = df_h1.groupby('Origen')['Total'].sum()
         perc = (stats_o / total_v * 100).round(1)
         origen_perc_str = ", ".join([f"{v}% {i}" for i, v in perc.items()])
 
     # Cálculo de Medios de Pago
     pagos_str = "<li>Sin datos</li>"
-    col_pago = 'Medio de Pago'
-    if col_pago in df_v.columns:
-        stats_p = df_v.groupby(col_pago)['Total_Num'].sum().sort_values(ascending=False)
+    if 'Medio de Pago' in df_h1.columns:
+        stats_p = df_h1.groupby('Medio de Pago')['Total'].sum().sort_values(ascending=False)
         pagos_str = "".join([f"<li>🔹 <strong>{i}:</strong> ${v:,.2f}</li>" for i, v in stats_p.items()])
 
     # Enviar reporte
-    print("4. Enviando correo resumen...")
+    print("4. Enviando correo resumen basado en Google Sheets...")
     enviar_resumen_email(total_v, ticket_p, mejor_p, top_5, origen_perc_str, pagos_str)
 
 if __name__ == "__main__":
     ejecutar_sistema_envio()
-
