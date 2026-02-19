@@ -12,7 +12,7 @@ import numpy as np
 URL_DASHBOARD = "https://docs.google.com/spreadsheets/d/1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8/edit#gid=487122359"
 
 MAIL_REMITENTE = "julialta17@gmail.com"
-MAIL_DESTINATARIOS = ["julialta17@gmail.com"]
+MAIL_DESTINATARIOS = ["julialta17@gmail.com", "matiasgabrielrebolledo@gmail.com"]
 MAIL_PASSWORD = "flns hgiy nwyw rzda" 
 
 def enviar_resumen_email(total_ventas, margen_total, ticket, mejor_prod, top5_df, origen_perc_str, pagos_str):
@@ -131,3 +131,4 @@ def ejecutar_sistema_envio():
 
 if __name__ == "__main__":
     ejecutar_sistema_envio()
+
