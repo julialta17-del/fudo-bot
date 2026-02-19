@@ -69,8 +69,9 @@ jobs:
         run: python fudo_bot_alerta.py
       - name: Paso 10 - Envio
         env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+         GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: python fudo_bot_envio.py
+         
         run: python paso4_reporte.py
 
       # ... y así hasta el paso 6
