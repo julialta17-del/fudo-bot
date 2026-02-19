@@ -1,94 +1,86 @@
+import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
 import os
-import time
-import zipfile
-import shutil
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import json
+import numpy as np
+from datetime import datetime
 
-# --- Configuración de Rutas Universales (Funcionan en Windows y GitHub) ---
-# Usamos el directorio actual del script para no depender de C:
-base_path = os.path.join(os.getcwd(), "descargas")
-temp_excel_path = os.path.join(base_path, "temp_excel")
-nombre_final = "ventas.xls"
+# --- CONFIGURACIÓN DE RUTAS ---
+ruta_excel = os.path.join("descargas", "temp_excel", "ventas.xls")
 
-# Asegurar que las carpetas existan
-os.makedirs(base_path, exist_ok=True)
-os.makedirs(temp_excel_path, exist_ok=True)
+def procesar_y_analizar():
+    print(f"Buscando archivo en: {ruta_excel}")
+    if not os.path.exists(ruta_excel):
+        print(f"Error: No se encontró el archivo en {ruta_excel}")
+        return
 
-chrome_options = Options()
-# --- CONFIGURACIÓN PARA GITHUB ACTIONS ---
-chrome_options.add_argument('--headless') # Navegador invisible
-chrome_options.add_argument('--no-sandbox')
-chrome_options.add_argument('--disable-dev-shm-usage')
-chrome_options.add_argument('--window-size=1920,1080')
-
-chrome_options.add_experimental_option("prefs", {
-    "download.default_directory": base_path,
-    "download.prompt_for_download": False,
-    "download.directory_upgrade": True,
-    "safebrowsing.enabled": True
-})
-
-# Inicializar Driver
-driver = webdriver.Chrome(options=chrome_options)
-wait = WebDriverWait(driver, 25)
-
-try:
-    print(f"Iniciando sesión en Fudo... Guardando en: {base_path}")
-    driver.get("https://app-v2.fu.do/app/#!/sales")
+    # 1. CARGAR DATOS
+    df_v = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
+    df_v.columns = df_v.columns.str.strip()
     
-    # Login
-    user_input = wait.until(EC.presence_of_element_located((By.ID, "user")))
-    pass_input = driver.find_element(By.ID, "password")
-    user_input.send_keys("admin@bigsaladssexta")
-    pass_input.send_keys("bigsexta")
-    pass_input.submit()
-    
-    # Esperar y Click en Exportar
-    exportar_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[ert-download-file='downloadSales()']")))
-    exportar_btn.click()
-    print("Exportación iniciada. Esperando descarga...")
-    
-    # Esperar a que el archivo aparezca (máximo 30 segundos)
-    timeout = 30
-    seconds = 0
-    zip_file = None
-    
-    while seconds < timeout:
-        archivos = [f for f in os.listdir(base_path) if f.lower().endswith(".zip")]
-        if archivos:
-            zip_file = os.path.join(base_path, max(archivos, key=lambda f: os.path.getctime(os.path.join(base_path, f))))
-            break
-        time.sleep(1)
-        seconds += 1
-
-    if not zip_file:
-        print(f"Error: El tiempo de espera terminó y no se encontró el ZIP en {base_path}")
+    # Procesamiento de fechas
+    if not pd.api.types.is_datetime64_any_dtype(df_v['Creación']):
+        df_v['Fecha_DT'] = pd.to_datetime(df_v['Creación'], unit='D', origin='1899-12-30', errors='coerce')
     else:
-        print(f"Extrayendo: {zip_file}")
-        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-            nombres = zip_ref.namelist()
-            if nombres:
-                archivo_interno = nombres[0]
-                zip_ref.extract(archivo_interno, base_path)
-                
-                ruta_extraida = os.path.join(base_path, archivo_interno)
-                ruta_destino_final = os.path.join(temp_excel_path, nombre_final)
+        df_v['Fecha_DT'] = df_v['Creación']
+    
+    # --- FILTRO DE SEGURIDAD: SOLO HOY ---
+    # Obtenemos la fecha de hoy en el mismo formato que Fudo
+    fecha_hoy = datetime.now().strftime('%Y-%m-%d')
+    print(f"Filtrando ventas para la fecha: {fecha_hoy}")
+    
+    # Filtramos el DataFrame para que solo queden las filas de hoy
+    df_v = df_v[df_v['Fecha_DT'].dt.strftime('%Y-%m-%d') == fecha_hoy].copy()
+    
+    if df_v.empty:
+        print("⚠️ Atención: No hay ventas registradas con fecha de hoy en el archivo descargado.")
+        # Opcional: podrías detener el proceso aquí para no borrar la Hoja 1 con datos vacíos
+        # return 
 
-                if os.path.exists(ruta_destino_final):
-                    os.remove(ruta_destino_final)
-                
-                shutil.move(ruta_extraida, ruta_destino_final)
-                print(f"¡ÉXITO! Archivo guardado en: {ruta_destino_final}")
+    print(f"Se conservaron {len(df_v)} ventas de hoy.")
 
-        os.remove(zip_file)
+    # 2. CONTINUAR CON EL PROCESAMIENTO NORMAL
+    df_v['Fecha_Texto'] = df_v['Fecha_DT'].dt.strftime('%d/%m/%Y')
+    df_v['Hora_Exacta'] = df_v['Fecha_DT'].dt.strftime('%H:%M')
+    df_v['Hora_Int'] = df_v['Fecha_DT'].dt.hour 
 
-except Exception as e:
-    print(f"Error crítico: {e}")
+    def asignar_turno(h):
+        if h < 16: return "Mañana"
+        else: return "Noche"
 
-finally:
-    driver.quit()
-    print("Proceso terminado.")
+    df_v['Turno'] = df_v['Hora_Int'].apply(asignar_turno)
+
+    # Cargar adiciones (productos) y cruzar para tener el detalle
+    df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
+    prod_resumen = df_a.groupby('Id. Venta')['Producto'].apply(lambda x: ', '.join(x.astype(str))).reset_index()
+    prod_resumen.columns = ['Id', 'Detalle_Productos']
+
+    # Unir datos
+    consolidado = df_v[['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago']].merge(prod_resumen, on='Id', how='left')
+
+    # 3. SUBIR A GOOGLE SHEETS
+    subir_a_google(consolidado)
+
+def subir_a_google(consolidado):
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    creds_json = os.getenv("GOOGLE_CREDENTIALS")
+    
+    if creds_json:
+        creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
+    else:
+        creds = Credentials.from_service_account_file('credentials.json', scopes=scope)
+    
+    client = gspread.authorize(creds)
+    spreadsheet = client.open("Analisis Fudo")
+    sheet_data = spreadsheet.worksheet("Hoja 1")
+    
+    # Al hacer .clear() y luego .update(), nos aseguramos de que los datos viejos de ayer se borren
+    sheet_data.clear()
+    datos_finales = [consolidado.columns.values.tolist()] + consolidado.fillna("").astype(str).values.tolist()
+    sheet_data.update(range_name='A1', values=datos_finales)
+
+    print("✅ Hoja 1 actualizada solo con datos de hoy.")
+
+if __name__ == "__main__":
+    procesar_y_analizar()
