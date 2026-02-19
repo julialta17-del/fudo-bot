@@ -4,8 +4,10 @@ from google.oauth2.service_account import Credentials
 import os
 import json
 import numpy as np
+from datetime import datetime
 
-# --- CAMBIO 1: Ruta para GitHub (No C:\) ---
+# --- CONFIGURACIÓN DE RUTAS (Adaptadas para GitHub) ---
+# Usamos el directorio actual para encontrar la descarga del Paso 1
 ruta_excel = os.path.join(os.getcwd(), "descargas", "temp_excel", "ventas.xls")
 
 def procesar_y_analizar():
@@ -15,10 +17,11 @@ def procesar_y_analizar():
         return
 
     # 1. CARGAR DATOS
+    # Cargamos Ventas (saltando las primeras 3 filas de encabezado de Fudo)
     df_v = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
     df_v.columns = df_v.columns.str.strip()
     
-    # Procesamiento de fechas
+    # Procesamiento de fechas para obtener el formato DD/MM/YYYY
     if not pd.api.types.is_datetime64_any_dtype(df_v['Creación']):
         df_v['Fecha_DT'] = pd.to_datetime(df_v['Creación'], unit='D', origin='1899-12-30', errors='coerce')
     else:
@@ -28,44 +31,59 @@ def procesar_y_analizar():
     df_v['Hora_Exacta'] = df_v['Fecha_DT'].dt.strftime('%H:%M')
     df_v['Hora_Int'] = df_v['Fecha_DT'].dt.hour 
 
+    # Definición de Turnos
     def asignar_turno(h):
         return "Mañana" if h < 16 else "Noche"
 
     df_v['Turno'] = df_v['Hora_Int'].apply(asignar_turno)
 
-    # 2. CARGAR HOJAS ADICIONALES (Tus columnas de Descuento y Envío)
+    # 2. CARGAR HOJAS ADICIONALES (Productos, Descuentos y Envíos)
     df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
     df_d = pd.read_excel(ruta_excel, sheet_name='Descuentos')
     df_e = pd.read_excel(ruta_excel, sheet_name='Costos de Envío')
 
-    # Agrupar Productos
+    # Agrupar Productos por Venta
     prod_resumen = df_a.groupby('Id. Venta')['Producto'].apply(lambda x: ', '.join(x.astype(str))).reset_index()
     prod_resumen.columns = ['Id', 'Detalle_Productos']
 
-    # Agrupar Descuentos
+    # Sumar Descuentos por Venta
     desc_resumen = df_d.groupby('Id. Venta')['Valor'].sum().reset_index()
     desc_resumen.columns = ['Id', 'Descuento_Total']
 
-    # Agrupar Envíos
+    # Sumar Envíos por Venta
     envio_resumen = df_e.groupby('Id. Venta')['Valor'].sum().reset_index()
     envio_resumen.columns = ['Id', 'Costo_Envio']
 
-    # 3. CONSOLIDACIÓN (Unimos todo)
-    consolidado = df_v[['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago']].merge(prod_resumen, on='Id', how='left')
+    # 3. CONSOLIDACIÓN (Unimos todas las partes)
+    columnas_interes = ['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago']
+    consolidado = df_v[columnas_interes].merge(prod_resumen, on='Id', how='left')
     consolidado = consolidado.merge(desc_resumen, on='Id', how='left')
     consolidado = consolidado.merge(envio_resumen, on='Id', how='left')
 
-    # Rellenar vacíos
+    # Rellenar valores vacíos
     consolidado[['Descuento_Total', 'Costo_Envio']] = consolidado[['Descuento_Total', 'Costo_Envio']].fillna(0)
     consolidado['Detalle_Productos'] = consolidado['Detalle_Productos'].fillna("Sin detalle")
 
-    # 4. SUBIR A GOOGLE
+    # --- 4. FILTRO FINAL: ELIMINAR TODO LO QUE NO SEA DE HOY ---
+    # Obtenemos la fecha de hoy en formato '19/02/2026'
+    fecha_hoy = datetime.now().strftime('%d/%m/%Y')
+    print(f"Filtrando para conservar solo la fecha: {fecha_hoy}")
+    
+    # Filtramos el DataFrame
+    consolidado = consolidado[consolidado['Fecha_Texto'] == fecha_hoy].copy()
+    
+    if consolidado.empty:
+        print(f"⚠️ Atención: No se encontraron ventas con fecha {fecha_hoy}. La Hoja 1 quedará vacía.")
+    else:
+        print(f"✅ Filtro aplicado: Se conservaron {len(consolidado)} ventas de hoy.")
+
+    # 5. SUBIR A GOOGLE SHEETS
     subir_a_google(consolidado)
 
 def subir_a_google(consolidado):
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     
-    # CAMBIO 2: Credenciales desde Secreto de GitHub
+    # Conexión mediante Secreto de GitHub
     creds_json = os.getenv("GOOGLE_CREDENTIALS")
     if creds_json:
         creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
@@ -76,15 +94,15 @@ def subir_a_google(consolidado):
     spreadsheet = client.open("Analisis Fudo")
     sheet_data = spreadsheet.worksheet("Hoja 1")
     
+    # Limpiamos la hoja antes de subir lo de hoy
     sheet_data.clear()
     
-    # Convertimos a lista de listas y todo a STRING para evitar errores de formato
+    # Convertimos a string para evitar errores de formato en la API
     datos_finales = [consolidado.columns.values.tolist()] + consolidado.fillna("").astype(str).values.tolist()
     
-    # CAMBIO 3: Sintaxis de update compatible con GitHub
+    # Subida forzada
     sheet_data.update(range_name='A1', values=datos_finales)
-
-    print(f"✅ Análisis completado. Se subieron {len(consolidado)} filas a la Hoja 1.")
+    print("🚀 Hoja 1 actualizada con éxito en Google Sheets.")
 
 if __name__ == "__main__":
     procesar_y_analizar()
