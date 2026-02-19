@@ -2,7 +2,6 @@ import os
 import time
 import zipfile
 import shutil
-from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -11,7 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
-# --- Configuración de Rutas Dinámicas (GitHub y Linux compatibles) ---
+# --- CONFIGURACIÓN DE RUTAS (Adaptadas para GitHub) ---
 base_path = os.path.join(os.getcwd(), "descargas")
 temp_excel_path = os.path.join(base_path, "temp_excel")
 nombre_final = "ventas.xls"
@@ -20,12 +19,11 @@ nombre_final = "ventas.xls"
 os.makedirs(base_path, exist_ok=True)
 os.makedirs(temp_excel_path, exist_ok=True)
 
-# --- Configuración de Chrome ---
 chrome_options = Options()
-chrome_options.add_argument('--headless')  # Indispensable para GitHub Actions
+# --- CONFIGURACIÓN OBLIGATORIA PARA LA NUBE ---
+chrome_options.add_argument('--headless') 
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
-chrome_options.add_argument('--window-size=1920,1080')
 
 chrome_options.add_experimental_option("prefs", {
     "download.default_directory": base_path,
@@ -34,86 +32,61 @@ chrome_options.add_experimental_option("prefs", {
     "safebrowsing.enabled": True
 })
 
-# Inicializar Driver con WebDriver Manager
+# Inicializar Driver
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=chrome_options)
-wait = WebDriverWait(driver, 25)
+wait = WebDriverWait(driver, 20)
 
 try:
-    print(f"Iniciando sesión en Fudo... Guardando en: {base_path}")
+    # 1. LOGIN Y EXPORTAR (Tu lógica original)
     driver.get("https://app-v2.fu.do/app/#!/sales")
-    
-    # 1. LOGIN
     user_input = wait.until(EC.presence_of_element_located((By.ID, "user")))
     pass_input = driver.find_element(By.ID, "password")
     user_input.send_keys("admin@bigsaladssexta")
     pass_input.send_keys("bigsexta")
     pass_input.submit()
     
-    # 2. APLICAR FILTRO "HOY" (Para evitar descargar días anteriores)
-    print("Esperando carga de página para filtrar por 'Hoy'...")
-    time.sleep(5) # Tiempo para que cargue la interfaz de ventas
-    
-    try:
-        # Hacer clic en el selector de fechas
-        selector_fecha = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "div.ert-date-filter-container")))
-        selector_fecha.click()
-        time.sleep(1)
-        
-        # Seleccionar la opción "Hoy"
-        boton_hoy = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(),'Hoy')]")))
-        boton_hoy.click()
-        print("Filtro 'Hoy' aplicado con éxito.")
-        time.sleep(3) # Esperar que la tabla se actualice
-    except Exception as e:
-        print(f"No se pudo aplicar el filtro de fecha (usando predeterminado): {e}")
-
-    # 3. EXPORTAR
     exportar_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[ert-download-file='downloadSales()']")))
     exportar_btn.click()
-    print("Exportación iniciada. Esperando descarga...")
+    print("Exportación iniciada. Esperando 5 segundos...")
     
-    # 4. LOCALIZAR Y PROCESAR EL ZIP
-    timeout = 30
-    seconds = 0
-    zip_file = None
-    
-    while seconds < timeout:
-        archivos = [f for f in os.listdir(base_path) if f.lower().endswith(".zip")]
-        if archivos:
-            # Tomamos el más nuevo
-            archivos_full = [os.path.join(base_path, f) for f in archivos]
-            zip_file = max(archivos_full, key=os.path.getctime)
-            break
-        time.sleep(1)
-        seconds += 1
+    time.sleep(5) # Tiempo de gracia para que el ZIP aparezca
 
-    if not zip_file:
+    # 2. LOCALIZAR EL ZIP
+    archivos_zip = [os.path.join(base_path, f) for f in os.listdir(base_path) if f.lower().endswith(".zip")]
+    
+    if not archivos_zip:
         print(f"Error: No se encontró el ZIP en {base_path}")
     else:
+        # El más reciente
+        zip_file = max(archivos_zip, key=os.path.getctime)
         print(f"Extrayendo: {zip_file}")
+
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
             nombres = zip_ref.namelist()
             if nombres:
                 archivo_interno = nombres[0]
+                # Extraemos temporalmente en la carpeta base
                 zip_ref.extract(archivo_interno, base_path)
                 
                 ruta_extraida = os.path.join(base_path, archivo_interno)
                 ruta_destino_final = os.path.join(temp_excel_path, nombre_final)
 
+                # --- LÓGICA DE REEMPLAZO FORZADO ---
                 if os.path.exists(ruta_destino_final):
                     os.remove(ruta_destino_final)
-                
+                    print("Archivo anterior eliminado para reemplazo.")
+
+                # Movemos y renombramos al mismo tiempo
                 shutil.move(ruta_extraida, ruta_destino_final)
                 print(f"¡ÉXITO! Archivo guardado en: {ruta_destino_final}")
 
+        # Limpieza del ZIP
         os.remove(zip_file)
-        print("Limpieza de archivos temporales completada.")
+        print("ZIP temporal borrado.")
 
 except Exception as e:
     print(f"Error crítico: {e}")
-    # Opcional: Tomar captura de pantalla en caso de error para debug en GitHub
-    driver.save_screenshot("error_fudo.png")
 
 finally:
     driver.quit()
