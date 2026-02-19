@@ -4,10 +4,9 @@ from google.oauth2.service_account import Credentials
 import os
 import json
 import numpy as np
-from datetime import datetime
 
-# --- CONFIGURACIÓN DE RUTAS ---
-ruta_excel = os.path.join("descargas", "temp_excel", "ventas.xls")
+# --- CAMBIO 1: Ruta para GitHub (No C:\) ---
+ruta_excel = os.path.join(os.getcwd(), "descargas", "temp_excel", "ventas.xls")
 
 def procesar_y_analizar():
     print(f"Buscando archivo en: {ruta_excel}")
@@ -19,32 +18,13 @@ def procesar_y_analizar():
     df_v = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
     df_v.columns = df_v.columns.str.strip()
     
-    # Procesamiento de fecha original de Fudo
+    # Procesamiento de fechas
     if not pd.api.types.is_datetime64_any_dtype(df_v['Creación']):
         df_v['Fecha_DT'] = pd.to_datetime(df_v['Creación'], unit='D', origin='1899-12-30', errors='coerce')
     else:
         df_v['Fecha_DT'] = df_v['Creación']
     
-    # --- FILTRO DE SEGURIDAD: SOLO HOY (Formato Día/Mes/Año) ---
-    # Creamos la fecha de hoy con el mismo formato que tu ejemplo: 19/02/2026
-    fecha_hoy_str = datetime.now().strftime('%d/%m/%Y')
-    print(f"Fecha del servidor hoy: {fecha_hoy_str}")
-
-    # Creamos la columna Fecha_Texto para comparar
     df_v['Fecha_Texto'] = df_v['Fecha_DT'].dt.strftime('%d/%m/%Y')
-    
-    # Aplicamos el filtro
-    print(f"Filtrando filas que coincidan con: {fecha_hoy_str}")
-    df_v = df_v[df_v['Fecha_Texto'] == fecha_hoy_str].copy()
-    
-    if df_v.empty:
-        print(f"⚠️ Alerta: No se encontraron ventas para hoy ({fecha_hoy_str}) en el archivo.")
-        # Opcional: Si quieres que el bot NO borre la Hoja 1 si no hay nada hoy, usa 'return'
-        # return 
-
-    print(f"Se conservaron {len(df_v)} ventas del día de hoy.")
-
-    # 2. CONTINUAR PROCESAMIENTO
     df_v['Hora_Exacta'] = df_v['Fecha_DT'].dt.strftime('%H:%M')
     df_v['Hora_Int'] = df_v['Fecha_DT'].dt.hour 
 
@@ -53,29 +33,40 @@ def procesar_y_analizar():
 
     df_v['Turno'] = df_v['Hora_Int'].apply(asignar_turno)
 
-    # Detalle de productos (Adiciones)
-    try:
-        df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
-        prod_resumen = df_a.groupby('Id. Venta')['Producto'].apply(lambda x: ', '.join(x.astype(str))).reset_index()
-        prod_resumen.columns = ['Id', 'Detalle_Productos']
-        consolidado = df_v.merge(prod_resumen, on='Id', how='left')
-    except:
-        consolidado = df_v.copy()
-        consolidado['Detalle_Productos'] = "Sin detalle"
+    # 2. CARGAR HOJAS ADICIONALES (Tus columnas de Descuento y Envío)
+    df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
+    df_d = pd.read_excel(ruta_excel, sheet_name='Descuentos')
+    df_e = pd.read_excel(ruta_excel, sheet_name='Costos de Envío')
 
-    # Seleccionar columnas finales para Hoja 1
-    columnas_finales = ['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago', 'Detalle_Productos']
-    # Nos aseguramos de que solo suban las columnas que existen
-    columnas_existentes = [c for c in columnas_finales if c in consolidado.columns]
-    consolidado = consolidado[columnas_existentes]
+    # Agrupar Productos
+    prod_resumen = df_a.groupby('Id. Venta')['Producto'].apply(lambda x: ', '.join(x.astype(str))).reset_index()
+    prod_resumen.columns = ['Id', 'Detalle_Productos']
 
-    # 3. SUBIR A GOOGLE SHEETS
+    # Agrupar Descuentos
+    desc_resumen = df_d.groupby('Id. Venta')['Valor'].sum().reset_index()
+    desc_resumen.columns = ['Id', 'Descuento_Total']
+
+    # Agrupar Envíos
+    envio_resumen = df_e.groupby('Id. Venta')['Valor'].sum().reset_index()
+    envio_resumen.columns = ['Id', 'Costo_Envio']
+
+    # 3. CONSOLIDACIÓN (Unimos todo)
+    consolidado = df_v[['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago']].merge(prod_resumen, on='Id', how='left')
+    consolidado = consolidado.merge(desc_resumen, on='Id', how='left')
+    consolidado = consolidado.merge(envio_resumen, on='Id', how='left')
+
+    # Rellenar vacíos
+    consolidado[['Descuento_Total', 'Costo_Envio']] = consolidado[['Descuento_Total', 'Costo_Envio']].fillna(0)
+    consolidado['Detalle_Productos'] = consolidado['Detalle_Productos'].fillna("Sin detalle")
+
+    # 4. SUBIR A GOOGLE
     subir_a_google(consolidado)
 
 def subir_a_google(consolidado):
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    creds_json = os.getenv("GOOGLE_CREDENTIALS")
     
+    # CAMBIO 2: Credenciales desde Secreto de GitHub
+    creds_json = os.getenv("GOOGLE_CREDENTIALS")
     if creds_json:
         creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
     else:
@@ -86,10 +77,14 @@ def subir_a_google(consolidado):
     sheet_data = spreadsheet.worksheet("Hoja 1")
     
     sheet_data.clear()
+    
+    # Convertimos a lista de listas y todo a STRING para evitar errores de formato
     datos_finales = [consolidado.columns.values.tolist()] + consolidado.fillna("").astype(str).values.tolist()
+    
+    # CAMBIO 3: Sintaxis de update compatible con GitHub
     sheet_data.update(range_name='A1', values=datos_finales)
 
-    print("✅ Hoja 1 limpia y actualizada solo con registros de hoy.")
+    print(f"✅ Análisis completado. Se subieron {len(consolidado)} filas a la Hoja 1.")
 
 if __name__ == "__main__":
     procesar_y_analizar()
