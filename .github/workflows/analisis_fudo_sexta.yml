@@ -58,7 +58,7 @@ jobs:
       - name: Paso 7 - Matriz
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-        run: python fudo_bot_analisis.py
+        run: python fudo_bot_matriz.py
       - name: Paso 8 - Limpieza
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
