@@ -3,7 +3,7 @@ name: Ejecutar cliente
 on:
   schedule:
     - cron: "05 18 * * *"   # 17:30 Argentina
-    - cron: "35 21 * * *"    # 23:45 Argentina
+    - cron: "05 00 * * *"    # 23:45 Argentina
   
 
 jobs:
