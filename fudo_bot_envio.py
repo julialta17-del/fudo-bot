@@ -6,129 +6,122 @@ import json
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import numpy as np
+from datetime import datetime
 
-# --- 1. CONFIGURACIÓN ---
-URL_DASHBOARD = "https://docs.google.com/spreadsheets/d/1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8/edit#gid=487122359"
-
+# --- CONFIGURACIÓN (GitHub Secrets) ---
 MAIL_REMITENTE = "julialta17@gmail.com"
 MAIL_DESTINATARIOS = ["julialta17@gmail.com", "matiasgabrielrebolledo@gmail.com"]
-MAIL_PASSWORD = "flns hgiy nwyw rzda" 
+MAIL_PASSWORD = os.getenv("MAIL_PASSWORD") 
+URL_DASHBOARD = "https://docs.google.com/spreadsheets/d/1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8/edit"
 
-def enviar_resumen_email(total_ventas, margen_total, ticket, mejor_prod, top5_df, origen_perc_str, pagos_str):
+def enviar_reporte_pro(datos):
     mensaje = MIMEMultipart()
     mensaje["From"] = MAIL_REMITENTE
     mensaje["To"] = ", ".join(MAIL_DESTINATARIOS)
-    mensaje["Subject"] = f"📊 Resumen Ejecutivo - {pd.Timestamp.now().strftime('%d/%m/%Y')}"
-
-    # Formateo de la tabla HTML
-    tabla_html = top5_df.to_html(index=False, border=1, justify='left')
-    tabla_html = tabla_html.replace('border="1"', 'style="border-collapse: collapse; width: 100%; font-family: sans-serif;"')
-    tabla_html = tabla_html.replace('<th>', '<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2; text-align: left;">')
-    tabla_html = tabla_html.replace('<td>', '<td style="border: 1px solid #ddd; padding: 8px;">')
-
-    # Color del margen (Verde si es positivo, Rojo si es negativo)
-    color_margen = "#27ae60" if margen_total >= 0 else "#e74c3c"
+    mensaje["Subject"] = f"🥗 Big Salads Sexta: Reporte Estratégico - {datetime.now().strftime('%d/%m/%Y')}"
 
     cuerpo = f"""
     <html>
-      <body style="font-family: Arial, sans-serif; color: #333;">
-        <div style="max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
-            <h2 style="color: #2c3e50;">📊 Reporte de Ventas Diario</h2>
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 10px;">
-                <p style="font-size: 16px;">💰 <strong>Ventas Totales:</strong> ${total_ventas:,.2f}</p>
-                <p style="font-size: 18px; color: {color_margen};">💵 <strong>Ganancia Neta (Margen):</strong> ${margen_total:,.2f}</p>
-                <p>🎫 <strong>Ticket Promedio:</strong> ${ticket:,.2f}</p>
-                <p>⭐ <strong>Producto Estrella:</strong> {mejor_prod}</p>
-                <p>🌐 <strong>Origen:</strong> {origen_perc_str}</p>
-                <hr style="border: 0; border-top: 1px solid #ddd;">
-                <p>💳 <strong>Medios de Pago:</strong></p>
-                <ul style="list-style: none; padding-left: 0;">
-                    {pagos_str}
-                </ul>
+      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+        <div style="max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 25px; border-radius: 10px;">
+            <h2 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">🥗 Big Salads Sexta</h2>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                <p style="font-size: 16px; margin: 5px 0;">💰 <strong>Ventas Totales:</strong> ${datos['total_v']:,.2f}</p>
+                <p style="font-size: 16px; margin: 5px 0; color: #27ae60;">💵 <strong>Ganancia Neta (Margen real):</strong> ${datos['margen_real']:,.2f}</p>
+                <p style="font-size: 12px; color: #777; margin-bottom: 10px;"><i>* Descontado 30% comision PeYa y costos de producción (Costo_Total_Venta).</i></p>
+                <p style="font-size: 16px; margin: 5px 0;">🎫 <strong>Ticket Promedio:</strong> ${datos['ticket']:,.2f}</p>
+                <hr style="border: 0; border-top: 1px solid #ddd; margin: 15px 0;">
+                <p style="margin: 5px 0;">🌐 <strong>Origen:</strong> {datos['origen_str']}</p>
             </div>
-            <h3>🔥 Top 5 Productos del Día:</h3>
-            {tabla_html}
-            <div style="text-align: center; margin-top: 20px;">
-                <a href="{URL_DASHBOARD}" style="background-color: #3498db; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">VER DASHBOARD COMPLETO</a>
+
+            <h3 style="color: #2c3e50; margin-bottom: 10px;">🕒 Pedidos por Turno:</h3>
+            <div style="background: #f4f4f4; padding: 10px; border-radius: 5px; margin-bottom: 25px;">
+                <table width="100%" style="text-align: center;">
+                    <tr>{datos['turnos_str']}</tr>
+                </table>
+            </div>
+
+            <h3 style="color: #27ae60; border-top: 1px solid #eee; padding-top: 15px;">🎯 Seguimiento de Campaña</h3>
+            <div style="background-color: #e8f5e9; padding: 15px; border-radius: 8px;">
+                {datos['lista_nombres']}
+            </div>
+
+            <h3 style="color: #2c3e50; margin-top: 25px;">🔥 Top Productos Estrella</h3>
+            <ul style="list-style: none; padding-left: 0; margin: 0;">
+                {datos['top_html']}
+            </ul>
+            
+            <div style="text-align: center; margin-top: 35px;">
+                <a href="{URL_DASHBOARD}" style="background-color: #27ae60; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">📊 ABRIR DRIVE</a>
             </div>
         </div>
       </body>
     </html>
     """
     mensaje.attach(MIMEText(cuerpo, "html"))
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(MAIL_REMITENTE, MAIL_PASSWORD)
-        server.sendmail(MAIL_REMITENTE, MAIL_DESTINATARIOS, mensaje.as_string())
-        server.quit()
-        print("✉️ Correo enviado con éxito.")
-    except Exception as e:
-        print(f"❌ Error al enviar mail: {e}")
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(MAIL_REMITENTE, MAIL_PASSWORD)
+    server.sendmail(MAIL_REMITENTE, MAIL_DESTINATARIOS, mensaje.as_string())
+    server.quit()
 
-def ejecutar_sistema_envio():
-    print("1. Conectando a Google Sheets...")
+def ejecutar():
+    # 1. CONEXIÓN USANDO SECRETS
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds_json = os.getenv("GOOGLE_CREDENTIALS")
-    if creds_json:
-        creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
-    else:
-        creds = Credentials.from_service_account_file('credentials.json', scopes=scope)
-    
+    creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
     client = gspread.authorize(creds)
     spreadsheet = client.open("Analisis Fudo")
+
+    # 2. PROCESAR VENTAS
+    df_hoy = pd.DataFrame(spreadsheet.worksheet("Hoja 1").get_all_records())
+    df_hoy.columns = df_hoy.columns.str.strip()
     
-    try:
-        sheet_h1 = spreadsheet.worksheet("Hoja 1")
-        df_h1 = pd.DataFrame(sheet_h1.get_all_records())
-    except Exception as e:
-        print(f"❌ Error al leer Hoja 1: {e}")
-        return
+    df_hoy['Total_Num'] = pd.to_numeric(df_hoy['Total'], errors='coerce').fillna(0)
+    df_hoy['Costo_Num'] = pd.to_numeric(df_hoy.get('Costo_Total_Venta', 0), errors='coerce').fillna(0)
 
-    if df_h1.empty:
-        print("⚠️ No hay ventas para reportar hoy.")
-        return
+    # Lógica Margen Real Big Salads
+    def calcular_margen(f):
+        t, c = f['Total_Num'], f['Costo_Num']
+        return t - c - (t * 0.3) if "pedidos ya" in str(f.get('Origen', '')).lower() else t - c
+    
+    df_hoy['Margen_Real'] = df_hoy.apply(calcular_margen, axis=1)
+    total_v, margen_total = df_hoy['Total_Num'].sum(), df_hoy['Margen_Real'].sum()
+    ticket = total_v / len(df_hoy) if len(df_hoy) > 0 else 0
 
-    df_h1.columns = [str(c).strip() for c in df_h1.columns]
+    # Formateo de datos secundarios
+    turnos_str = "".join([f"<td><strong>{k}</strong><br>{v} tkt</td>" for k, v in df_hoy['Turno'].value_counts().items()])
+    origen_str = ", ".join([f"{v:.1f}% {k}" for k, v in (df_hoy.groupby('Origen')['Total_Num'].sum() / total_v * 100).items()])
+    df_hoy['Principal'] = df_hoy['Detalle_Productos'].str.split(',').str[0].str.strip()
+    top_html = "".join([f"<li style='padding:5px 0; border-bottom:1px dashed #eee;'>• {k}: <b>{v}</b></li>" for k, v in df_hoy['Principal'].value_counts().head(5).items()])
+    pagos_str = "".join([f"<li>🔹 {i}: ${v:,.2f}</li>" for i, v in df_hoy.groupby('Medio de Pago')['Total_Num'].sum().sort_values(ascending=False).items()])
 
-    # 3. CÁLCULO DE MÉTRICAS ECONÓMICAS
-    df_h1['Total'] = pd.to_numeric(df_h1['Total'], errors='coerce').fillna(0)
-    total_v = df_h1['Total'].sum()
-    ticket_p = total_v / len(df_h1) if len(df_h1) > 0 else 0
-
-    # SUMA DE LA PLATA QUE QUEDÓ (Margen Neto)
-    col_margen = 'Margen_Neto_$'
-    if col_margen in df_h1.columns:
-        df_h1[col_margen] = pd.to_numeric(df_h1[col_margen], errors='coerce').fillna(0)
-        margen_total = df_h1[col_margen].sum()
+    # 3. PROCESAR CAMPAÑAS (LECTURA ROBUSTA)
+    sheet_cp = spreadsheet.worksheet("campañas")
+    vals = sheet_cp.get_all_values()
+    if len(vals) > 1:
+        headers = [h.strip() for h in vals[0]]
+        df_c = pd.DataFrame(vals[1:], columns=headers)
+        
+        col_res = [c for c in df_c.columns if "resultado" in c.lower()]
+        col_cli = [c for c in df_c.columns if "cliente" in c.lower()]
+        
+        if col_res and col_cli:
+            exitos = df_c[df_c[col_res[0]].str.contains("EXITOSA", na=False, case=False)]
+            lista_nombres = "🎯 <b>Volvieron:</b> " + ", ".join(exitos[col_cli[0]].tolist()) if not exitos.empty else "Sin retornos hoy."
+        else:
+            lista_nombres = "⚠️ Columnas de campaña no detectadas."
     else:
-        print(f"⚠️ Advertencia: No se encontró la columna {col_margen}")
-        margen_total = 0
+        lista_nombres = "Hoja de campañas vacía."
 
-    # Procesar Top 5 Productos
-    all_products = df_h1['Detalle_Productos'].str.split(',').explode().str.strip()
-    top_5_series = all_products.value_counts().head(5)
-    top_5 = top_5_series.reset_index()
-    top_5.columns = ['Producto', 'Cant']
-    mejor_p = top_5.iloc[0]['Producto'] if not top_5.empty else "N/A"
-
-    # Cálculo de Origen y Pagos
-    origen_perc_str = "Sin datos"
-    if 'Origen' in df_h1.columns and total_v > 0:
-        stats_o = df_h1.groupby('Origen')['Total'].sum()
-        perc = (stats_o / total_v * 100).round(1)
-        origen_perc_str = ", ".join([f"{v}% {i}" for i, v in perc.items()])
-
-    pagos_str = "<li>Sin datos</li>"
-    if 'Medio de Pago' in df_h1.columns:
-        stats_p = df_h1.groupby('Medio de Pago')['Total'].sum().sort_values(ascending=False)
-        pagos_str = "".join([f"<li>🔹 <strong>{i}:</strong> ${v:,.2f}</li>" for i, v in stats_p.items()])
-
-    # Enviar reporte con el Margen incluido
-    print(f"4. Enviando correo... Margen total calculado: ${margen_total}")
-    enviar_resumen_email(total_v, margen_total, ticket_p, mejor_p, top_5, origen_perc_str, pagos_str)
+    datos_finales = {
+        'total_v': total_v, 'margen_real': margen_total, 'ticket': ticket,
+        'turnos_str': turnos_str, 'origen_str': origen_str, 'top_html': top_html,
+        'lista_nombres': lista_nombres, 'pagos_str': pagos_str
+    }
+    
+    enviar_reporte_pro(datos_finales)
 
 if __name__ == "__main__":
-    ejecutar_sistema_envio()
-
+    ejecutar()
