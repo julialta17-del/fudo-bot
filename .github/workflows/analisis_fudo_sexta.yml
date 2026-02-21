@@ -69,7 +69,11 @@ jobs:
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: python fudo_bot_alerta.py
-      - name: Paso 10 - Envio
+      - name: Paso 10 - audiroria campañas
+        env:
+         GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: python fudo_bot_auditoria_campañas.py
+      - name: Paso 11 - Envio
         env:
          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: python fudo_bot_envio.py
