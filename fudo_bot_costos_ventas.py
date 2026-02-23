@@ -4,7 +4,6 @@ from google.oauth2.service_account import Credentials
 import os
 import json
 import numpy as np
-from datetime import datetime
 
 def calcular_margen_detallado_big_salads():
     print("1. Conectando a Google Sheets...")
@@ -23,16 +22,19 @@ def calcular_margen_detallado_big_salads():
 
     # 2. PROCESAR COSTOS
     df_costos = pd.DataFrame(sheet_costos.get_all_records())
-    dict_costos = pd.Series(df_costos['Costo'].values, index=df_costos['Nombre'].str.strip()).to_dict()
+    dict_costos = pd.Series(df_costos['Costo'].values, index=df_costos['Nombre'].astype(str).str.strip()).to_dict()
 
-    # 3. LEER VENTAS (Eliminamos columnas calculadas previas para no duplicar)
+    # 3. LEER VENTAS
     data_ventas = sheet_ventas.get_all_records()
     df_ventas = pd.DataFrame(data_ventas)
-    df_ventas.columns = df_ventas.columns.str.strip()
     
-    # Borramos las columnas si ya existen para que el reordenamiento sea limpio
-    cols_a_borrar = ['Costo_Total_Venta', 'Comision_PeYa_$', 'Margen_Neto_$', 'Margen_Neto_%']
-    df_ventas = df_ventas.drop(columns=[c for c in cols_a_borrar if c in df_ventas.columns])
+    # --- ARREGLO DEL ERROR ---
+    # Forzamos que los nombres de columnas sean string antes del strip
+    df_ventas.columns = [str(col).strip() for col in df_ventas.columns]
+
+    # Borramos columnas previas si existen para evitar duplicados
+    cols_check = ['Costo_Total_Venta', 'Comision_PeYa_$', 'Margen_Neto_$', 'Margen_Neto_%']
+    df_ventas = df_ventas.drop(columns=[c for c in cols_check if c in df_ventas.columns])
 
     # --- CÁLCULOS ---
     def calcular_costo_acumulado(celda_productos):
@@ -51,7 +53,6 @@ def calcular_margen_detallado_big_salads():
         margen = round(venta - costo_insumos - comision, 2)
         return pd.Series([comision, margen])
 
-    # Creamos las columnas nuevas
     df_ventas[['Comision_PeYa_$', 'Margen_Neto_$']] = df_ventas.apply(procesar_finanzas, axis=1)
     
     df_ventas['Margen_Neto_%'] = np.where(
@@ -60,22 +61,17 @@ def calcular_margen_detallado_big_salads():
         0
     )
 
-    # --- 4. REORDENAMIENTO BLINDADO ---
-    # Sacamos la comisión y la ponemos al final de la lista de columnas
+    # --- REORDENAMIENTO ---
     orden_final = [c for c in df_ventas.columns if c != 'Comision_PeYa_$'] + ['Comision_PeYa_$']
-    df_final = df_ventas.reindex(columns=orden_final) # Forzamos el nuevo índice
+    df_final = df_ventas[orden_final].copy()
 
     print("5. Sincronizando...")
     df_final = df_final.replace([np.nan, np.inf, -np.inf], 0)
-    
-    # Convertimos a lista para gspread
     datos_subir = [df_final.columns.tolist()] + df_final.values.tolist()
     
-    # Limpieza y subida forzada
     sheet_ventas.clear()
     sheet_ventas.update(values=datos_subir, range_name='A1')
-    
-    print(f"✅ Sincronización exitosa. Total columnas: {len(df_final.columns)}")
+    print("✅ Sincronización exitosa.")
 
 if __name__ == "__main__":
     calcular_margen_detallado_big_salads()
