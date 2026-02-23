@@ -109,7 +109,7 @@ def ejecutar():
     top_html = "".join([f"<li style='padding:5px 0; border-bottom: 1px dashed #eee;'>• {k}: <b>{v}</b></li>" for k, v in df_hoy['Principal'].value_counts().head(5).items()])
 
     # --- CAMPAÑAS ---
-    sheet_cp = spreadsheet.worksheet("campañas")
+    sheet_cp = spreadsheet.worksheet("campanas")
     vals = sheet_cp.get_all_values()
     lista_nombres = "Sin retornos hoy."
     
@@ -136,3 +136,4 @@ def ejecutar():
 
 if __name__ == "__main__":
     ejecutar()
+
