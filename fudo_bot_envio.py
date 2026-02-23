@@ -11,8 +11,20 @@ from datetime import datetime
 # --- CONFIGURACIÓN (GitHub Secrets) ---
 MAIL_REMITENTE = "julialta17@gmail.com"
 MAIL_DESTINATARIOS = ["julialta17@gmail.com", "matiasgabrielrebolledo@gmail.com"]
-MAIL_PASSWORD = os.getenv("flns hgiy nwyw rzda") 
+MAIL_PASSWORD = os.getenv("MAIL_PASSWORD") 
 URL_DASHBOARD = "https://docs.google.com/spreadsheets/d/1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8/edit"
+
+def limpiar_dinero(serie):
+    """Normaliza formatos de moneda (1.250,50 -> 1250.50) para evitar errores de magnitud."""
+    serie = serie.astype(str).str.replace('$', '', regex=False).str.strip()
+    def corregir_puntos_comas(val):
+        if ',' in val and '.' in val: # Estilo 1.234,56
+            return val.replace('.', '').replace(',', '.')
+        if ',' in val: # Estilo 1234,56
+            return val.replace(',', '.')
+        return val
+    serie = serie.apply(corregir_puntos_comas)
+    return pd.to_numeric(serie, errors='coerce').fillna(0)
 
 def enviar_reporte_pro(datos):
     mensaje = MIMEMultipart()
@@ -27,9 +39,9 @@ def enviar_reporte_pro(datos):
             <h2 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">🥗 Big Salads Sexta</h2>
             
             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                <p style="font-size: 16px; margin: 5px 0;">💰 <strong>Ventas Totales:</strong> ${datos['total_v']:,.2f}</p>
-                <p style="font-size: 16px; margin: 5px 0; color: #27ae60;">💵 <strong>Ganancia Neta (Margen real):</strong> ${datos['margen_real']:,.2f}</p>
-                <p style="font-size: 12px; color: #777; margin-bottom: 10px;"><i>* Reporte basado en los márgenes calculados en la planilla.</i></p>
+                <p style="font-size: 18px; margin: 5px 0;">💰 <strong>Ventas Totales:</strong> ${datos['total_v']:,.2f}</p>
+                <p style="font-size: 18px; margin: 5px 0; color: #27ae60;">💵 <strong>Ganancia Neta (Margen real):</strong> ${datos['margen_real']:,.2f}</p>
+                <p style="font-size: 12px; color: #777; margin-bottom: 10px;"><i>* Sincronizado con Hoja 1.</i></p>
                 <p style="font-size: 16px; margin: 5px 0;">🎫 <strong>Ticket Promedio:</strong> ${datos['ticket']:,.2f}</p>
                 <hr style="border: 0; border-top: 1px solid #ddd; margin: 15px 0;">
                 <p style="margin: 5px 0;">🌐 <strong>Origen:</strong> {datos['origen_str']}</p>
@@ -57,8 +69,8 @@ def enviar_reporte_pro(datos):
                 {datos['top_html']}
             </ul>
             
-            <div style="text-align: center; margin-top: 35px; border-top: 1px solid #eee; padding-top: 20px;">
-                <a href="{URL_DASHBOARD}" style="background-color: #27ae60; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">📊 ABRIR PLANILLA DRIVE</a>
+            <div style="text-align: center; margin-top: 35px;">
+                <a href="{URL_DASHBOARD}" style="background-color: #27ae60; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">📊 ABRIR PLANILLA DRIVE</a>
             </div>
         </div>
       </body>
@@ -72,7 +84,7 @@ def enviar_reporte_pro(datos):
     server.quit()
 
 def ejecutar():
-    print("1. Conectando a Google Sheets vía GitHub...")
+    print("1. Conectando a Google Sheets desde GitHub...")
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds_json = os.getenv("GOOGLE_CREDENTIALS")
     creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
@@ -83,46 +95,44 @@ def ejecutar():
     df_hoy = pd.DataFrame(spreadsheet.worksheet("Hoja 1").get_all_records())
     df_hoy.columns = df_hoy.columns.str.strip()
     
-    # Lectura de columnas pre-calculadas
-    df_hoy['Total_Num'] = pd.to_numeric(df_hoy['Total'], errors='coerce').fillna(0)
-    # Busca la columna que creó el script anterior
-    col_margen = 'Margen_Neto_$' if 'Margen_Neto_$' in df_hoy.columns else 'Total'
-    df_hoy['Margen_Real_Col'] = pd.to_numeric(df_hoy[col_margen], errors='coerce').fillna(0)
+    # LIMPIEZA FORZADA DE MONEDA
+    df_hoy['Total_Num'] = limpiar_dinero(df_hoy['Total'])
+    df_hoy['Margen_Num'] = limpiar_dinero(df_hoy['Margen_Neto_$'])
 
     total_v = df_hoy['Total_Num'].sum()
-    margen_total = df_hoy['Margen_Real_Col'].sum()
+    margen_total = df_hoy['Margen_Num'].sum()
     ticket = total_v / len(df_hoy) if len(df_hoy) > 0 else 0
 
-    # Procesar Turnos
+    # Turnos
     turnos_str = "".join([f"<td><strong>{k}</strong><br>{v} tkt</td>" for k, v in df_hoy['Turno'].value_counts().items()])
     
     # Origen
-    origen_str = "N/D"
-    if 'Origen' in df_hoy.columns:
-        origen_str = ", ".join([f"{v:.1f}% {k}" for k, v in (df_hoy.groupby('Origen')['Total_Num'].sum() / total_v * 100).items()])
+    origen_stats = df_hoy.groupby('Origen')['Total_Num'].sum()
+    origen_str = ", ".join([f"{(v/total_v*100):.1f}% {k}" for k, v in origen_stats.items()]) if total_v > 0 else "N/D"
 
-    # Medios de Pago
-    pagos_str = "".join([f"<li style='margin-bottom:8px;'>🔹 <strong>{i}:</strong> ${v:,.2f}</li>" for i, v in df_hoy.groupby('Medio de Pago')['Total_Num'].sum().sort_values(ascending=False).items()])
+    # Pagos
+    pagos_resumen = df_hoy.groupby('Medio de Pago')['Total_Num'].sum().sort_values(ascending=False)
+    pagos_str = "".join([f"<li>🔹 <strong>{i}:</strong> ${v:,.2f}</li>" for i, v in pagos_resumen.items()])
     
-    # Top Productos
-    df_hoy['Principal'] = df_hoy['Detalle_Productos'].str.split(',').str[0].str.strip()
-    top_html = "".join([f"<li style='padding:5px 0; border-bottom: 1px dashed #eee;'>• {k}: <b>{v}</b></li>" for k, v in df_hoy['Principal'].value_counts().head(5).items()])
+    # Productos
+    df_hoy['Principal'] = df_hoy['Detalle_Productos'].astype(str).str.split(',').str[0].str.strip()
+    top_html = "".join([f"<li>• {k}: <b>{v} vendidos</b></li>" for k, v in df_hoy['Principal'].value_counts().head(5).items()])
 
-    # --- CAMPAÑAS ---
-    sheet_cp = spreadsheet.worksheet("campanas")
-    vals = sheet_cp.get_all_values()
-    lista_nombres = "Sin retornos hoy."
-    
-    if len(vals) > 1:
-        headers = [h.strip() for h in vals[0]]
-        df_c = pd.DataFrame(vals[1:], columns=headers)
-        col_res = [c for c in df_c.columns if "resultado" in c.lower()]
-        col_cli = [c for c in df_c.columns if "cliente" in c.lower()]
-        
-        if col_res and col_cli:
-            exitos = df_c[df_c[col_res[0]].str.contains("EXITOSA", na=False, case=False)]
-            if not exitos.empty:
-                lista_nombres = "🎯 <b>Volvieron:</b> " + ", ".join(exitos[col_cli[0]].tolist())
+    # --- CAMPANAS (Sin Ñ) ---
+    lista_nombres = "Sin retornos registrados."
+    try:
+        sheet_cp = spreadsheet.worksheet("campanas")
+        vals = sheet_cp.get_all_values()
+        if len(vals) > 1:
+            df_c = pd.DataFrame(vals[1:], columns=[h.strip() for h in vals[0]])
+            col_res = [c for c in df_c.columns if "resultado" in c.lower()]
+            col_cli = [c for c in df_c.columns if "cliente" in c.lower()]
+            if col_res and col_cli:
+                exitos = df_c[df_c[col_res[0]].str.contains("EXITOSA", na=False, case=False)]
+                if not exitos.empty:
+                    lista_nombres = "🎯 <b>Volvieron:</b> " + ", ".join(exitos[col_cli[0]].astype(str).tolist())
+    except:
+        lista_nombres = "Hoja de campanas no disponible."
 
     datos_finales = {
         'total_v': total_v, 'margen_real': margen_total, 'ticket': ticket,
@@ -132,9 +142,7 @@ def ejecutar():
     }
     
     enviar_reporte_pro(datos_finales)
-    print("✅ Reporte de GitHub enviado con éxito.")
+    print("✅ Proceso de envío completado.")
 
 if __name__ == "__main__":
     ejecutar()
-
-
