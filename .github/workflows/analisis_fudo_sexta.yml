@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "30 23 * * *"   
     - cron: "30 00 * * *"   
-    - cron: "00 18 * * *"   
+    - cron: "30 17 * * *"   
   workflow_dispatch:        # Para ejecutarlo a mano
 
 jobs:
@@ -76,4 +76,5 @@ jobs:
       - name: Paso 11 - Envio
         env:
          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+         MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }} # ESTA LÍNEA ES OBLIGATORIA
         run: python fudo_bot_envio.py
