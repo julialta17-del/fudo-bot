@@ -11,7 +11,7 @@ from datetime import datetime
 # --- CONFIGURACIÓN (GitHub Secrets) ---
 MAIL_REMITENTE = "julialta17@gmail.com"
 MAIL_DESTINATARIOS = ["julialta17@gmail.com", "matiasgabrielrebolledo@gmail.com"]
-MAIL_PASSWORD = os.getenv("MAIL_PASSWORD") 
+MAIL_PASSWORD = os.getenv("flns hgiy nwyw rzda") 
 URL_DASHBOARD = "https://docs.google.com/spreadsheets/d/1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8/edit"
 
 def enviar_reporte_pro(datos):
@@ -136,4 +136,5 @@ def ejecutar():
 
 if __name__ == "__main__":
     ejecutar()
+
 
