@@ -2,9 +2,9 @@ name: Proceso Completo Fudo
 
 on:
   schedule:
-    - cron: "30 23 * * *"   
+    - cron: "30 01 * * *"   
     - cron: "30 00 * * *"   
-    - cron: "30 17 * * *"   
+   
   workflow_dispatch:        # Para ejecutarlo a mano
 
 jobs:
