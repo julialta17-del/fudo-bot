@@ -15,15 +15,38 @@ MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 URL_DASHBOARD = "https://docs.google.com/spreadsheets/d/1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8/edit"
 
 def limpiar_dinero(serie):
-    """Normaliza formatos de moneda (1.250,50 -> 1250.50) para evitar errores de magnitud."""
+    """
+    Convierte moneda de texto a número real respetando la magnitud.
+    Maneja formatos como: $1.250,50 -> 1250.50 o $1,250.50 -> 1250.50
+    """
     serie = serie.astype(str).str.replace('$', '', regex=False).str.strip()
-    def corregir_puntos_comas(val):
-        if ',' in val and '.' in val: # Estilo 1.234,56
+    
+    def corregir_formato(val):
+        if not val or val.lower() == 'nan': return "0"
+        
+        # Si tiene punto y coma (ej: 1.250,50), el punto es miles y la coma decimal
+        if '.' in val and ',' in val:
             return val.replace('.', '').replace(',', '.')
-        if ',' in val: # Estilo 1234,56
-            return val.replace(',', '.')
+        
+        # Si solo tiene coma, revisamos si parece decimal (2 dígitos después)
+        if ',' in val:
+            partes = val.split(',')
+            if len(partes[-1]) <= 2: # Es decimal: 1250,50 -> 1250.50
+                return val.replace(',', '.')
+            else: # Es miles: 1,250 -> 1250
+                return val.replace(',', '')
+                
+        # Si solo tiene punto, revisamos si es decimal o miles
+        if '.' in val:
+            partes = val.split('.')
+            if len(partes[-1]) <= 2: # Es decimal: 1250.50 -> 1250.50
+                return val
+            else: # Es miles: 1.250 -> 1250
+                return val.replace('.', '')
+        
         return val
-    serie = serie.apply(corregir_puntos_comas)
+
+    serie = serie.apply(corregir_formato)
     return pd.to_numeric(serie, errors='coerce').fillna(0)
 
 def enviar_reporte_pro(datos):
@@ -40,8 +63,7 @@ def enviar_reporte_pro(datos):
             
             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                 <p style="font-size: 18px; margin: 5px 0;">💰 <strong>Ventas Totales:</strong> ${datos['total_v']:,.2f}</p>
-                <p style="font-size: 18px; margin: 5px 0; color: #27ae60;">💵 <strong>Ganancia Neta (Margen real):</strong> ${datos['margen_real']:,.2f}</p>
-                <p style="font-size: 12px; color: #777; margin-bottom: 10px;"><i>* Sincronizado con Hoja 1.</i></p>
+                <p style="font-size: 18px; margin: 5px 0; color: #27ae60;">💵 <strong>Ganancia Neta:</strong> ${datos['margen_real']:,.2f}</p>
                 <p style="font-size: 16px; margin: 5px 0;">🎫 <strong>Ticket Promedio:</strong> ${datos['ticket']:,.2f}</p>
                 <hr style="border: 0; border-top: 1px solid #ddd; margin: 15px 0;">
                 <p style="margin: 5px 0;">🌐 <strong>Origen:</strong> {datos['origen_str']}</p>
@@ -84,7 +106,7 @@ def enviar_reporte_pro(datos):
     server.quit()
 
 def ejecutar():
-    print("1. Conectando a Google Sheets desde GitHub...")
+    print("1. Conectando a Google Sheets...")
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds_json = os.getenv("GOOGLE_CREDENTIALS")
     creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
@@ -95,7 +117,7 @@ def ejecutar():
     df_hoy = pd.DataFrame(spreadsheet.worksheet("Hoja 1").get_all_records())
     df_hoy.columns = df_hoy.columns.str.strip()
     
-    # LIMPIEZA FORZADA DE MONEDA
+    # Aplicamos la nueva limpieza que respeta los puntos decimales
     df_hoy['Total_Num'] = limpiar_dinero(df_hoy['Total'])
     df_hoy['Margen_Num'] = limpiar_dinero(df_hoy['Margen_Neto_$'])
 
@@ -118,7 +140,7 @@ def ejecutar():
     df_hoy['Principal'] = df_hoy['Detalle_Productos'].astype(str).str.split(',').str[0].str.strip()
     top_html = "".join([f"<li>• {k}: <b>{v} vendidos</b></li>" for k, v in df_hoy['Principal'].value_counts().head(5).items()])
 
-    # --- CAMPANAS (Sin Ñ) ---
+    # --- CAMPANAS ---
     lista_nombres = "Sin retornos registrados."
     try:
         sheet_cp = spreadsheet.worksheet("campanas")
@@ -142,10 +164,7 @@ def ejecutar():
     }
     
     enviar_reporte_pro(datos_finales)
-    print("✅ Proceso de envío completado.")
+    print(f"✅ Reporte enviado con Venta Total de: ${total_v:,.2f}")
 
 if __name__ == "__main__":
     ejecutar()
-
-
-
