@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 import numpy as np
 
-def auditar_campañas_acumulativo():
+def auditar_campanas_acumulativo():
     print("1. Conectando a Google Sheets...")
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     
