@@ -32,12 +32,7 @@ jobs:
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: python fudo_bot_costos.py
-        
-      - name: Paso 3 - Análisis de Clientes
-        env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-        run: python fudo_bot_analisis.py
-
+      
       - name: Paso 3 - Análisis
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
