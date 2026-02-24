@@ -21,14 +21,14 @@ def auditar_campañas_acumulativo():
     spreadsheet = client.open("Analisis Fudo")
     
     try:
-        sheet_cp = spreadsheet.worksheet("campañas")
+        sheet_cp = spreadsheet.worksheet("campanas")
         
         # --- 2. ZONA DE SEGURIDAD EN Z1 ---
         fecha_inicio_str = sheet_cp.acell('Z1').value 
         if not fecha_inicio_str:
             fecha_inicio_str = sheet_cp.acell('I1').value # Rescate por si quedó en I1
             if not fecha_inicio_str:
-                print("❌ Error: Falta fecha de inicio en Z1 de la hoja 'campañas'.")
+                print("❌ Error: Falta fecha de inicio en Z1 de la hoja 'campanas'.")
                 return
         
         # Limpieza de la cadena de fecha por si trae espacios
@@ -43,8 +43,8 @@ def auditar_campañas_acumulativo():
             return
 
         header = [h.strip() if h.strip() != "" else f"Vacia_{i}" for i, h in enumerate(all_values[0])]
-        df_campaña = pd.DataFrame(all_values[1:], columns=header)
-        df_campaña = df_campaña.loc[:, ~df_campaña.columns.str.contains('Vacia_')]
+        df_campana = pd.DataFrame(all_values[1:], columns=header)
+        df_campana = df_campana.loc[:, ~df_campana.columns.str.contains('Vacia_')]
 
     except Exception as e:
         print(f"Error en lectura inicial: {e}")
@@ -79,14 +79,14 @@ def auditar_campañas_acumulativo():
     df_seguimiento = df_seguimiento.reset_index()
 
     # 7. UNIR Y MARCAR ÉXITOS
-    cols_viejas = [c for c in df_campaña.columns if 'Compra_' in str(c) or 'Resultado' in str(c)]
-    df_campaña = df_campaña.drop(columns=cols_viejas)
+    cols_viejas = [c for c in df_campana.columns if 'Compra_' in str(c) or 'Resultado' in str(c)]
+    df_campana = df_campana.drop(columns=cols_viejas)
 
-    df_final = pd.merge(df_campaña, df_seguimiento, on='Cliente', how='left')
-    df_final['Resultado'] = df_final['Compra_1'].apply(lambda x: "CAMPAÑA EXITOSA" if pd.notnull(x) and x != "" else "")
+    df_final = pd.merge(df_campana, df_seguimiento, on='Cliente', how='left')
+    df_final['Resultado'] = df_final['Compra_1'].apply(lambda x: "CAMPANA EXITOSA" if pd.notnull(x) and x != "" else "")
 
     # 8. SUBIR A DRIVE Y AJUSTAR ESPACIO
-    print("Actualizando hoja 'campañas' en la nube...")
+    print("Actualizando hoja 'campanas' en la nube...")
     
     # Asegurar que la hoja es lo suficientemente ancha para Z1 (Columna 26)
     columnas_finales = max(len(df_final.columns) + 1, 30)
@@ -105,4 +105,4 @@ def auditar_campañas_acumulativo():
     print(f"✅ Auditoría completada para Big Salads Sexta.")
 
 if __name__ == "__main__":
-    auditar_campañas_acumulativo()
+    auditar_campanas_acumulativo()
