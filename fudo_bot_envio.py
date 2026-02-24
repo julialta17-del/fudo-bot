@@ -10,127 +10,113 @@ from datetime import datetime, timedelta
 
 # --- CONFIGURACIÓN ---
 MAIL_REMITENTE = "julialta17@gmail.com"
-MAIL_DESTINATARIOS = ["julialta17@gmail.com", "matiasgabrielrebolledo@gmail.com"]
+MAIL_DESTINATARIOS = ["julialta17@gmail.com"]
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 URL_DASHBOARD = "https://docs.google.com/spreadsheets/d/1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8/edit"
 
-def limpiar_dinero_pro(serie):
+def limpiar_dinero_blindado(serie):
     """
-    Específicamente diseñado para el formato: 12376,95
-    Convierte la coma en punto para que Python pueda sumar correctamente.
+    Elimina puntos de miles y convierte comas decimales.
+    Si el valor es '1.250,50' -> '1250.50'
+    Si el valor es '12376,95' -> '12376.95'
     """
-    # Convertimos a string y limpiamos espacios o símbolos $
-    serie = serie.astype(str).str.replace('$', '', regex=False).str.strip()
-    
-    def procesar_valor(val):
-        if not val or val.lower() in ['nan', 'none', '', '0']: 
+    def procesar(val):
+        val = str(val).replace('$', '').strip()
+        if not val or val.lower() in ['nan', 'none', '0', '']:
             return 0.0
         
-        # Si tiene punto de miles Y coma decimal (ej: 12.376,95)
+        # 1. Si detectamos el formato con punto y coma (1.250,50)
         if '.' in val and ',' in val:
-            return float(val.replace('.', '').replace(',', '.'))
+            # Quitamos el punto (miles) y cambiamos la coma por punto (decimal)
+            val = val.replace('.', '').replace(',', '.')
         
-        # Si tiene SOLO la coma decimal (tu ejemplo: 12376,95)
-        if ',' in val:
-            return float(val.replace(',', '.'))
+        # 2. Si solo hay una coma (12376,95)
+        elif ',' in val:
+            val = val.replace(',', '.')
             
+        # 3. Si hay un punto, pero NO hay coma, hay que saber si es miles o decimal
+        # Regla: Si hay 3 dígitos después del punto, es miles (1.250 -> 1250)
+        elif '.' in val:
+            partes = val.split('.')
+            if len(partes[-1]) != 2: 
+                val = val.replace('.', '')
+        
         try:
             return float(val)
         except:
             return 0.0
 
-    return serie.apply(procesar_valor)
+    return serie.apply(procesar)
 
 def enviar_reporte_pro(datos):
     mensaje = MIMEMultipart()
     mensaje["From"] = MAIL_REMITENTE
     mensaje["To"] = ", ".join(MAIL_DESTINATARIOS)
-    mensaje["Subject"] = f"🥗 Big Salads Sexta: Resumen Ejecutivo - {datos['fecha']}"
+    mensaje["Subject"] = f"🥗 Resumen Ejecutivo: {datos['fecha']}"
+
+    # Formateamos los números con separador de miles para el mail
+    venta_fmt = "{:,.2f}".format(datos['total_v']).replace(',', 'X').replace('.', ',').replace('X', '.')
+    margen_fmt = "{:,.2f}".format(datos['margen_real']).replace(',', 'X').replace('.', ',').replace('X', '.')
 
     cuerpo = f"""
     <html>
-      <body style="font-family: Arial, sans-serif; color: #333;">
-        <div style="max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 25px; border-radius: 10px;">
-            <h2 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">🥗 Big Salads Sexta</h2>
-            <p style="text-align: center;">Datos del día: <strong>{datos['fecha']}</strong></p>
-            
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                <p style="font-size: 18px; margin: 5px 0;">💰 <strong>Ventas Totales:</strong> ${datos['total_v']:,.2f}</p>
-                <p style="font-size: 18px; margin: 5px 0; color: #27ae60;">💵 <strong>Margen Neto Total:</strong> ${datos['margen_real']:,.2f}</p>
-                <p style="font-size: 16px; margin: 5px 0;">🎫 <strong>Ticket Promedio:</strong> ${datos['ticket']:,.2f}</p>
+      <body style="font-family: Arial, sans-serif;">
+        <div style="max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
+            <h2 style="color: #2c3e50; text-align: center;">🥗 Big Salads Sexta</h2>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 10px;">
+                <p style="font-size: 18px;">💰 <strong>Ventas Totales:</strong> ${venta_fmt}</p>
+                <p style="font-size: 18px; color: #27ae60;">💵 <strong>Margen Neto Real:</strong> ${margen_fmt}</p>
             </div>
-
-            <h3 style="color: #2c3e50;">🕒 Pedidos por Turno:</h3>
-            <table width="100%" style="text-align: center; background: #f4f4f4; border-radius: 5px;">
-                <tr>{datos['turnos_str']}</tr>
-            </table>
-
-            <h3 style="color: #2c3e50;">💳 Medios de Pago:</h3>
-            <ul>{datos['pagos_str']}</ul>
-            
-            <div style="text-align: center; margin-top: 35px;">
-                <a href="{URL_DASHBOARD}" style="background-color: #27ae60; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">📊 ABRIR PLANILLA DRIVE</a>
-            </div>
+            <p style="text-align: center; margin-top: 20px;">
+                <a href="{URL_DASHBOARD}" style="color: #27ae60; font-weight: bold;">📊 Ver Dashboard en Drive</a>
+            </p>
         </div>
       </body>
     </html>
     """
     mensaje.attach(MIMEText(cuerpo, "html"))
-    
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(MAIL_REMITENTE, MAIL_PASSWORD)
-        server.sendmail(MAIL_REMITENTE, MAIL_DESTINATARIOS, mensaje.as_string())
-        server.quit()
-        print("✅ Email enviado con éxito.")
-    except Exception as e:
-        print(f"❌ Error al enviar mail: {e}")
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(MAIL_REMITENTE, MAIL_PASSWORD)
+    server.sendmail(MAIL_REMITENTE, MAIL_DESTINATARIOS, mensaje.as_string())
+    server.quit()
 
 def ejecutar():
-    print("1. Conectando a Google Sheets...")
+    print("Conectando a Google Sheets...")
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds_json = os.getenv("GOOGLE_CREDENTIALS")
     creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
     client = gspread.authorize(creds)
     
-    # Abrimos la planilla por nombre
-    spreadsheet = client.open("Analisis Fudo")
-    df = pd.DataFrame(spreadsheet.worksheet("Hoja 1").get_all_records())
+    sheet = client.open("Analisis Fudo").worksheet("Hoja 1")
+    
+    # IMPORTANTE: Forzamos que todo se lea como texto para que Pandas no rompa los números
+    df = pd.DataFrame(sheet.get_all_records(numericise_ignore=['all']))
     df.columns = df.columns.str.strip()
 
-    # --- LIMPIEZA Y CÁLCULOS ---
-    # Usamos la nueva lógica para la coma decimal
-    df['Total_Num'] = limpiar_dinero_pro(df['Total'])
+    # Aplicamos limpieza blindada
+    df['Total_Num'] = limpiar_dinero_blindado(df['Total'])
     
-    # IMPORTANTE: Revisa que la columna se llame exactamente así en tu Excel
+    # Buscamos la columna de margen (flexible por si cambia el nombre)
     col_margen = 'Margen_Neto_$' if 'Margen_Neto_$' in df.columns else 'Margen_Neto'
-    df['Margen_Num'] = limpiar_dinero_pro(df[col_margen])
+    df['Margen_Num'] = limpiar_dinero_blindado(df[col_margen])
 
-    # Filtramos para no sumar pedidos anulados (Total 0)
+    # Filtro: solo pedidos reales
     df_ventas = df[df['Total_Num'] > 0].copy()
 
     total_v = df_ventas['Total_Num'].sum()
     margen_total = df_ventas['Margen_Num'].sum()
-    ticket = total_v / len(df_ventas) if len(df_ventas) > 0 else 0
 
-    print(f"DEBUG: Venta Total: {total_v} | Margen Total: {margen_total}")
+    print(f"Cálculo final -> Venta: {total_v} | Margen: {margen_total}")
 
-    # --- PREPARAR DATOS PARA EMAIL ---
-    turnos_str = "".join([f"<td><strong>{k}</strong><br>{v} pedidos</td>" for k, v in df_ventas['Turno'].value_counts().items()])
-    pagos_resumen = df_ventas.groupby('Medio de Pago')['Total_Num'].sum().sort_values(ascending=False)
-    pagos_str = "".join([f"<li>🔹 <strong>{i}:</strong> ${v:,.2f}</li>" for i, v in pagos_resumen.items()])
-
-    datos_finales = {
+    datos = {
         'total_v': total_v,
         'margen_real': margen_total,
-        'ticket': ticket,
-        'fecha': datetime.now().strftime('%d/%m/%Y'),
-        'turnos_str': turnos_str,
-        'pagos_str': pagos_str
+        'fecha': datetime.now().strftime('%d/%m/%Y')
     }
 
-    enviar_reporte_pro(datos_finales)
+    enviar_reporte_pro(datos)
+    print("✅ Proceso completado.")
 
 if __name__ == "__main__":
     ejecutar()
