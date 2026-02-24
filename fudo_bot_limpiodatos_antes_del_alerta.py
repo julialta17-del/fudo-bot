@@ -1,93 +1,46 @@
-import pandas as pd
-import gspread
-from google.oauth2.service_account import Credentials
-import os
-import json
-
-def limpiar_dinero(serie):
+def limpiar_dinero_pro(serie):
     """
-    Normaliza montos para que Python no confunda miles con decimales.
-    Maneja: $1.250,50 -> 1250.50
+    Convierte montos a números reales sin romper la magnitud.
+    Maneja correctamente: 1.250,50 | 1250,50 | 1.250 | 1250.50
     """
+    # Convertimos a string y quitamos el símbolo $
     serie = serie.astype(str).str.replace('$', '', regex=False).str.strip()
     
-    def corregir_formato(val):
-        if not val or val.lower() in ['nan', 'none', '']: return "0"
+    def procesar_valor(val):
+        if not val or val.lower() in ['nan', 'none', '', '0']: 
+            return 0.0
         
-        # Caso 1.250,50 (Punto miles, coma decimal)
+        # 1. Si tiene ambos (. y ,) el último es el decimal
         if '.' in val and ',' in val:
-            return val.replace('.', '').replace(',', '.')
+            if val.find('.') < val.find(','): # Estilo 1.250,50
+                return float(val.replace('.', '').replace(',', '.'))
+            else: # Estilo 1,250.50
+                return float(val.replace(',', '').replace('.', '.'))
         
-        # Caso 1250,50 (Solo coma decimal)
+        # 2. Si solo tiene COMA
         if ',' in val:
             partes = val.split(',')
-            if len(partes[-1]) <= 2: return val.replace(',', '.') # Es decimal
-            else: return val.replace(',', '') # Es miles tipo 1,250
-                
-        # Caso 1.250 (Solo punto de miles)
+            # Si después de la coma hay 2 dígitos, es decimal (1250,50)
+            if len(partes[-1]) <= 2:
+                return float(val.replace(',', '.'))
+            # Si hay 3 dígitos, era un separador de miles (1,250)
+            else:
+                return float(val.replace(',', ''))
+
+        # 3. Si solo tiene PUNTO
         if '.' in val:
             partes = val.split('.')
-            if len(partes[-1]) <= 2: return val # Es decimal tipo 1250.50
-            else: return val.replace('.', '') # Es miles tipo 1.250
-        
-        return val
-
-    serie = serie.apply(corregir_formato)
-    return pd.to_numeric(serie, errors='coerce').fillna(0)
-
-def ejecutar_control_cancelaciones():
-    print("🔍 Iniciando control de pedidos respetando formatos numéricos...")
-    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    
-    creds_json = os.getenv("GOOGLE_CREDENTIALS")
-    if creds_json:
-        creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
-    else:
-        creds = Credentials.from_service_account_file('credentials.json', scopes=scope)
-    
-    client = gspread.authorize(creds)
-    spreadsheet = client.open("Analisis Fudo")
-    sheet_ventas = spreadsheet.worksheet("Hoja 1")
-    
-    records = sheet_ventas.get_all_records()
-    if not records:
-        print("La hoja está vacía.")
-        return
-        
-    df = pd.DataFrame(records)
-    df.columns = [str(c).strip() for c in df.columns]
-
-    # --- CAMBIO CLAVE AQUÍ ---
-    # En lugar de pd.to_numeric directo, usamos nuestra función de limpieza
-    df['Total_Limpio'] = limpiar_dinero(df['Total'])
-    
-    def clasificar_nulos(fila):
-        precio = fila['Total_Limpio']
-        canal = str(fila.get('Origen', '')).strip().lower()
-        
-        if precio == 0:
-            if 'pedidos ya' in canal or 'peya' in canal:
-                return "VENTA CANCELADA (PeYa)"
-            elif canal in ["", "nan", "local"]:
-                return "PEDIDO BORRADO (Manual)"
+            # Si después del punto hay 2 dígitos, es decimal (1250.50)
+            if len(partes[-1]) <= 2:
+                return float(val)
+            # Si hay 3 dígitos, es separador de miles (1.250)
             else:
-                return "PEDIDO ANULADO"
-        return "VENTA REAL"
+                return float(val.replace('.', ''))
+        
+        # 4. Es un número limpio
+        try:
+            return float(val)
+        except:
+            return 0.0
 
-    df['Estado_Control'] = df.apply(clasificar_nulos, axis=1)
-    
-    # Eliminamos la columna temporal antes de subir para no duplicar datos
-    df = df.drop(columns=['Total_Limpio'])
-
-    # 3. GUARDADO SEGURO
-    print("Sincronizando datos...")
-    df_subir = df.fillna("").replace(['nan', 'None', 'inf', '-inf'], "")
-    datos_finales = [df_subir.columns.tolist()] + df_subir.astype(str).values.tolist()
-    
-    sheet_ventas.clear()
-    sheet_ventas.update(range_name='A1', values=datos_finales)
-    
-    print(f"✅ Proceso terminado. Se mantuvo la integridad de los montos en {len(df)} filas.")
-
-if __name__ == "__main__":
-    ejecutar_control_cancelaciones()
+    return serie.apply(procesar_valor)
