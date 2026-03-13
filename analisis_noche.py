@@ -1,97 +1,87 @@
+import os, time, zipfile, shutil, json, pytz
 import pandas as pd
 import gspread
+from datetime import datetime
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from google.oauth2.service_account import Credentials
-import os
-import json
-import numpy as np
-# Importamos timedelta para poder restar un día
-from datetime import datetime, timedelta 
 
-# --- CONFIGURACIÓN DE RUTAS ---
-ruta_excel = os.path.join(os.getcwd(), "descargas", "temp_excel", "ventas.xls")
+# --- 1. CONFIGURACIÓN DE TIEMPO ARGENTINA ---
+arg_tz = pytz.timezone('America/Argentina/Buenos_Aires')
+fecha_hoy_arg = datetime.now(arg_tz).strftime('%d/%m/%Y')
 
-def procesar_y_analizar():
-    print(f"Buscando archivo en: {ruta_excel}")
-    if not os.path.exists(ruta_excel):
-        print(f"Error: No se encontró el archivo en {ruta_excel}")
-        return
+# --- 2. CONFIGURACIÓN DE RUTAS ---
+base_path = os.path.join(os.getcwd(), "descargas")
+ruta_excel = os.path.join(base_path, "ventas.xls")
+os.makedirs(base_path, exist_ok=True)
 
-    # 1. CARGAR DATOS
-    df_v = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
-    df_v.columns = df_v.columns.str.strip()
-    
-    if not pd.api.types.is_datetime64_any_dtype(df_v['Creación']):
-        df_v['Fecha_DT'] = pd.to_datetime(df_v['Creación'], unit='D', origin='1899-12-30', errors='coerce')
-    else:
-        df_v['Fecha_DT'] = df_v['Creación']
-    
-    df_v['Fecha_Texto'] = df_v['Fecha_DT'].dt.strftime('%d/%m/%Y')
-    df_v['Hora_Exacta'] = df_v['Fecha_DT'].dt.strftime('%H:%M')
-    df_v['Hora_Int'] = df_v['Fecha_DT'].dt.hour 
+def ejecutar_todo():
+    # --- CONFIGURACIÓN CHROME ---
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_experimental_option("prefs", {"download.default_directory": base_path})
 
-    def asignar_turno(h):
-        return "Mañana" if h < 16 else "Noche"
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    wait = WebDriverWait(driver, 20)
 
-    df_v['Turno'] = df_v['Hora_Int'].apply(asignar_turno)
+    try:
+        # LOGIN
+        driver.get("https://app-v2.fu.do/app/#!/sales")
+        wait.until(EC.presence_of_element_located((By.ID, "user"))).send_keys("admin@bigsaladssexta")
+        driver.find_element(By.ID, "password").send_keys("bigsexta")
+        driver.find_element(By.ID, "password").submit()
 
-    # 2. CARGAR HOJAS ADICIONALES
-    df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
-    df_d = pd.read_excel(ruta_excel, sheet_name='Descuentos')
-    df_e = pd.read_excel(ruta_excel, sheet_name='Costos de Envío')
+        # ESPERAR CARGA Y REFRESCAR
+        time.sleep(5) 
+        driver.refresh()
+        print("Página refrescada. Esperando 5 segundos...")
+        time.sleep(5)
 
-    prod_resumen = df_a.groupby('Id. Venta')['Producto'].apply(lambda x: ', '.join(x.astype(str))).reset_index()
-    prod_resumen.columns = ['Id', 'Detalle_Productos']
+        # DESCARGAR
+        exportar_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[ert-download-file='downloadSales()']")))
+        exportar_btn.click()
+        time.sleep(10) # Tiempo para que baje el ZIP
 
-    desc_resumen = df_d.groupby('Id. Venta')['Valor'].sum().reset_index()
-    desc_resumen.columns = ['Id', 'Descuento_Total']
+        # PROCESAR ZIP
+        archivos_zip = [os.path.join(base_path, f) for f in os.listdir(base_path) if f.lower().endswith(".zip")]
+        if archivos_zip:
+            zip_file = max(archivos_zip, key=os.path.getctime)
+            with zipfile.ZipFile(zip_file, 'r') as z:
+                z.extract(z.namelist()[0], base_path)
+                os.rename(os.path.join(base_path, z.namelist()[0]), ruta_excel)
+            os.remove(zip_file)
 
-    envio_resumen = df_e.groupby('Id. Venta')['Valor'].sum().reset_index()
-    envio_resumen.columns = ['Id', 'Costo_Envio']
+        # --- 3. PROCESAR CON PANDAS Y SUBIR ---
+        df = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
+        # Filtro de seguridad: Solo lo que diga la fecha de hoy en Argentina
+        # (Esto evita el error de las 23:30)
+        df['Fecha_Texto'] = pd.to_datetime(df['Creación'], unit='D', origin='1899-12-30').dt.strftime('%d/%m/%Y')
+        consolidado = df[df['Fecha_Texto'] == fecha_hoy_arg]
 
-    # 3. CONSOLIDACIÓN
-    columnas_interes = ['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago']
-    consolidado = df_v[columnas_interes].merge(prod_resumen, on='Id', how='left')
-    consolidado = consolidado.merge(desc_resumen, on='Id', how='left')
-    consolidado = consolidado.merge(envio_resumen, on='Id', how='left')
+        if not consolidado.empty:
+            subir_a_google(consolidado)
+            print(f"Éxito: {len(consolidado)} ventas subidas de la fecha {fecha_hoy_arg}")
+        else:
+            print(f"Ojo: No hay ventas para la fecha {fecha_hoy_arg} todavía.")
 
-    consolidado[['Descuento_Total', 'Costo_Envio']] = consolidado[['Descuento_Total', 'Costo_Envio']].fillna(0)
-    consolidado['Detalle_Productos'] = consolidado['Detalle_Productos'].fillna("Sin detalle")
+    finally:
+        driver.quit()
 
-    # --- 4. FILTRO FINAL: ELIMINAR TODO LO QUE NO SEA DE AYER ---
-    # Restamos 1 día a la fecha actual
-    fecha_ayer = (datetime.now() - timedelta(days=1)).strftime('%d/%m/%Y')
-    print(f"Filtrando para conservar solo la fecha de ayer: {fecha_ayer}")
-    
-    # Filtramos el DataFrame
-    consolidado = consolidado[consolidado['Fecha_Texto'] == fecha_ayer].copy()
-    
-    if consolidado.empty:
-        print(f"⚠️ Atención: No se encontraron ventas con fecha {fecha_ayer}. La Hoja 1 quedará vacía.")
-    else:
-        print(f"✅ Filtro aplicado: Se conservaron {len(consolidado)} ventas de ayer.")
-
-    # 5. SUBIR A GOOGLE SHEETS
-    subir_a_google(consolidado)
-
-def subir_a_google(consolidado):
+def subir_a_google(df):
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    
     creds_json = os.getenv("GOOGLE_CREDENTIALS")
-    if creds_json:
-        creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
-    else:
-        creds = Credentials.from_service_account_file('credentials.json', scopes=scope)
-    
+    creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
     client = gspread.authorize(creds)
-    spreadsheet = client.open("Analisis Fudo")
-    sheet_data = spreadsheet.worksheet("Hoja 1")
-    
-    sheet_data.clear()
-    
-    datos_finales = [consolidado.columns.values.tolist()] + consolidado.fillna("").astype(str).values.tolist()
-    
-    sheet_data.update(range_name='A1', values=datos_finales)
-    print("🚀 Hoja 1 actualizada con éxito en Google Sheets con los datos de AYER.")
+    sheet = client.open("Analisis Fudo").worksheet("Hoja 1")
+    sheet.clear()
+    datos = [df.columns.values.tolist()] + df.fillna("").astype(str).values.tolist()
+    sheet.update(range_name='A1', values=datos)
 
 if __name__ == "__main__":
-    procesar_y_analizar()
+    ejecutar_todo()
