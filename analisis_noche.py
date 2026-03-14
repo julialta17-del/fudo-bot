@@ -61,7 +61,7 @@ def ejecutar_todo():
         df = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
         # Filtro de seguridad: Solo lo que diga la fecha de hoy en Argentina
         # (Esto evita el error de las 23:30)
-        df['Fecha_Texto'] = pd.to_datetime(df['Creación'], unit='D', origin='1899-12-30').dt.strftime('%d/%m/%Y')
+        #df['Fecha_Texto'] = pd.to_datetime(df['Creación'], unit='D', origin='1899-12-30').dt.strftime('%d/%m/%Y')
         consolidado = df[df['Fecha_Texto'] == fecha_hoy_arg]
 
         if not consolidado.empty:
