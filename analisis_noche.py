@@ -12,7 +12,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
 # --- CONFIGURACIÓN DE FECHAS ---
-hoy = ayer = hoy + 1 
+hoy = datetime.now() + timedelta(days=1)
 ayer = hoy - timedelta(days=1)
 
 # Formato YYYY-MM-DD requerido por los inputs tipo date de HTML5
