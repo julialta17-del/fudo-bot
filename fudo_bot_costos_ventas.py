@@ -97,18 +97,33 @@ def calcular_margen_detallado_big_salads():
     columnas_principales = [c for c in df_ventas.columns if c not in columnas_al_final]
     df_final = df_ventas[columnas_principales + columnas_al_final].copy()
 
-    # -------------------------------------------------------
+# -------------------------------------------------------
     # 6. SUBIR A GOOGLE SHEETS
     # -------------------------------------------------------
     print("5. Actualizando Hoja 1 con las nuevas comisiones...")
     df_final = df_final.replace([np.nan, np.inf, -np.inf], 0)
+
+    # ✅ Columnas que van como entero sin decimales ni .0
+    cols_enteras = [
+        'Costo_Total_Venta',
+        'Comision_PeYa_$',
+        'Comision_Tienda_Online_$',
+        'Margen_Neto_$'
+    ]
+    for col in cols_enteras:
+        if col in df_final.columns:
+            df_final[col] = pd.to_numeric(df_final[col], errors='coerce').fillna(0).round(0).astype(int)
+
+    # ✅ Margen_Neto_% con 1 decimal pero sin .0 innecesario (ej: 45.0 → 45, 45.3 → 45.3)
+    if 'Margen_Neto_%' in df_final.columns:
+        df_final['Margen_Neto_%'] = pd.to_numeric(df_final['Margen_Neto_%'], errors='coerce').fillna(0).round(1)
+        df_final['Margen_Neto_%'] = df_final['Margen_Neto_%'].apply(
+            lambda x: str(int(x)) if x == int(x) else str(x)
+        )
+
     datos_subir = [df_final.columns.tolist()] + df_final.astype(str).values.tolist()
 
     sheet_ventas.clear()
     sheet_ventas.update(values=datos_subir, range_name='A1')
 
     print(f"✅ ¡Proceso completado! Columnas finales: {', '.join(columnas_al_final)}")
-
-
-if __name__ == "__main__":
-    calcular_margen_detallado_big_salads()
