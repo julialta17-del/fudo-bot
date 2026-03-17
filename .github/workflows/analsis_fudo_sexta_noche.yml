@@ -27,6 +27,11 @@ jobs:
           FUDO_PASS: ${{ secrets.FUDO_PASS }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: python analisis_noche.py
+      - name: Paso 1.2 - Pegar de Datos
+        env:
+
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: python fudo_bot_analisis.py
 
       - name: Paso 2 - Descargar costos
         env:
