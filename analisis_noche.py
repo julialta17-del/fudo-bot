@@ -315,7 +315,7 @@ def ejecutar_todo():
             creds = Credentials.from_service_account_file('credentials.json', scopes=scope)
 
         client = gspread.authorize(creds)
-        spreadsheet = client.open("Quinta Analisis Fudo")
+        spreadsheet = client.open("Analisis Fudo")
         sheet_data = spreadsheet.worksheet("Hoja 1")
 
         sheet_data.clear()
