@@ -41,7 +41,7 @@ def subir_a_google(consolidado):
     client = gspread.authorize(creds)
     
     try:
-        spreadsheet = client.open("Quinta Analisis Fudo")
+        spreadsheet = client.open("Analisis Fudo")
         sheet_data = spreadsheet.worksheet("Hoja 1")
         sheet_data.clear()
         
