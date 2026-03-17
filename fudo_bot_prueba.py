@@ -22,20 +22,11 @@ ruta_excel = os.path.join(temp_excel_path, "ventas.xls")
 os.makedirs(temp_excel_path, exist_ok=True)
 
 def limpiar_a_entero_string(serie):
-    """Convierte a número, redondea y devuelve un string puro sin .0"""
     temp = pd.to_numeric(
         serie.astype(str).str.replace(',', '.', regex=False),
         errors='coerce'
     ).fillna(0)
     return temp.round(0).astype(int).astype(str)
-
-def limpiar_a_decimal_string(serie, decimales=2):
-    """Para columnas como porcentajes donde se quieren mantener decimales"""
-    temp = pd.to_numeric(
-        serie.astype(str).str.replace(',', '.', regex=False),
-        errors='coerce'
-    ).fillna(0)
-    return temp.round(decimales).astype(str)
 
 def subir_a_google(consolidado):
     print("--- PASO: CONEXIÓN A GOOGLE SHEETS ---")
@@ -62,7 +53,7 @@ def subir_a_google(consolidado):
                          consolidado.fillna("").astype(str).values.tolist()
 
         sheet_data.update(range_name='A1', values=datos_finales)
-        print("🚀 ¡DATOS SIN DECIMALES ACTUALIZADOS EN HOJA 1!")
+        print("🚀 ¡DATOS ACTUALIZADOS EN HOJA 1!")
 
     except Exception as e:
         print(f"❌ ERROR EN GOOGLE SHEETS: {e}")
@@ -121,7 +112,7 @@ try:
     df_v['Hora_Exacta'] = df_v['Fecha_DT'].dt.strftime('%H:%M')
     df_v['Turno'] = df_v['Fecha_DT'].dt.hour.apply(lambda h: "Mañana" if h < 16 else "Noche")
 
-    # ✅ FILTRO: solo filas con fecha de hoy
+    # Filtro: solo filas con fecha de hoy
     hoy = datetime.now().date()
     df_v = df_v[df_v['Fecha_DT'].dt.date == hoy]
 
@@ -130,71 +121,47 @@ try:
 
     print(f"✅ Filas de hoy ({hoy.strftime('%d/%m/%Y')}): {len(df_v)}")
 
+    # --- HOJAS ADICIONALES ---
     df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
     df_d = pd.read_excel(ruta_excel, sheet_name='Descuentos')
     df_e = pd.read_excel(ruta_excel, sheet_name='Costos de Envío')
 
+    # Detalle de productos por venta
     prod = df_a.groupby('Id. Venta')['Producto'].apply(lambda x: ', '.join(x.astype(str))).reset_index()
     prod.columns = ['Id', 'Detalle_Productos']
 
-    consolidado = df_v[['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Costo_Total_Venta', 'Origen', 'Medio de Pago']].copy()
-    consolidado = consolidado.merge(prod, on='Id', how='left')
+    # Total bruto de productos por venta (suma de precios en Adiciones)
+    total_bruto = df_a.groupby('Id. Venta')['Precio'].sum().reset_index()
+    total_bruto.columns = ['Id', 'Total_Productos_Bruto']
 
+    # Descuentos por venta
     desc = df_d.groupby('Id. Venta')['Valor'].sum().reset_index()
+    desc.columns = ['Id', 'Descuento_Total']
+
+    # Costos de envío por venta
     env = df_e.groupby('Id. Venta')['Valor'].sum().reset_index()
+    env.columns = ['Id', 'Costo_Envio']
 
-    consolidado = consolidado.merge(desc, left_on='Id', right_on='Id. Venta', how='left').drop('Id. Venta', axis=1)
-    consolidado = consolidado.merge(env, left_on='Id', right_on='Id. Venta', how='left').drop('Id. Venta', axis=1)
-
-    consolidado.rename(columns={'Valor_x': 'Descuento', 'Valor_y': 'Envio'}, inplace=True)
+    # --- CONSOLIDADO ---
+    consolidado = df_v[['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago']].copy()
+    consolidado = consolidado.merge(prod,        on='Id', how='left')
+    consolidado = consolidado.merge(total_bruto, on='Id', how='left')
+    consolidado = consolidado.merge(desc,        on='Id', how='left')
+    consolidado = consolidado.merge(env,         on='Id', how='left')
     consolidado = consolidado.fillna(0)
 
-    def a_num(s):
-        return pd.to_numeric(s.astype(str).str.replace(',', '.', regex=False), errors='coerce').fillna(0)
-
-    venta     = a_num(consolidado['Total'])
-    costo     = a_num(consolidado['Costo_Total_Venta'])
-    descuento = a_num(consolidado['Descuento'])
-
-    consolidado['Margen_Neto']              = (venta - costo - descuento).round(0).astype(int)
-    consolidado['Margen_Neto_$']            = consolidado['Margen_Neto']  # ajustá si tiene lógica distinta
-    consolidado['Margen_Neto_%']            = ((consolidado['Margen_Neto'] / venta.replace(0, 1)) * 100).round(2)
-    consolidado['Descuento_Total']          = descuento.round(0).astype(int)
-    consolidado['Costo_Envio']              = a_num(consolidado['Envio']).round(0).astype(int)
-    consolidado['Comision_PeYa_$']          = 0  # reemplazá con tu cálculo real
-    consolidado['Comision_Tienda_Online_$'] = 0  # reemplazá con tu cálculo real
-
     # --- LIMPIEZA DE DECIMALES ---
-    cols_enteras = [
-        'Id',
-        'Total',
-        'Costo_Total_Venta',
-        'Descuento',
-        'Envio',
-        'Margen_Neto',
-        'Margen_Neto_$',
-        'Descuento_Total',
-        'Costo_Envio',
-        'Comision_PeYa_$',
-        'Comision_Tienda_Online_$',
-    ]
+    cols_enteras = ['Id', 'Total', 'Total_Productos_Bruto', 'Descuento_Total', 'Costo_Envio']
     for col in cols_enteras:
         if col in consolidado.columns:
             consolidado[col] = limpiar_a_entero_string(consolidado[col])
 
-    # Margen_Neto_% mantiene 2 decimales
-    if 'Margen_Neto_%' in consolidado.columns:
-        consolidado['Margen_Neto_%'] = limpiar_a_decimal_string(consolidado['Margen_Neto_%'], decimales=2)
-
+    # --- ORDEN FINAL DE COLUMNAS ---
     orden = [
-        'Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Detalle_Productos',
-        'Total', 'Costo_Total_Venta', 'Descuento', 'Descuento_Total', 'Envio', 'Costo_Envio',
-        'Margen_Neto', 'Margen_Neto_$', 'Margen_Neto_%',
-        'Comision_PeYa_$', 'Comision_Tienda_Online_$',
-        'Origen', 'Medio de Pago'
+        'Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente',
+        'Total', 'Origen', 'Medio de Pago', 'Detalle_Productos',
+        'Total_Productos_Bruto', 'Descuento_Total', 'Costo_Envio'
     ]
-    # Solo incluir columnas que realmente existan en el DataFrame
-    orden = [c for c in orden if c in consolidado.columns]
     consolidado = consolidado[orden]
 
     subir_a_google(consolidado)
