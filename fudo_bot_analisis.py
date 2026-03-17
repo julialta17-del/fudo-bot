@@ -64,18 +64,14 @@ def procesar_y_analizar():
     consolidado[['Descuento_Total', 'Costo_Envio']] = consolidado[['Descuento_Total', 'Costo_Envio']].fillna(0)
     consolidado['Detalle_Productos'] = consolidado['Detalle_Productos'].fillna("Sin detalle")
 
-    # --- 4. FILTRO FINAL: ELIMINAR TODO LO QUE NO SEA DE HOY ---
-    # Obtenemos la fecha de hoy en formato '19/02/2026'
-    fecha_hoy = datetime.now().strftime('%d/%m/%Y')
-    print(f"Filtrando para conservar solo la fecha: {fecha_hoy}")
+
     
-    # Filtramos el DataFrame
-    consolidado = consolidado[consolidado['Fecha_Texto'] == fecha_hoy].copy()
+
     
     if consolidado.empty:
         print(f"⚠️ Atención: No se encontraron ventas con fecha {fecha_hoy}. La Hoja 1 quedará vacía.")
     else:
-        print(f"✅ Filtro aplicado: Se conservaron {len(consolidado)} ventas de hoy.")
+        print(f"✅ ventas de hoy.")
 
     # 5. SUBIR A GOOGLE SHEETS
     subir_a_google(consolidado)
