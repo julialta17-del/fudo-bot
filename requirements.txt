@@ -5,3 +5,4 @@ google-auth
 pandas
 xlrd
 openpyxl
+xlrd==2.0.1
