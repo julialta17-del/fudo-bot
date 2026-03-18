@@ -155,8 +155,23 @@ try:
     consolidado[['Valor_x', 'Valor_y']] = consolidado[['Valor_x', 'Valor_y']].fillna(0)
     consolidado.rename(columns={'Producto': 'Detalle_Productos', 'Valor_x': 'Descuento', 'Valor_y': 'Envio'}, inplace=True)
 
-    # SUBIR
-    subir_a_google(consolidado)
+
+    # --- NUEVO: FILTRO POR FECHA DE HOY ---
+    fecha_hoy_str = datetime.now().strftime('%d/%m/%Y')
+    
+    print(f"--- FILTRANDO DATOS PARA HOY: {fecha_hoy_str} ---")
+    
+    # Aplicamos el filtro exacto
+    consolidado_hoy = consolidado[consolidado['Fecha_Texto'] == fecha_hoy_str].copy()
+
+    # Verificación en consola
+    if consolidado_hoy.empty:
+        print(f"⚠️ Ojo: No hay registros con la fecha {fecha_hoy_str}. Verifica si ya hubo ventas hoy.")
+    else:
+        print(f"✅ Filtrado con éxito: {len(consolidado_hoy)} ventas encontradas para hoy.")
+
+    # SUBIR SOLO LO DE HOY
+    subir_a_google(consolidado_hoy)
 
 except Exception as e:
     print(f"❌ ERROR: {e}")
