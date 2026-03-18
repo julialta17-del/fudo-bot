@@ -17,6 +17,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 # --- 1. CONFIGURACIÓN DE FECHAS Y RUTAS ---
 ahora = datetime.now()
+hoy_real = ahora.date()  # Objeto fecha (año, mes, día) para filtrar con precisión
 ayer = ahora - timedelta(days=1)
 manana = ahora + timedelta(days=1)
 fecha_inicio = ayer.strftime("%Y-%m-%d")
@@ -44,20 +45,23 @@ def subir_a_google(consolidado):
         spreadsheet = client.open("Analisis Fudo")
         sheet_data = spreadsheet.worksheet("Hoja 1")
         
-        print("🧹 Limpiando Hoja 1...")
+        print("🧹 Limpiando Hoja 1 por completo...")
         sheet_data.clear()
         
-        print("📝 Preparando datos...")
-        datos_finales = [consolidado.columns.values.tolist()] + \
-                         consolidado.fillna("").astype(str).values.tolist()
-        
-        sheet_data.update(range_name='A1', values=datos_finales)
-        print("🚀 ¡DATOS PEGADOS CON ÉXITO EN GOOGLE SHEETS!")
+        if not consolidado.empty:
+            print(f"📝 Preparando {len(consolidado)} filas para la fecha de hoy...")
+            datos_finales = [consolidado.columns.values.tolist()] + \
+                             consolidado.fillna("").astype(str).values.tolist()
+            
+            sheet_data.update(range_name='A1', values=datos_finales)
+            print("🚀 ¡DATOS ACTUALIZADOS EN GOOGLE SHEETS!")
+        else:
+            print("⚠️ No se encontraron ventas para hoy. La hoja quedó vacía.")
         
     except Exception as e:
         print(f"❌ ERROR EN GOOGLE SHEETS: {e}")
 
-# --- 2. SELENIUM: DESCARGA FORZADA CON JS ---
+# --- 2. SELENIUM: DESCARGA ---
 chrome_options = Options()
 chrome_options.add_argument('--headless')
 chrome_options.add_argument('--no-sandbox')
@@ -79,44 +83,33 @@ try:
     driver.find_element(By.ID, "password").send_keys("bigsexta")
     driver.find_element(By.ID, "password").submit()
 
-    print(f"Esperando carga y aplicando rango: {fecha_inicio} a {fecha_fin}")
-    time.sleep(7) # Tiempo para que Angular cargue la UI
+    time.sleep(7) 
 
     # Seleccionar Rango
     select_tipo = wait.until(EC.presence_of_element_located((By.XPATH, "//select[@ng-model='type']")))
     Select(select_tipo).select_by_value("string:r")
     time.sleep(2)
 
-    # Hack de JavaScript para las fechas (Soluciona el 'not interactable')
     input_desde = driver.find_element(By.XPATH, "//input[@ng-model='model.t1']")
     input_hasta = driver.find_element(By.XPATH, "//input[@ng-model='model.t2']")
     
     driver.execute_script("arguments[0].value = arguments[1];", input_desde, fecha_inicio)
-    driver.execute_script("arguments[0].dispatchEvent(new Event('change'));", input_desde)
-    
     driver.execute_script("arguments[0].value = arguments[1];", input_hasta, fecha_fin)
+    driver.execute_script("arguments[0].dispatchEvent(new Event('change'));", input_desde)
     driver.execute_script("arguments[0].dispatchEvent(new Event('change'));", input_hasta)
     
-    print("Fechas inyectadas con éxito.")
     time.sleep(3)
 
-    # Exportar (Click forzado)
+    # Exportar
     print("Exportando...")
     export_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[ert-download-file='downloadSales()']")))
     driver.execute_script("arguments[0].click();", export_btn)
 
-    # Esperar ZIP
-    found_zip = False
-    for _ in range(30):
-        zips = [f for f in os.listdir(base_path) if f.lower().endswith(".zip")]
-        if zips:
-            found_zip = True
-            break
-        time.sleep(1)
-    
-    if not found_zip: raise Exception("El ZIP no se descargó.")
+    # Esperar y extraer ZIP
+    time.sleep(5)
+    zips = [f for f in os.listdir(base_path) if f.lower().endswith(".zip")]
+    if not zips: raise Exception("El ZIP no se descargó.")
 
-    # Procesar Archivo
     zip_path = os.path.join(base_path, zips[0])
     with zipfile.ZipFile(zip_path, 'r') as z:
         archivo_interno = z.namelist()[0]
@@ -131,9 +124,12 @@ try:
     df_v = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
     df_v.columns = df_v.columns.str.strip()
     
-    # Fix de fechas
+    # Convertir a fecha real (Esto elimina el apóstrofe automáticamente)
     df_v['Fecha_DT'] = pd.to_datetime(df_v['Creación'], unit='D', origin='1899-12-30', errors='coerce')
-    df_v['Fecha_Texto'] = df_v['Fecha_DT'].dt.strftime('%d/%m/%Y')
+    
+    # Formatear columna B como fecha pura (sin comillas)
+    df_v['Fecha_Texto'] = df_v['Fecha_DT'].dt.date
+    
     df_v['Hora_Exacta'] = df_v['Fecha_DT'].dt.strftime('%H:%M')
     df_v['Turno'] = df_v['Fecha_DT'].dt.hour.apply(lambda h: "Mañana" if h < 16 else "Noche")
 
@@ -152,31 +148,22 @@ try:
     consolidado = consolidado.merge(desc, left_on='Id', right_on='Id', how='left')
     consolidado = consolidado.merge(env, left_on='Id', right_on='Id', how='left')
     
-    consolidado[['Valor_x', 'Valor_y']] = consolidado[['Valor_x', 'Valor_y']].fillna(0)
     consolidado.rename(columns={'Producto': 'Detalle_Productos', 'Valor_x': 'Descuento', 'Valor_y': 'Envio'}, inplace=True)
 
-    # --- NUEVO: FILTRO POR FECHA DE HOY ---
-    # Generamos el string de hoy: "18/03/2026"
-    fecha_hoy_str = datetime.now().strftime('%d/%m/%Y')
-    
-    print(f"--- FILTRANDO DATOS PARA HOY: {fecha_hoy_str} ---")
-    
-    # Aplicamos el filtro exacto
-    consolidado_hoy = consolidado[consolidado['Fecha_Texto'] == fecha_hoy_str].copy()
+    # --- 4. FILTRO DE HOY ---
+    print(f"Filtrando para la fecha: {hoy_real}")
+    # Filtramos usando objetos date (infalible)
+    consolidado_hoy = consolidado[consolidado['Fecha_Texto'] == hoy_real].copy()
 
-    # Verificación en consola
-    if consolidado_hoy.empty:
-        print(f"⚠️ Ojo: No hay registros con la fecha {fecha_hoy_str}. Verifica si ya hubo ventas hoy.")
-    else:
-        print(f"✅ Filtrado con éxito: {len(consolidado_hoy)} ventas encontradas para hoy.")
+    # Convertir a texto limpio para la subida final (DD/MM/YYYY)
+    consolidado_hoy['Fecha_Texto'] = consolidado_hoy['Fecha_Texto'].apply(lambda x: x.strftime('%d/%m/%Y') if x else "")
 
-    # SUBIR SOLO LO DE HOY
+    # SUBIR
     subir_a_google(consolidado_hoy)
-
 
 except Exception as e:
     print(f"❌ ERROR: {e}")
-    driver.save_screenshot("error_fudo.png")
 finally:
     driver.quit()
+    if os.path.exists(base_path): shutil.rmtree(base_path)
     print("--- PROCESO TERMINADO ---")
