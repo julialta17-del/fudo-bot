@@ -17,8 +17,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 # --- 1. CONFIGURACIÓN DE FECHAS Y RUTAS ---
 ahora = datetime.now()
+ayer = ahora - timedelta(days=1)
 manana = ahora + timedelta(days=1)
-fecha_inicio = ahora.strftime("%Y-%m-%d")
+fecha_inicio = ayer.strftime("%Y-%m-%d")
 fecha_fin = manana.strftime("%Y-%m-%d")
 
 base_path = os.path.join(os.getcwd(), "descargas")
