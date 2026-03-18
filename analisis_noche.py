@@ -126,19 +126,13 @@ try:
     
     print(f"✅ Archivo extraído: {ruta_excel}")
 
-# --- 3. PROCESAMIENTO PANDAS ---
+    # --- 3. PROCESAMIENTO PANDAS ---
     print("--- PASO: PROCESAMIENTO PANDAS ---")
     df_v = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
     df_v.columns = df_v.columns.str.strip()
     
-    # 1. Convertir la columna 'Creación' a formato fecha real
+    # Fix de fechas
     df_v['Fecha_DT'] = pd.to_datetime(df_v['Creación'], unit='D', origin='1899-12-30', errors='coerce')
-
-    # --- NUEVO: FILTRAR SOLO FECHA DE AYER ---
-
-    df_v = df_v[df_v['Fecha_DT'].dt.date == ayer.date()]
-    print(f"Filtrado aplicado: Se encontraron {len(df_v)} registros de la fecha {ayer.date()}")
-
     df_v['Fecha_Texto'] = df_v['Fecha_DT'].dt.strftime('%d/%m/%Y')
     df_v['Hora_Exacta'] = df_v['Fecha_DT'].dt.strftime('%H:%M')
     df_v['Turno'] = df_v['Fecha_DT'].dt.hour.apply(lambda h: "Mañana" if h < 16 else "Noche")
