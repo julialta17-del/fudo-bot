@@ -18,6 +18,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 # --- 1. CONFIGURACIÓN ---
 ahora = datetime.now()
 fecha_hoy_str = ahora.strftime("%d/%m/%Y")
+fecha_hoy_date = ahora.date()  # ← usado para el filtro real
 ayer = ahora - timedelta(days=1)
 manana = ahora + timedelta(days=1)
 fecha_inicio = ayer.strftime("%Y-%m-%d")
@@ -38,8 +39,6 @@ def subir_a_google(consolidado):
     try:
         spreadsheet = client.open("Analisis Fudo")
         sheet_data = spreadsheet.worksheet("Hoja 1")
-        
-        # LIMPIEZA TOTAL: Asegura que no quede nada previo
         print("🧹 Limpiando Hoja 1 por completo...")
         sheet_data.batch_clear(['A1:Z5000']) 
         
@@ -70,7 +69,7 @@ try:
     wait.until(EC.presence_of_element_located((By.ID, "user"))).send_keys("admin@bigsaladssexta")
     driver.find_element(By.ID, "password").send_keys("bigsexta")
     driver.find_element(By.ID, "password").submit()
-    time.sleep(7) 
+    time.sleep(7)
 
     select_tipo = wait.until(EC.presence_of_element_located((By.XPATH, "//select[@ng-model='type']")))
     Select(select_tipo).select_by_value("string:r")
@@ -103,21 +102,23 @@ try:
         if os.path.exists(ruta_excel): os.remove(ruta_excel)
         shutil.move(os.path.join(base_path, archivo_interno), ruta_excel)
 
-    # --- 3. PANDAS: LIMPIEZA NIVEL DIOS ---
+    # --- 3. PANDAS ---
     print("--- PASO: PROCESAMIENTO PANDAS ---")
     df_v = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
     df_v.columns = df_v.columns.str.strip()
     
-    # Procesar Fecha_DT
-    df_v['Fecha_DT'] = pd.to_datetime(df_v['Creación'], unit='D', origin='1899-12-30', errors='coerce')
-    
-    # Generar Fecha_Texto y LIMPIAR CUALQUIER COSA QUE NO SEA NÚMERO O BARRA
-    df_v['Fecha_Texto'] = df_v['Fecha_DT'].dt.strftime('%d/%m/%Y').astype(str)
-    
+    # ✅ FIX: parseo robusto — primero intenta directo, si falla usa serial numérico
+    df_v['Fecha_DT'] = pd.to_datetime(df_v['Creación'], errors='coerce')
+    mask_nulos = df_v['Fecha_DT'].isna()
+    if mask_nulos.any():
+        df_v.loc[mask_nulos, 'Fecha_DT'] = pd.to_datetime(
+            df_v.loc[mask_nulos, 'Creación'], unit='D', origin='1899-12-30', errors='coerce'
+        )
+
+    df_v['Fecha_Texto'] = df_v['Fecha_DT'].dt.strftime('%d/%m/%Y')
     df_v['Hora_Exacta'] = df_v['Fecha_DT'].dt.strftime('%H:%M')
     df_v['Turno'] = df_v['Fecha_DT'].dt.hour.apply(lambda h: "Mañana" if h < 16 else "Noche")
 
-    # Joins con otras hojas
     df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
     df_d = pd.read_excel(ruta_excel, sheet_name='Descuentos')
     df_e = pd.read_excel(ruta_excel, sheet_name='Costos de Envío')
@@ -125,29 +126,26 @@ try:
     desc = df_d.groupby('Id. Venta')['Valor'].sum().reset_index()
     env = df_e.groupby('Id. Venta')['Valor'].sum().reset_index()
 
-    cols = ['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago']
+    cols = ['Id', 'Fecha_DT', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago']
     consolidado = df_v[cols].merge(prod, on='Id', how='left')
     consolidado = consolidado.merge(desc, left_on='Id', right_on='Id', how='left')
     consolidado = consolidado.merge(env, left_on='Id', right_on='Id', how='left')
     consolidado.rename(columns={'Producto': 'Detalle_Productos', 'Valor_x': 'Descuento', 'Valor_y': 'Envio'}, inplace=True)
 
-    # --- 4. FILTRO FINAL DINÁMICO ---
-    # Convertimos a string y quitamos el apóstrofe explícitamente antes de comparar
-    consolidado['Fecha_Texto'] = consolidado['Fecha_Texto'].astype(str).str.replace("'", "", regex=False).str.strip()
+    # ✅ FIX: filtro por fecha real, sin depender del string ni del apóstrofe
+    print(f"Buscando hoy: {fecha_hoy_date}")
+    print(f"Muestra de fechas en Excel: {consolidado['Fecha_DT'].dt.date.unique()[:5]}")
+    consolidado_hoy = consolidado[consolidado['Fecha_DT'].dt.date == fecha_hoy_date].copy()
     
-    # Filtro: debe contener la fecha de hoy
-    consolidado_hoy = consolidado[consolidado['Fecha_Texto'].str.contains(fecha_hoy_str, na=False)].copy()
+    # Sacamos Fecha_DT antes de subir (columna auxiliar, no hace falta en Sheets)
+    consolidado_hoy = consolidado_hoy.drop(columns=['Fecha_DT'])
 
-    print(f"Buscando hoy: {fecha_hoy_str}")
-    if not consolidado.empty:
-        print(f"Muestra de datos en Excel: {consolidado['Fecha_Texto'].unique()[:3]}")
-
+    print(f"✅ Filas filtradas para hoy: {len(consolidado_hoy)}")
     subir_a_google(consolidado_hoy)
 
 except Exception as e:
     print(f"❌ ERROR: {e}")
 finally:
     driver.quit()
-    # Limpieza de temporales para que no se mezclen en la próxima corrida
     if os.path.exists(base_path): shutil.rmtree(base_path)
     print("--- PROCESO TERMINADO ---")
