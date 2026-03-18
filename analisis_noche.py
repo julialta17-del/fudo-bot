@@ -22,6 +22,9 @@ manana = ahora + timedelta(days=1)
 fecha_inicio = ayer.strftime("%Y-%m-%d")
 fecha_fin = manana.strftime("%Y-%m-%d")
 
+# Formato para el filtro de hoy (ej: 18/03/2026)
+fecha_hoy_str = ahora.strftime("%d/%m/%Y")
+
 base_path = os.path.join(os.getcwd(), "descargas")
 temp_excel_path = os.path.join(base_path, "temp_excel")
 ruta_excel = os.path.join(temp_excel_path, "ventas.xls")
@@ -47,7 +50,7 @@ def subir_a_google(consolidado):
         print("🧹 Limpiando Hoja 1...")
         sheet_data.clear()
         
-        print("📝 Preparando datos...")
+        print(f"📝 Preparando {len(consolidado)} filas para hoy...")
         datos_finales = [consolidado.columns.values.tolist()] + \
                          consolidado.fillna("").astype(str).values.tolist()
         
@@ -80,14 +83,14 @@ try:
     driver.find_element(By.ID, "password").submit()
 
     print(f"Esperando carga y aplicando rango: {fecha_inicio} a {fecha_fin}")
-    time.sleep(7) # Tiempo para que Angular cargue la UI
+    time.sleep(7) 
 
     # Seleccionar Rango
     select_tipo = wait.until(EC.presence_of_element_located((By.XPATH, "//select[@ng-model='type']")))
     Select(select_tipo).select_by_value("string:r")
     time.sleep(2)
 
-    # Hack de JavaScript para las fechas (Soluciona el 'not interactable')
+    # Hack de JavaScript para las fechas
     input_desde = driver.find_element(By.XPATH, "//input[@ng-model='model.t1']")
     input_hasta = driver.find_element(By.XPATH, "//input[@ng-model='model.t2']")
     
@@ -100,7 +103,7 @@ try:
     print("Fechas inyectadas con éxito.")
     time.sleep(3)
 
-    # Exportar (Click forzado)
+    # Exportar
     print("Exportando...")
     export_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[ert-download-file='downloadSales()']")))
     driver.execute_script("arguments[0].click();", export_btn)
@@ -131,9 +134,12 @@ try:
     df_v = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
     df_v.columns = df_v.columns.str.strip()
     
-    # Fix de fechas
+    # Fix de fechas y limpieza de caracteres especiales como el apóstrofe (')
     df_v['Fecha_DT'] = pd.to_datetime(df_v['Creación'], unit='D', origin='1899-12-30', errors='coerce')
-    df_v['Fecha_Texto'] = df_v['Fecha_DT'].dt.strftime('%d/%m/%Y')
+    
+    # Generamos la columna de texto y eliminamos cualquier apóstrofe que traiga el Excel
+    df_v['Fecha_Texto'] = df_v['Fecha_DT'].dt.strftime('%d/%m/%Y').str.replace("'", "", regex=False).str.strip()
+    
     df_v['Hora_Exacta'] = df_v['Fecha_DT'].dt.strftime('%H:%M')
     df_v['Turno'] = df_v['Fecha_DT'].dt.hour.apply(lambda h: "Mañana" if h < 16 else "Noche")
 
@@ -155,23 +161,22 @@ try:
     consolidado[['Valor_x', 'Valor_y']] = consolidado[['Valor_x', 'Valor_y']].fillna(0)
     consolidado.rename(columns={'Producto': 'Detalle_Productos', 'Valor_x': 'Descuento', 'Valor_y': 'Envio'}, inplace=True)
 
-
-    # --- NUEVO: FILTRO POR FECHA DE HOY ---
-    fecha_hoy_str = datetime.now().strftime('%d/%m/%Y')
+    # --- 4. FILTRO FINAL POR LA FECHA DE HOY ---
+    print(f"🔍 Buscando registros para la fecha: {fecha_hoy_str}")
     
-    print(f"--- FILTRANDO DATOS PARA HOY: {fecha_hoy_str} ---")
+    # Aseguramos limpieza en el consolidado final
+    consolidado['Fecha_Texto'] = consolidado['Fecha_Texto'].astype(str).str.replace("'", "", regex=False).str.strip()
     
-    # Aplicamos el filtro exacto
     consolidado_hoy = consolidado[consolidado['Fecha_Texto'] == fecha_hoy_str].copy()
 
-    # Verificación en consola
     if consolidado_hoy.empty:
-        print(f"⚠️ Ojo: No hay registros con la fecha {fecha_hoy_str}. Verifica si ya hubo ventas hoy.")
+        print(f"⚠️ No se encontraron ventas para hoy ({fecha_hoy_str}) en el archivo descargado.")
+        # Opcional: imprimir la primera fecha para ver qué formato tiene
+        if not consolidado.empty:
+            print(f"DEBUG: La primera fecha encontrada en el Excel es: '{consolidado['Fecha_Texto'].iloc[0]}'")
     else:
-        print(f"✅ Filtrado con éxito: {len(consolidado_hoy)} ventas encontradas para hoy.")
-
-    # SUBIR SOLO LO DE HOY
-    subir_a_google(consolidado_hoy)
+        print(f"✅ Se filtraron {len(consolidado_hoy)} ventas exitosamente.")
+        subir_a_google(consolidado_hoy)
 
 except Exception as e:
     print(f"❌ ERROR: {e}")
