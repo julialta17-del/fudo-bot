@@ -10,13 +10,17 @@
         :root { --green: #2a7d40; --light: #5dbf72; --dark: #12331c; --bg: #fdfcfb; --white: #ffffff; --red: #e63946; }
         body { font-family: 'Outfit', sans-serif; background: var(--bg); margin: 0; color: #333; }
         
+        /* Pantalla de Inicio */
         #auth-screen { position: fixed; inset: 0; background: var(--dark); z-index: 2000; display: flex; align-items: center; justify-content: center; }
         .login-card { background: rgba(255,255,255,0.05); padding: 50px; border-radius: 30px; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .logo-login { font-family: 'Bebas Neue'; font-size: 60px; color: white; margin-bottom: 20px; letter-spacing: 2px; }
+        .logo-login span { color: var(--red); }
         .btn-login { background: var(--red); color: white; border: none; padding: 18px 40px; border-radius: 15px; font-family: 'Bebas Neue'; font-size: 26px; cursor: pointer; transition: 0.3s; width: 100%; box-shadow: 0 10px 20px rgba(230, 57, 70, 0.3); }
 
+        /* Header con Logo en BLANCO */
         header { background: var(--dark); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--red); }
-        .logo { font-family: 'Bebas Neue'; font-size: 32px; letter-spacing: 1px; }
-        .logo span { color: var(--light); }
+        .logo-header { font-family: 'Bebas Neue'; font-size: 32px; letter-spacing: 1px; color: white; }
+        .logo-header span { color: var(--red); }
 
         .tabs { background: white; display: flex; padding: 0 30px; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; }
         .tab { padding: 20px 15px; cursor: pointer; font-family: 'Bebas Neue'; font-size: 18px; color: #999; transition: 0.3s; }
@@ -24,9 +28,6 @@
 
         main { padding: 20px; max-width: 1400px; margin: 0 auto; display: none; }
         main.active { display: block; animation: fadeIn 0.5s; }
-
-        .filters { background: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; border: 1px solid #eee; }
-        .filters input { padding: 10px; border-radius: 10px; border: 1px solid #ddd; font-family: 'Outfit'; }
 
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
         .kpi { background: white; padding: 20px; border-radius: 20px; border-top: 5px solid var(--green); box-shadow: 0 8px 20px rgba(0,0,0,0.04); }
@@ -39,12 +40,9 @@
         .card-h { font-family: 'Bebas Neue'; font-size: 22px; color: var(--dark); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f8f8f8; padding-bottom: 10px; }
         
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; font-size: 11px; color: #aaa; padding: 10px; text-transform: uppercase; }
+        th { text-align: left; font-size: 11px; color: #aaa; padding: 10px; }
         td { padding: 12px 10px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
-        
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
-        .badge-green { background: #e8f5ec; color: var(--green); }
-        .badge-red { background: #fdeaea; color: var(--red); }
+        .badge-red { background: #fdeaea; color: var(--red); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -53,28 +51,22 @@
 
 <div id="auth-screen">
     <div class="login-card">
-        <div class="logo" style="font-size: 50px;">BIG SALADS 🥗</div>
-        <button class="btn-login" id="authorize_button">ABRIR DASHBOARD 🚀</button>
+        <div class="logo-login">BIG SALADS <span>🥗</span></div>
+        <button class="btn-login" id="authorize_button">ABRIR SISTEMA 🚀</button>
     </div>
 </div>
 
 <header>
-    <div class="logo">BIG SALADS <span>STATS</span></div>
-    <div id="sync-status" style="font-size: 12px;">🟢 SISTEMA EN LÍNEA</div>
+    <div class="logo-header">BIG SALADS <span>STATS</span></div>
+    <div id="sync-status" style="font-size: 12px;">🟢 CONECTADO</div>
 </header>
 
 <div class="tabs">
-    <div class="tab active" onclick="setTab('Hoja 1', this)">📅 HOY</div>
+    <div class="tab active" onclick="setTab('Hoja 1', this)">📅 RESUMEN HOY</div>
     <div class="tab" onclick="setTab('Historico', this)">📊 ESTRATEGIA</div>
 </div>
 
 <main id="main-content">
-    <div id="historico-filters" class="filters" style="display:none;">
-        <div><small>📅 Desde:</small><br><input type="date" id="date-from"></div>
-        <div><small>📅 Hasta:</small><br><input type="date" id="date-to"></div>
-        <button class="btn-login" style="padding: 10px 25px; font-size: 16px; width: auto;" onclick="loadData()">FILTRAR 🔍</button>
-    </div>
-
     <div class="kpi-grid" id="kpi-container"></div>
     <div class="dashboard-grid" id="dashboard-content"></div>
 </main>
@@ -83,6 +75,7 @@
 <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
 <script>
+    // --- IMPORTANTE: RELLENA ESTOS DATOS PARA QUE LA INFO NO SALGA EN BLANCO ---
     const CLIENT_ID = '89958085370-j4jbkoa7t3u4o0br5erg3j9h3nrcif3g.apps.googleusercontent.com';
     const API_KEY = 'AIzaSyAVQoifZYh3oc2T1p9xMYKNhe_XtIYQjYc'; 
     const SPREADSHEET_ID = '1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8';
@@ -93,6 +86,7 @@
         await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"] });
         gapiInited = true; checkAuth();
     });}
+
     function gisLoaded() {
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID, scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
@@ -100,17 +94,21 @@
         });
         gisInited = true; checkAuth();
     }
+
     function checkAuth() { if (gapiInited && gisInited) document.getElementById('authorize_button').onclick = () => tokenClient.requestAccessToken(); }
 
     async function loadData() {
-        const range = activeSheet === 'Hoja 1' ? 'Hoja 1!A1:Z500' : 'Historico!A1:Z15000';
-        const resp = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: range });
-        processData(resp.result.values);
+        try {
+            const range = activeSheet === 'Hoja 1' ? 'Hoja 1!A1:Z500' : 'Historico!A1:Z10000';
+            const resp = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: range });
+            if (!resp.result.values) { alert("No se encontraron datos en la hoja: " + activeSheet); return; }
+            processData(resp.result.values);
+        } catch (e) { alert("Error al cargar datos. Verifica tu API KEY y permisos."); console.error(e); }
     }
 
     function processData(rows) {
         const headers = rows[0];
-        let data = rows.slice(1).filter(r => r[0]);
+        const data = rows.slice(1).filter(r => r[0]);
         const fmt = v => new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(v);
         const parse = v => {
             if (!v) return 0;
@@ -120,130 +118,79 @@
             return parseFloat(n) || 0;
         };
 
+        // Buscador de columnas inteligente para que no se pierda la info
+        const findCol = (keys) => headers.findIndex(h => keys.some(k => h.toLowerCase().includes(k.toLowerCase())));
+        
         const idx = {
-            total: headers.findIndex(h => h.includes('Total')),
-            margen: headers.findIndex(h => h.includes('Margen')),
-            fecha: headers.findIndex(h => h.includes('Fecha')),
-            hora: headers.findIndex(h => h.includes('Hora')),
-            origen: headers.findIndex(h => h.includes('Origen')),
-            pago: headers.findIndex(h => h.includes('Pago')),
-            producto: headers.findIndex(h => h.includes('Producto'))
+            total: findCol(['total', 'monto', 'venta']),
+            margen: findCol(['margen', 'ganancia', 'neto']),
+            hora: findCol(['hora', 'tiempo']),
+            origen: findCol(['origen', 'canal']),
+            pago: findCol(['pago', 'medio']),
+            producto: findCol(['producto', 'item'])
         };
 
-        if(activeSheet === 'Historico') {
-            const f = document.getElementById('date-from').value, t = document.getElementById('date-to').value;
-            if(f && t) data = data.filter(r => { const d = new Date(r[idx.fecha]); return d >= new Date(f) && d <= new Date(t); });
-        }
+        let tVenta = 0, tMargen = 0, tMañana = 0, cMañana = 0, tNoche = 0, cNoche = 0;
+        const origenes = {}, pagos = {}, prods = {};
 
-        const turnos = { m_val:0, m_cnt:0, n_val:0, n_cnt:0, h_counts:{} };
-        const origenes = {}, pagos = {}, prods = {}, prodsM = {};
-        
         data.forEach(r => {
-            const val = parse(r[idx.total]), mar = parse(r[idx.margen]);
-            const hora = parseInt(r[idx.hora]) || 0;
-            const prod = r[idx.producto];
+            const v = parse(r[idx.total]), m = parse(r[idx.margen]);
+            const h = parseInt(r[idx.hora]) || 0;
+            tVenta += v; tMargen += m;
 
-            if(hora < 17) { turnos.m_val += val; turnos.m_cnt++; }
-            else { turnos.n_val += val; turnos.n_cnt++; }
-            turnos.h_counts[hora] = (turnos.h_counts[hora] || 0) + 1;
+            if(h < 17) { tMañana += v; cMañana++; } else { tNoche += v; cNoche++; }
 
             const org = r[idx.origen] == "0" ? "🏠 Local" : (r[idx.origen] || "🛵 Otros");
-            if(!origenes[org]) origenes[org] = {v:0, c:0};
-            origenes[org].v += val; origenes[org].c++;
+            origenes[org] = (origenes[org] || 0) + v;
 
-            pagos[r[idx.pago]] = (pagos[r[idx.pago]] || 0) + val;
-            if(prod) {
-                prods[prod] = (prods[prod] || 0) + 1;
-                prodsM[prod] = (prodsM[prod] || 0) + mar;
-            }
+            const pg = r[idx.pago] || "Otros";
+            pagos[pg] = (pagos[pg] || 0) + v;
+
+            const pr = r[idx.producto];
+            if(pr) prods[pr] = (prods[pr] || 0) + 1;
         });
 
-        const totalV = data.reduce((a, b) => a + parse(b[idx.total]), 0);
-        const totalM = data.reduce((a, b) => a + parse(b[idx.margen]), 0);
-
+        // RENDER DE KPIs
         document.getElementById('kpi-container').innerHTML = `
-            <div class="kpi"><div class="kpi-lbl">💰 Venta Total</div><div class="kpi-val">${fmt(totalV)}</div></div>
-            <div class="kpi"><div class="kpi-lbl">🌿 Ganancia Neta</div><div class="kpi-val" style="color:var(--green)">${fmt(totalM)}</div></div>
-            <div class="kpi red-top"><div class="kpi-lbl">🎫 Ticket Promedio</div><div class="kpi-val">${fmt(totalV/data.length || 0)}</div></div>
-            <div class="kpi red-top"><div class="kpi-lbl">📦 Total Pedidos</div><div class="kpi-val">${data.length}</div></div>
+            <div class="kpi"><div class="kpi-lbl">💰 Venta Total</div><div class="kpi-val">${fmt(tVenta)}</div></div>
+            <div class="kpi"><div class="kpi-lbl">🌿 Ganancia</div><div class="kpi-val" style="color:var(--green)">${fmt(tMargen)}</div></div>
+            <div class="kpi red-top"><div class="kpi-lbl">🎫 Ticket Prom.</div><div class="kpi-val">${fmt(tVenta/data.length || 0)}</div></div>
         `;
 
-        let html = `
+        // TABLAS
+        document.getElementById('dashboard-content').innerHTML = `
             <div class="card">
                 <div class="card-h">☀️ Turnos Mañana / Noche 🌙</div>
                 <table>
-                    <tr><th>Turno</th><th>Cant</th><th>Total $</th></tr>
-                    <tr><td>Mañana</td><td>${turnos.m_cnt}</td><td><strong>${fmt(turnos.m_val)}</strong></td></tr>
-                    <tr><td>Noche</td><td>${turnos.n_cnt}</td><td><strong>${fmt(turnos.n_val)}</strong></td></tr>
+                    <tr><td>Mañana</td><td>${cMañana} ped.</td><td><strong>${fmt(tMañana)}</strong></td></tr>
+                    <tr><td>Noche</td><td>${cNoche} ped.</td><td><strong>${fmt(tNoche)}</strong></td></tr>
                 </table>
             </div>
             <div class="card">
                 <div class="card-h">📍 Canales de Venta</div>
                 <table>
-                    <tr><th>Origen</th><th>%</th><th>Total $</th></tr>
                     ${Object.entries(origenes).map(([k,v]) => `
-                        <tr><td>${k}</td><td><span class="badge badge-red">${((v.v/totalV)*100).toFixed(1)}%</span></td><td>${fmt(v.v)}</td></tr>
+                        <tr><td>${k}</td><td><span class="badge-red">${((v/tVenta)*100).toFixed(1)}%</span></td><td>${fmt(v)}</td></tr>
                     `).join('')}
                 </table>
             </div>
             <div class="card">
-                <div class="card-h">🔝 Top 5 Más Pedidos 🔥</div>
+                <div class="card-h">🔝 Top Productos</div>
                 <table>
-                    ${Object.entries(prods).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v], i) => `
-                        <tr><td>#${i+1} ${k}</td><td style="text-align:right"><strong>${v} u.</strong></td></tr>
+                    ${Object.entries(prods).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v]) => `
+                        <tr><td>${k}</td><td style="text-align:right"><strong>${v} u.</strong></td></tr>
                     `).join('')}
                 </table>
-            </div>
-            <div class="card">
-                <div class="card-h">💳 Medios de Pago</div>
-                <canvas id="chartPagos" height="200"></canvas>
             </div>
         `;
 
-        if(activeSheet === 'Historico') {
-            const hMañana = Object.entries(turnos.h_counts).filter(e => e[0] < 17).sort((a,b)=>b[1]-a[1])[0]?.[0] || '--';
-            const hNoche = Object.entries(turnos.h_counts).filter(e => e[0] >= 17).sort((a,b)=>b[1]-a[1])[0]?.[0] || '--';
-            
-            html += `
-                <div class="card" style="border-left: 6px solid var(--red);">
-                    <div class="card-h">🚀 Análisis Estratégico</div>
-                    <div style="margin-bottom:12px"><b>⏰ Pico Mañana:</b> ${hMañana}:00 hs</div>
-                    <div style="margin-bottom:12px"><b>⏰ Pico Noche:</b> ${hNoche}:00 hs</div>
-                    <div style="margin-bottom:12px"><b>📈 Proyectado:</b> <span class="badge badge-green">${fmt((totalV/data.length)*30*(data.length/7 || 1))}</span></div>
-                </div>
-                <div class="card">
-                    <div class="card-h">💎 Top Margen Ganancia</div>
-                    <table>
-                        ${Object.entries(prodsM).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v], i) => `
-                            <tr><td>${k}</td><td style="text-align:right; color:var(--green)">${fmt(v)}</td></tr>
-                        `).join('')}
-                    </table>
-                </div>
-            `;
-        }
-
-        document.getElementById('dashboard-content').innerHTML = html;
-        renderChart(pagos);
-    }
-
-    function renderChart(pagos) {
-        const ctx = document.getElementById('chartPagos');
-        if(!ctx) return;
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(pagos),
-                datasets: [{ data: Object.values(pagos), backgroundColor: ['#12331c', '#e63946', '#5dbf72', '#f5c030', '#2a7d40'] }]
-            },
-            options: { plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
-        });
+        document.getElementById('main-content').classList.add('active');
     }
 
     function setTab(name, el) {
         activeSheet = name;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         el.classList.add('active');
-        document.getElementById('historico-filters').style.display = name === 'Historico' ? 'flex' : 'none';
         loadData();
     }
 </script>
