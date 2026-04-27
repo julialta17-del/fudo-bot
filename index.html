@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BIG SALADS SEXTA · Dashboard Profesional</title>
+<title>BIG SALADS SEXTA · Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -16,68 +16,58 @@
   --sans: 'Outfit', sans-serif; --mono: 'JetBrains Mono', monospace;
 }
 *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
-body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
 header { position: sticky; top: 0; z-index: 100; background: var(--green-dark); padding: 0 36px; display: flex; align-items: center; justify-content: space-between; height: 68px; box-shadow: 0 2px 20px rgba(0,0,0,0.2); }
 .brand { display: flex; align-items: center; gap: 14px; }
-.brand-logo { width: 42px; height: 42px; border-radius: 10px; background: var(--green2); display: flex; align-items: center; justify-content: center; font-size: 22px; border: 2px solid rgba(255,255,255,0.2); }
 .brand-name { font-family: var(--bebas); font-size: 26px; letter-spacing: 2px; color: #ffffff; }
 .brand-name span { color: var(--green3); }
-.btn { border:none; border-radius:8px; cursor:pointer; font-family:var(--mono); font-size:11px; padding:9px 16px; background:#fff; color:var(--green-dark); transition: 0.2s; font-weight: 600; }
-.btn:hover { background: var(--green3); color: white; transform: translateY(-1px); }
-.tabs-wrap { background: var(--green-dark); border-bottom: 3px solid rgba(255,255,255,0.08); padding: 0 36px; display: flex; gap: 2px; overflow-x: auto; }
-.tab { padding: 12px 20px; font-family: var(--bebas); font-size: 15px; letter-spacing: 1.5px; color: rgba(255,255,255,0.45); cursor: pointer; border: none; background: none; border-bottom: 3px solid transparent; transition: 0.2s; white-space: nowrap; }
+.tabs-wrap { background: var(--green-dark); border-bottom: 3px solid rgba(255,255,255,0.08); padding: 0 36px; display: flex; overflow-x: auto; }
+.tab { padding: 12px 20px; font-family: var(--bebas); font-size: 15px; letter-spacing: 1px; color: rgba(255,255,255,0.45); cursor: pointer; border: none; background: none; transition: 0.2s; white-space: nowrap; border-bottom: 3px solid transparent; }
 .tab.active { color:#fff; border-bottom-color: var(--green3); background: rgba(255,255,255,0.05); }
 main { padding: 28px 36px; display: flex; flex-direction: column; gap: 28px; max-width: 1600px; margin: 0 auto; }
 .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .kpi { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 22px; box-shadow: 0 2px 12px rgba(42,125,64,0.08); position: relative; overflow: hidden; }
 .kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background: var(--kc, var(--green)); }
-.kpi-lbl { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
-.kpi-val { font-family: var(--bebas); font-size: 48px; color: var(--text); margin-top: 5px; line-height: 1; }
-.card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
-.card-head { padding: 18px 22px; border-bottom: 1px solid var(--bg1); font-family: var(--bebas); font-size: 20px; color: var(--green-dark); display: flex; justify-content: space-between; align-items: center; }
-.card-body { padding: 20px; }
+.kpi-lbl { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; }
+.kpi-val { font-family: var(--bebas); font-size: 48px; color: var(--text); line-height: 1; margin-top: 5px; }
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.card-head { padding: 18px 22px; border-bottom: 1px solid var(--bg1); font-family: var(--bebas); font-size: 20px; color: var(--green-dark); display: flex; justify-content: space-between; }
 .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
-.tscroll { overflow: auto; max-height: 550px; border-radius: 8px; }
+.tscroll { overflow: auto; max-height: 500px; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { position: sticky; top: 0; background: var(--bg1); padding: 12px; text-align: left; font-family: var(--mono); font-size: 10px; z-index: 10; border-bottom: 2px solid var(--border); }
-td { padding: 12px; border-bottom: 1px solid var(--bg1); white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--bg1); padding: 12px; text-align: left; font-family: var(--mono); font-size: 10px; z-index: 10; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--bg1); }
 .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
-.mc { background: #fff; padding: 18px; border-radius: 14px; border: 1px solid var(--border); transition: 0.2s; }
-.mc:hover { border-color: var(--green2); transform: translateY(-2px); }
-#loader { position: fixed; inset: 0; background: rgba(26,84,48,0.98); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; gap: 20px; }
+.mc { background: #fff; padding: 18px; border-radius: 14px; border: 1px solid var(--border); }
+#loader { position: fixed; inset: 0; background: rgba(26,84,48,0.98); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
 #loader.on { display: flex; }
-.badge { background: var(--bg1); padding: 2px 8px; border-radius: 4px; font-family: var(--mono); font-size: 10px; color: var(--green-dark); }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
 <div id="loader" class="on">
-    <div style="width:60px;height:60px;border:5px solid rgba(255,255,255,0.1);border-top-color:#6be082;border-radius:50%;animation:spin 1s linear infinite;"></div>
-    <div style="font-family:var(--bebas);letter-spacing:5px;font-size:24px;">CARGANDO TODA LA DATA...</div>
-    <div id="loadStatus" style="font-family:var(--mono);font-size:12px;color:var(--green3);">Conectando con Google Sheets...</div>
+    <div style="width:50px;height:50px;border:5px solid rgba(255,255,255,0.1);border-top-color:#6be082;border-radius:50%;animation:spin 1s linear infinite;"></div>
+    <div style="font-family:var(--bebas);font-size:22px;margin-top:20px;letter-spacing:3px;">PROCESANDO DATOS...</div>
 </div>
 
 <header>
     <div class="brand">
-        <div class="brand-logo">🥗</div>
         <div class="brand-name">BIG <span>SALADS</span> SEXTA</div>
     </div>
-    <div style="display:flex; gap:15px; align-items:center;">
-        <div id="dataInfo" style="color:rgba(255,255,255,0.5); font-family:var(--mono); font-size:10px;"></div>
-        <button class="btn" onclick="fullRefresh()">ACTUALIZAR</button>
-    </div>
+    <button class="btn" style="background:#fff; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-family:var(--mono); font-size:10px;" onclick="fullRefresh()">ACTUALIZAR DATOS</button>
 </header>
 
 <div class="tabs-wrap" id="tabsWrap"></div>
 
 <main>
     <div class="kpi-grid">
-        <div class="kpi" style="--kc:var(--green)">
+        <div class="kpi">
             <div class="kpi-lbl">VENTAS TOTALES</div>
             <div class="kpi-val" id="kTotal">$0</div>
         </div>
-        <div class="kpi" style="--kc:var(--green2)">
-            <div class="kpi-lbl">MARGEN NETO (EST.)</div>
+        <div class="kpi">
+            <div class="kpi-lbl">MARGEN NETO</div>
             <div class="kpi-val" id="kMargen">$0</div>
         </div>
         <div class="kpi" style="--kc:var(--yellow)">
@@ -88,28 +78,27 @@ td { padding: 12px; border-bottom: 1px solid var(--bg1); white-space: nowrap; }
 
     <div class="grid-2-1">
         <div class="card">
-            <div class="card-head">
-                DETALLE DE TRANSACCIONES 
-                <span id="rowCounter" class="badge">0 FILAS</span>
-            </div>
+            <div class="card-head">DETALLE DE VENTAS</div>
             <div class="tscroll">
-                <table id="mainTable">
+                <table>
                     <thead><tr id="tHead"></tr></thead>
                     <tbody id="tBody"></tbody>
                 </table>
             </div>
         </div>
         <div class="card">
-            <div class="card-head">MEDIOS DE PAGO</div>
-            <div class="card-body" id="payBody"></div>
-            <div class="card-head" style="border-top:1px solid var(--bg1)">TOP PRODUCTOS (VENDIDOS)</div>
-            <div class="card-body" id="prodBody"></div>
+            <div class="card-head">PAGOS Y PRODUCTOS</div>
+            <div style="padding:20px;">
+                <div id="payBody"></div>
+                <hr style="margin:20px 0; border:0; border-top:1px solid var(--bg1);">
+                <div id="prodBody"></div>
+            </div>
         </div>
     </div>
 
     <div class="card">
-        <div class="card-head">EVOLUCIÓN POR MES</div>
-        <div class="card-body">
+        <div class="card-head">ANÁLISIS POR MES (HISTÓRICO)</div>
+        <div style="padding:20px;">
             <div class="month-grid" id="monthGrid"></div>
         </div>
     </div>
@@ -127,64 +116,43 @@ const parseN = s => {
     return isNaN(n) ? 0 : n;
 };
 
-// PARSER ROBUSTO PARA MILES DE LÍNEAS (Maneja comillas de CSV de Google)
-function robustParse(txt) {
+// Parser robusto para CSV
+function parseCSV(txt) {
     const rows = []; let cur = ''; let inQ = false; let row = [];
     for (let i = 0; i < txt.length; i++) {
         const c = txt[i];
-        if (c === '"') { inQ = !inQ; }
+        if (c === '"') inQ = !inQ;
         else if (c === ',' && !inQ) { row.push(cur.trim()); cur = ''; }
         else if (c === '\n' && !inQ) { row.push(cur.trim()); rows.push(row); row = []; cur = ''; }
-        else { cur += c; }
+        else cur += c;
     }
     if (cur || row.length) { row.push(cur.trim()); rows.push(row); }
     return rows.filter(r => r.length > 1);
 }
 
 async function fullRefresh() {
-    const loader = document.getElementById('loader');
-    const status = document.getElementById('loadStatus');
-    loader.classList.add('on');
-    
-    // Lista de nombres de hojas a intentar cargar (con y sin tilde por las dudas)
-    const targets = ['Hoja 1', 'Historico', 'Histórico'];
+    document.getElementById('loader').classList.add('on');
+    // Forzamos la carga de ambas solapas
+    const targets = ['Hoja 1', 'Historico'];
     sheets = [];
-    
     for(const t of targets) {
-        status.innerText = `Cargando solapa: ${t}...`;
         try {
-            const url = `https://docs.google.com/spreadsheets/d/e/${PUB_ID}/pub?output=csv&sheet=${encodeURIComponent(t)}&_=${Date.now()}`;
-            const resp = await fetch(url);
-            const rawTxt = await resp.text();
-            const data = robustParse(rawTxt);
-            
-            if(data.length > 1) {
-                sheets.push({ 
-                    name: t, 
-                    headers: data[0], 
-                    rows: data.slice(1) 
-                });
-            }
-        } catch(e) { console.warn("No se pudo cargar:", t); }
+            const r = await fetch(`https://docs.google.com/spreadsheets/d/e/${PUB_ID}/pub?output=csv&sheet=${encodeURIComponent(t)}&_=${Date.now()}`);
+            const data = parseCSV(await r.text());
+            if(data.length > 0) sheets.push({ name: t, headers: data[0], rows: data.slice(1) });
+        } catch(e) {}
     }
-
-    if(sheets.length > 0) {
-        renderTabs();
-        renderData();
-    } else {
-        alert("Error: No se pudo obtener datos de ninguna solapa. Verificá que el archivo esté publicado.");
-    }
-    
-    loader.classList.remove('on');
+    renderTabs();
+    renderData();
+    document.getElementById('loader').classList.remove('on');
 }
 
 function renderTabs() {
-    const w = document.getElementById('tabsWrap'); 
-    w.innerHTML = '';
+    const w = document.getElementById('tabsWrap'); w.innerHTML = '';
     sheets.forEach(s => {
         const b = document.createElement('button');
         b.className = `tab ${s.name === active ? 'active' : ''}`;
-        b.innerText = s.name.toUpperCase();
+        b.innerText = s.name === 'Hoja 1' ? 'RESUMEN DEL DÍA' : 'HISTÓRICO';
         b.onclick = () => { active = s.name; renderTabs(); renderData(); };
         w.appendChild(b);
     });
@@ -193,16 +161,12 @@ function renderTabs() {
 function renderData() {
     const s = sheets.find(x => x.name === active);
     if(!s) return;
-
     const h = s.headers.map(v => v.toLowerCase().trim());
     const r = s.rows;
 
-    // Mapeo dinámico de columnas
     const idx = { 
-        total: h.indexOf('total'), 
-        margen: h.indexOf('margen neto'), 
-        fecha: h.indexOf('fecha'), 
-        medio: h.indexOf('medio de pago'),
+        total: h.indexOf('total'), margen: h.indexOf('margen neto'), 
+        fecha: h.indexOf('fecha'), medio: h.indexOf('medio de pago'),
         prod: h.indexOf('detalle productos')
     };
 
@@ -211,74 +175,52 @@ function renderData() {
 
     r.forEach(row => {
         const val = parseN(row[idx.total]);
-        const mar = parseN(row[idx.margen]);
-        tV += val; 
-        tM += mar;
+        tV += val; tM += parseN(row[idx.margen]);
 
-        // Agrupar Medios de Pago
-        const m = row[idx.medio] || 'Sin especificar';
+        // Medios
+        const m = row[idx.medio] || 'S/D';
         medios[m] = (medios[m] || 0) + val;
 
-        // Agrupar Productos
-        const pStr = row[idx.prod] || '';
-        pStr.split(',').forEach(p => {
-            const parts = p.split('x');
-            const name = parts[0].trim();
+        // Productos
+        (row[idx.prod] || '').split(',').forEach(p => {
+            const name = p.split('x')[0].trim();
             if(name.length > 2) prods[name] = (prods[name] || 0) + 1;
         });
 
-        // Agrupar por Mes
+        // Mensual
         const f = row[idx.fecha] || '';
-        const fParts = f.split('/');
-        if(fParts.length === 3) {
-            const key = `${fParts[2]}-${fParts[1].padStart(2,'0')}`;
-            if(!mensual[key]) mensual[key] = { v:0, c:0, n: `${MESES[parseInt(fParts[1])-1]} ${fParts[2]}` };
-            mensual[key].v += val; 
-            mensual[key].c++;
+        const parts = f.split('/');
+        if(parts.length === 3) {
+            const key = `${parts[2]}-${parts[1].padStart(2,'0')}`;
+            if(!mensual[key]) mensual[key] = { v:0, c:0, days:new Set(), n: `${MESES[parseInt(parts[1])-1]} ${parts[2]}` };
+            mensual[key].v += val; mensual[key].c++;
+            mensual[key].days.add(parts[0]); // Guardamos el día para el promedio
         }
     });
 
-    // Actualizar Interfaz
     document.getElementById('kTotal').innerText = `$${fmt(tV)}`;
     document.getElementById('kMargen').innerText = `$${fmt(tM)}`;
     document.getElementById('kAvg').innerText = `$${fmt(tV/r.length)}`;
-    document.getElementById('rowCounter').innerText = `${r.length} TRANSACCIONES`;
-    document.getElementById('dataInfo').innerText = `SOLAPA ACTUAL: ${active.toUpperCase()}`;
 
-    // Lista de Medios de Pago
-    document.getElementById('payBody').innerHTML = Object.entries(medios)
-        .sort((a,b)=>b[1]-a[1])
-        .map(e => `<div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;border-bottom:1px solid #f0f0f0;padding-bottom:4px;"><span>${e[0]}</span><b>$${fmt(e[1])}</b></div>`)
-        .join('');
+    document.getElementById('payBody').innerHTML = '<b>VENTAS POR MEDIO</b><br><br>' + Object.entries(medios).sort((a,b)=>b[1]-a[1]).map(e => `<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;"><span>${e[0]}</span><b>$${fmt(e[1])}</b></div>`).join('');
+    document.getElementById('prodBody').innerHTML = '<b>TOP PRODUCTOS</b><br><br>' + Object.entries(prods).sort((a,b)=>b[1]-a[1]).slice(0,8).map(e => `<div style="font-size:12px;margin-bottom:5px;display:flex;justify-content:space-between;"><span>${e[0]}</span><b>${e[1]} uds</b></div>`).join('');
 
-    // Lista de Productos
-    document.getElementById('prodBody').innerHTML = Object.entries(prods)
-        .sort((a,b)=>b[1]-a[1])
-        .slice(0,10)
-        .map(e => `<div style="font-size:13px;margin-bottom:8px;display:flex;justify-content:space-between;"><span>${e[0]}</span><span class="badge" style="background:var(--green-bg); color:var(--green);">${e[1]} uds</span></div>`)
-        .join('');
-
-    // Tabla de Datos (Muestra todo)
     document.getElementById('tHead').innerHTML = s.headers.map(col => `<th>${col}</th>`).join('');
-    document.getElementById('tBody').innerHTML = r.slice().reverse().map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('');
+    document.getElementById('tBody').innerHTML = r.slice().reverse().map(row => `<tr>${row.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
 
-    // Tarjetas Mensuales
-    document.getElementById('monthGrid').innerHTML = Object.keys(mensual).sort().reverse().map(k => `
+    document.getElementById('monthGrid').innerHTML = Object.keys(mensual).sort().reverse().map(k => {
+        const m = mensual[k];
+        const promDia = (m.c / m.days.size).toFixed(1);
+        return `
         <div class="mc">
-            <div style="font-family:var(--bebas); font-size:20px; color:var(--green-dark);">${mensual[k].n}</div>
-            <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:14px;">
-                <span style="color:var(--muted)">Ventas:</span>
-                <b style="color:var(--green)">$${fmt(mensual[k].v)}</b>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:14px;margin-top:5px;">
-                <span style="color:var(--muted)">Pedidos:</span>
-                <b>${mensual[k].c}</b>
-            </div>
-        </div>
-    `).join('');
+            <div style="font-family:var(--bebas); font-size:18px; color:var(--green-dark);">${m.n}</div>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;"><span>Ventas:</span><b>$${fmt(m.v)}</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Tickets Mes:</span><b>${m.c}</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--orange);"><span>Prom. Tickets/Día:</span><b>${promDia}</b></div>
+        </div>`;
+    }).join('');
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
 fullRefresh();
 </script>
 </body>
