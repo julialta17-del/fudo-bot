@@ -46,7 +46,6 @@ body {
   min-height: 100vh;
 }
 
-/* ── GRAIN TEXTURE OVERLAY ── */
 body::before {
   content: '';
   position: fixed; inset: 0; pointer-events: none; z-index: 0;
@@ -55,7 +54,6 @@ body::before {
   background-size: 180px;
 }
 
-/* ── HEADER ── */
 header {
   position: sticky; top: 0; z-index: 100;
   background: var(--green-dark);
@@ -66,7 +64,6 @@ header {
 }
 
 .brand { display: flex; align-items: center; gap: 14px; }
-
 .brand-logo {
   width: 42px; height: 42px; border-radius: 10px;
   background: var(--green2);
@@ -74,8 +71,6 @@ header {
   font-size: 22px;
   border: 2px solid rgba(255,255,255,0.2);
 }
-
-.brand-text {}
 .brand-name {
   font-family: var(--bebas);
   font-size: 26px; letter-spacing: 2px;
@@ -115,7 +110,6 @@ header {
 .btn svg.spin { animation:rotate 0.7s linear infinite; }
 @keyframes rotate { to { transform:rotate(360deg); } }
 
-/* ── TABS BAR ── */
 .tabs-wrap {
   background: var(--green-dark);
   border-bottom: 3px solid rgba(255,255,255,0.08);
@@ -145,7 +139,6 @@ header {
 }
 .tab.active .tab-count { background:rgba(93,191,114,0.25);color:var(--green3); }
 
-/* ── MAIN ── */
 main {
   position:relative;z-index:1;
   padding: 28px 36px 60px;
@@ -153,7 +146,6 @@ main {
   max-width:1600px;margin:0 auto;
 }
 
-/* ── SECTION HEADER ── */
 .sec {
   display:flex;align-items:center;gap:10px;margin-bottom:14px;
 }
@@ -164,7 +156,6 @@ main {
 .sec-line { flex:1;height:1px;background:var(--border); }
 .sec-note { font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap; }
 
-/* ── BANNER ── */
 .banner {
   border-radius:14px;padding:18px 20px;
   display:none;gap:14px;flex-direction:column;
@@ -185,7 +176,6 @@ main {
 .banner .note { font-size:11px;color:var(--muted);font-style:italic; }
 .err-text { font-size:13px;color:var(--red); }
 
-/* ── COL MAPPER ── */
 .mapper-bar {
   background:var(--white);border:1px solid var(--border);
   border-radius:12px;padding:14px 18px;
@@ -202,7 +192,6 @@ main {
 .btn-green { background:var(--green);color:#fff; }
 .btn-green:hover { background:var(--green2); }
 
-/* ── KPI GRID ── */
 .kpi-grid {
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(185px,1fr));
@@ -218,8 +207,6 @@ main {
   animation:up 0.4s ease both;
 }
 .kpi:hover { transform:translateY(-2px);box-shadow:var(--shadow-lg); }
-
-/* top accent stripe */
 .kpi::before {
   content:'';position:absolute;top:0;left:0;right:0;height:3px;
   background:var(--kc,var(--green)); border-radius:3px 3px 0 0;
@@ -228,8 +215,6 @@ main {
 .kpi[data-c=orange] { --kc:var(--orange); }
 .kpi[data-c=yellow] { --kc:var(--yellow); }
 .kpi[data-c=red]    { --kc:var(--red); }
-
-/* watermark icon */
 .kpi::after {
   content:attr(data-ico);
   position:absolute;right:12px;bottom:8px;
@@ -255,7 +240,6 @@ main {
 
 @keyframes up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
-/* ── CARDS (chart/table containers) ── */
 .card {
   background:var(--white);border:1px solid var(--border);
   border-radius:16px;overflow:hidden;
@@ -271,7 +255,6 @@ main {
 .card-sub { font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px; }
 .card-body { padding:20px 22px; }
 
-/* ── CHART TOGGLE BUTTONS ── */
 .toggle-group { display:flex;gap:4px; }
 .tog {
   padding:5px 10px;border-radius:6px;cursor:pointer;
@@ -282,10 +265,8 @@ main {
 .tog:hover { border-color:var(--border2);color:var(--text2); }
 .tog.on { background:var(--green-bg);border-color:var(--green);color:var(--green); }
 
-/* ── 2-COL CHART GRID ── */
 .chart-row { display:grid;grid-template-columns:2fr 1fr;gap:16px; }
 
-/* ── MONTHLY MONTH CARDS ── */
 .month-grid {
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
@@ -305,7 +286,6 @@ main {
 }
 .mc-month { font-family:var(--bebas);font-size:20px;letter-spacing:1px;color:var(--green-dark); }
 .mc-year  { font-family:var(--mono);font-size:9px;color:var(--muted);text-align:right; }
-
 .mc-stats { display:flex;flex-direction:column;gap:7px; }
 .mc-row { display:flex;justify-content:space-between;align-items:center; }
 .mc-row-lbl { font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted); }
@@ -313,11 +293,9 @@ main {
 .mc-row-val.g { color:var(--green); }
 .mc-row-val.o { color:var(--orange); }
 .mc-row-val.y { color:#8a6a00; }
-
 .mc-bar-wrap { height:4px;background:var(--bg1);border-radius:999px;margin-top:10px;overflow:hidden; }
 .mc-bar { height:100%;border-radius:999px;background:linear-gradient(to right,var(--green),var(--green3));transition:width 1.3s cubic-bezier(.4,0,.2,1); }
 
-/* ── PROJECTION BARS ── */
 .pbars { padding:4px 0; }
 .prow  { display:flex;align-items:center;gap:10px;margin-bottom:10px; }
 .prow-lbl { font-family:var(--mono);font-size:10px;color:var(--muted2,var(--muted));min-width:130px; }
@@ -325,7 +303,6 @@ main {
 .pfill    { height:100%;border-radius:999px;background:linear-gradient(to right,var(--green),var(--green3));transition:width 1.3s; }
 .pval     { font-family:var(--bebas);font-size:15px;color:var(--text);min-width:70px;text-align:right; }
 
-/* ── TABLE ── */
 .tscroll { overflow-x:auto;max-height:340px;overflow-y:auto; }
 .tscroll::-webkit-scrollbar { width:5px;height:5px; }
 .tscroll::-webkit-scrollbar-thumb { background:var(--border2);border-radius:999px; }
@@ -344,7 +321,6 @@ tbody td { padding:9px 14px;font-size:12px;color:var(--text2); }
 .td-n { font-family:var(--bebas);font-size:15px;text-align:right;color:var(--green); }
 .td-d { font-family:var(--mono);font-size:11px;color:var(--muted); }
 
-/* ── FOOTER ── */
 footer {
   background:var(--green-dark);color:rgba(255,255,255,0.4);
   padding:14px 36px;
@@ -354,7 +330,6 @@ footer {
 }
 footer strong { color:rgba(255,255,255,0.7); }
 
-/* ── LOADER ── */
 #loader {
   position:fixed;inset:0;background:rgba(26,84,48,0.88);
   z-index:300;display:none;flex-direction:column;
@@ -369,7 +344,6 @@ footer strong { color:rgba(255,255,255,0.7); }
 }
 .loader-txt { font-family:var(--bebas);font-size:18px;letter-spacing:3px;color:rgba(255,255,255,0.6); }
 
-/* ── RESPONSIVE ── */
 @media(max-width:900px){
   header,main,footer{padding-left:18px;padding-right:18px;}
   .tabs-wrap{padding-left:18px;}
@@ -385,7 +359,6 @@ footer strong { color:rgba(255,255,255,0.7); }
   <div class="loader-txt" id="loaderTxt">CARGANDO HOJAS…</div>
 </div>
 
-<!-- ═══ HEADER ═══ -->
 <header>
   <div class="brand">
     <div class="brand-logo">🥗</div>
@@ -408,17 +381,15 @@ footer strong { color:rgba(255,255,255,0.7); }
   </div>
 </header>
 
-<!-- ═══ TABS ═══ -->
+<!-- TABS: el primero activo será "Resumen del día" (Hoja 1) -->
 <div class="tabs-wrap" id="tabsWrap">
-  <button class="tab active" onclick="switchTab('__all__')" id="tab___all__">
+  <button class="tab" onclick="switchTab('__all__')" id="tab___all__">
     📊 TODAS LAS HOJAS <span class="tab-count" id="cnt___all__">—</span>
   </button>
 </div>
 
-<!-- ═══ MAIN ═══ -->
 <main>
 
-  <!-- BANNERS -->
   <div class="banner" id="bannerSetup">
     <h3>⚙️ CONFIGURACIÓN NECESARIA</h3>
     <ol>
@@ -436,7 +407,6 @@ footer strong { color:rgba(255,255,255,0.7); }
     <div class="err-text" id="errTxt">Error al cargar datos.</div>
   </div>
 
-  <!-- COL MAPPER -->
   <div class="mapper-bar" id="mapperBar">
     <label>FECHA</label>
     <select id="mDate" onchange="applyMap()"></select>
@@ -448,7 +418,7 @@ footer strong { color:rgba(255,255,255,0.7); }
     <button class="btn btn-sm" style="background:var(--bg);border:1px solid var(--border)" onclick="document.getElementById('mapperBar').classList.remove('on')">✕</button>
   </div>
 
-  <!-- ── KPIs GENERALES ── -->
+  <!-- KPIs -->
   <div>
     <div class="sec">
       <div class="sec-title">RESUMEN GENERAL</div>
@@ -489,20 +459,18 @@ footer strong { color:rgba(255,255,255,0.7); }
     </div>
   </div>
 
-  <!-- ── ORIGEN · TURNOS · MEDIOS DE PAGO ── -->
+  <!-- ORIGEN · TURNOS · MEDIOS DE PAGO -->
   <div>
     <div class="sec">
       <div class="sec-title">CANALES · TURNOS · MEDIOS DE PAGO</div>
       <div class="sec-line"></div>
     </div>
     <div class="chart-row" style="grid-template-columns:1fr 1fr 1fr">
-
-      <!-- Origen donut -->
       <div class="card">
         <div class="card-head">
           <div>
             <div class="card-title">📍 ORIGEN DE VENTAS</div>
-            <div class="card-sub">Local · Pedidos Ya · Online</div>
+            <div class="card-sub">Local · Pedidos Ya</div>
           </div>
         </div>
         <div class="card-body" style="padding-top:8px;display:flex;flex-direction:column;align-items:center;gap:12px">
@@ -511,7 +479,6 @@ footer strong { color:rgba(255,255,255,0.7); }
         </div>
       </div>
 
-      <!-- Turnos bar -->
       <div class="card">
         <div class="card-head">
           <div>
@@ -525,7 +492,6 @@ footer strong { color:rgba(255,255,255,0.7); }
         </div>
       </div>
 
-      <!-- Medios de pago -->
       <div class="card">
         <div class="card-head">
           <div>
@@ -537,11 +503,10 @@ footer strong { color:rgba(255,255,255,0.7); }
           <div id="mediosList" style="width:100%;font-size:13px;display:flex;flex-direction:column;gap:8px"></div>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- ── TOP PRODUCTOS ── -->
+  <!-- TOP PRODUCTOS -->
   <div>
     <div class="sec">
       <div class="sec-title">🌟 TOP PRODUCTOS MÁS VENDIDOS</div>
@@ -573,7 +538,7 @@ footer strong { color:rgba(255,255,255,0.7); }
     </div>
   </div>
 
-  <!-- ── ANÁLISIS MENSUAL ── -->
+  <!-- ANÁLISIS MENSUAL -->
   <div>
     <div class="sec">
       <div class="sec-title">ANÁLISIS POR MES</div>
@@ -581,7 +546,6 @@ footer strong { color:rgba(255,255,255,0.7); }
       <div class="sec-note">ticket promedio · cantidad vendida · venta total</div>
     </div>
 
-    <!-- Monthly bar chart with toggle -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-head">
         <div>
@@ -600,13 +564,12 @@ footer strong { color:rgba(255,255,255,0.7); }
       </div>
     </div>
 
-    <!-- Month cards -->
     <div class="month-grid" id="monthGrid">
       <div style="font-family:var(--mono);font-size:12px;color:var(--muted);padding:20px">Cargando meses…</div>
     </div>
   </div>
 
-  <!-- ── EVOLUCIÓN & DISTRIBUCIÓN ── -->
+  <!-- EVOLUCIÓN & DISTRIBUCIÓN -->
   <div>
     <div class="sec">
       <div class="sec-title">EVOLUCIÓN &amp; DISTRIBUCIÓN</div>
@@ -638,7 +601,7 @@ footer strong { color:rgba(255,255,255,0.7); }
     </div>
   </div>
 
-  <!-- ── PROYECCIONES ── -->
+  <!-- PROYECCIONES -->
   <div>
     <div class="sec">
       <div class="sec-title">PROYECCIONES</div>
@@ -671,7 +634,7 @@ footer strong { color:rgba(255,255,255,0.7); }
     </div>
   </div>
 
-  <!-- ── TABLA DE DATOS ── -->
+  <!-- TABLA -->
   <div>
     <div class="sec">
       <div class="sec-title">DATOS CRUDOS</div>
@@ -704,29 +667,44 @@ footer strong { color:rgba(255,255,255,0.7); }
   <div id="footerDate">—</div>
 </footer>
 
-<!-- ═══ SCRIPT ═══ -->
 <script>
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // CONFIG
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 const SHEET_ID = '1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8';
 const PUB_ID   = '2PACX-1vSqXw7W2kUj_BsUyLKYmRIIZyYacKR9nYbaeXRFqSPzBVZuyCuj7Vl_Cf13tTTJAq9jGVXudNqWfiiC';
 const REFRESH  = 5 * 60 * 1000;
 
-// ════════════════════════════════
+// Nombres de display para pestañas (renombrar sin tocar la lógica interna)
+const SHEET_DISPLAY_NAMES = {
+  'Hoja 1': 'Resumen del día'
+};
+
+// ══════════════════════════════════════════════════════
+// Columnas que NUNCA deben mostrarse con formato $ en la tabla
+// aunque isNumC las detecte como numéricas
+// ══════════════════════════════════════════════════════
+const NEVER_MONEY_COLS = new Set([
+  'id', 'fecha_texto', 'fecha', 'hora_exacta', 'hora',
+  'turno', 'cliente', 'origen', 'medio de pago', 'medio_de_pago',
+  'detalle_productos', 'detalle productos'
+]);
+
+// ══════════════════════════════════════════════════════
 // STATE
-// ════════════════════════════════
-let sheets  = [];   // [{name, headers, rows}]
-let active  = '__all__';
+// ══════════════════════════════════════════════════════
+let sheets  = [];
+// Por defecto arrancar en Hoja 1; si no carga, se cae a __all__
+let active  = 'Hoja 1';
 let map     = { date: null, value: null, cat: null };
-let ch      = {};   // charts
+let ch      = {};
 let mMode   = 'ventas';
 let monthly = [];
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // UTILS
-// ════════════════════════════════
-const $  = id => document.getElementById(id);
+// ══════════════════════════════════════════════════════
+const $   = id => document.getElementById(id);
 const fmt = n => n == null || isNaN(n) ? '—'
   : new Intl.NumberFormat('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
 const fmtD = s => {
@@ -739,11 +717,14 @@ function parseN(s){
   const c = String(s).replace(/[^\d.,\-]/g,'').replace(',','.');
   const n = parseFloat(c); return isNaN(n)?null:n;
 }
+
+// isNumC: comprueba si una columna tiene mayoría de valores numéricos
 function isNumC(rows,i){
   let h=0;
   for(let r=0;r<Math.min(15,rows.length);r++) if(parseN(rows[r][i])!==null) h++;
   return h >= Math.min(8, rows.length*0.55);
 }
+
 function isDateC(rows,i){
   let h=0;
   for(let r=0;r<Math.min(10,rows.length);r++){
@@ -752,6 +733,7 @@ function isDateC(rows,i){
   }
   return h>=4;
 }
+
 function parseDateVal(s){
   if(!s) return null;
   const dmy=String(s).match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
@@ -772,9 +754,9 @@ function load(on,msg=''){
   if(msg) $('loaderTxt').textContent=msg;
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // PARSE CSV
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 function parseCSV(txt){
   const rows=[];let cur='',inQ=false,row=[];
   for(let i=0;i<txt.length;i++){
@@ -793,9 +775,9 @@ function parseCSV(txt){
   return rows;
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // DISCOVER ALL SHEETS
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 async function discoverSheets(){
   return [
     {name:'Hoja 1'},
@@ -809,9 +791,9 @@ async function discoverSheets(){
   ];
 }
 
-// ════════════════════════════════
-// LOAD ONE SHEET BY NAME
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
+// LOAD ONE SHEET
+// ══════════════════════════════════════════════════════
 async function loadSheet(name){
   const urls=[
     `https://docs.google.com/spreadsheets/d/e/${PUB_ID}/pub?output=csv&sheet=${encodeURIComponent(name)}&_=${Date.now()}`,
@@ -834,41 +816,40 @@ async function loadSheet(name){
   return null;
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // AUTO-DETECT COLUMNS
-// ════════════════════════════════
-// Columnas NO numéricas que deben ignorarse aunque contengan números
-const NON_NUMERIC_COLS = ['id','fecha_texto','fecha','hora_exacta','hora'];
+// Columnas excluidas del análisis numérico automático
+// ══════════════════════════════════════════════════════
+const NON_NUMERIC_COLS = ['id','fecha_texto','fecha','hora_exacta','hora','turno','cliente','origen','medio de pago','medio_de_pago','detalle_productos','detalle productos'];
 
 function autoDetect(headers,rows){
   const h=headers.map(x=>String(x||'').toLowerCase().trim());
 
-  // Fecha: buscar Fecha_Texto exacto
+  // Fecha: Fecha_Texto o Fecha
   let dateIdx=h.findIndex(x=>x==='fecha_texto'||x==='fecha');
 
-  // Valor $: columna "Total" exacta (precio de venta de cada transacción)
-  // Excluir Id, Fecha_Texto, Hora_Exacta explícitamente
+  // Valor $: columna "Total" — precio de venta real de cada transacción
   let valIdx=h.findIndex(x=>x==='total');
   if(valIdx<0){
-    // Fallback: cualquier col numérica con nombre monetario, excluyendo las no-numéricas
     const numCols=headers.map((_,i)=>isNumC(rows,i)?i:-1)
       .filter(i=>i>=0 && !NON_NUMERIC_COLS.includes(h[i]));
-    valIdx=headers.findIndex((hh,i)=>/^(costo_total_venta|margen_neto)/.test(h[i])&&numCols.includes(i));
-    if(valIdx<0) valIdx=numCols.find(i=>/total|monto|ingreso|venta|importe/i.test(h[i]))??numCols[0]??-1;
+    valIdx=numCols.find(i=>/^(costo_total_venta|margen_neto)/.test(h[i]))??
+           numCols.find(i=>/total|monto|ingreso|venta|importe/i.test(h[i]))??
+           numCols[0]??-1;
   }
 
-  // Categoría: Detalle_Productos > Medio de Pago > Origen > Cliente
-  let catIdx=h.findIndex(x=>x==='detalle_productos'||x==='detalle productos');
-  if(catIdx<0) catIdx=h.findIndex(x=>x==='medio de pago'||x==='medio_de_pago');
+  // Categoría: Medio de Pago (para distribución/gráfico donut)
+  let catIdx=h.findIndex(x=>x==='medio de pago'||x==='medio_de_pago');
+  if(catIdx<0) catIdx=h.findIndex(x=>x==='detalle_productos'||x==='detalle productos');
   if(catIdx<0) catIdx=h.findIndex(x=>x==='origen');
   if(catIdx<0) catIdx=h.findIndex(x=>x==='cliente');
 
   return {date:dateIdx>=0?dateIdx:null, value:valIdx>=0?valIdx:null, cat:catIdx>=0?catIdx:null};
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // ACTIVE DATA
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 function getData(){
   if(active==='__all__'){
     if(!sheets.length) return{headers:[],rows:[]};
@@ -880,9 +861,9 @@ function getData(){
   return s?{headers:s.headers,rows:s.rows}:{headers:[],rows:[]};
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // MONTHLY CALC
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 function calcMonthly(rows){
   if(map.date===null||map.value===null) return[];
   const byM={};
@@ -907,49 +888,52 @@ function calcMonthly(rows){
     }));
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // RENDER KPIs
-// ════════════════════════════════
-// Charts refs for Resumen
+// ══════════════════════════════════════════════════════
 let chOrigen=null,chTurno=null,chTopProd=null;
 
 function renderKPIs(rows){
+  // Columna Total para ventas
   const vals=map.value!==null?rows.map(r=>parseN(r[map.value])).filter(v=>v!==null):[];
   if(!vals.length) return;
 
+  // Ticket promedio = suma Total / cantidad de filas (ventas)
   const total=vals.reduce((a,b)=>a+b,0);
-  const count=rows.length;
-  const avgTicket=total/count;
+  const count=rows.length;           // cantidad de ventas (filas)
+  const avgTicket=total/count;       // suma total / cantidad ventas
+
   const max=Math.max(...vals);
   const maxIdx=vals.indexOf(max);
 
-  // Distinct days
   let distinctDays=new Set();
   if(map.date!==null){
     rows.forEach(r=>{const d=parseDateVal(r[map.date]);if(d)distinctDays.add(d.toDateString());});
   }
   const days=distinctDays.size||count;
-  const avgDay=total/days;
+  const avgDay=total/days;           // promedio por día
 
-  // Extra columns
+  // Margen neto (columna explícita si existe)
   const headers=getData().headers;
   const margenIdx=headers.findIndex(h=>/margen_neto_.*\$|margen.*neto/i.test(h));
   const margenTotal=margenIdx>=0?rows.reduce((a,r)=>{const v=parseN(r[margenIdx]);return v!==null?a+v:a;},0):null;
   const margenPct=margenTotal!==null&&total>0?((margenTotal/total)*100).toFixed(1):null;
 
   $('kTotal').innerHTML=`<span class="u">$</span>${fmt(total)}`;
-  if($('kMargen')){
-    $('kMargen').innerHTML=margenTotal!==null?`<span class="u">$</span>${fmt(margenTotal)}`:`<span style="font-size:14px;color:var(--muted)">—</span>`;
-    if($('kMargenSub')) $('kMargenSub').textContent=margenPct?`${margenPct}% del total`:'';
-  }
-  $('kTickets').textContent=`${fmt(count)} transacciones`;
+  $('kMargen').innerHTML=margenTotal!==null
+    ?`<span class="u">$</span>${fmt(margenTotal)}`
+    :`<span style="font-size:14px;color:var(--muted)">—</span>`;
+  if($('kMargenSub')) $('kMargenSub').textContent=margenPct?`${margenPct}% del total`:'';
+
+  // Ticket promedio correcto: Total $ / cantidad de ventas
   $('kAvgTicket').innerHTML=`<span class="u">$</span>${fmt(avgTicket)}`;
+  $('kTickets').textContent=`${fmt(count)} ventas`;   // cantidad = filas
+
   $('kAvgDay').innerHTML=`<span class="u">$</span>${fmt(avgDay)}`;
   $('kBest').innerHTML=`<span class="u">$</span>${fmt(max)}`;
-  $('kpiNote').textContent=`${count} registros · ${days} días con ventas`;
+  $('kpiNote').textContent=`${count} ventas · ${days} días con actividad`;
   $('tableSub').textContent=`${count} filas · últimas 100 mostradas`;
 
-  // Render secciones especiales
   renderOrigen(rows, headers);
   renderTurnos(rows, headers);
   renderMediosPago(rows, headers);
@@ -960,44 +944,46 @@ function renderKPIs(rows){
   $('kBestDate').textContent=bestDate?fmtD(bestDate):`fila ${maxIdx+1}`;
   $('kAvgDaySub').textContent=`${days} días con ventas registradas`;
 
-  // Trend
+  // Tendencia 7 días
   if(vals.length>=14){
     const l7=vals.slice(-7).reduce((a,b)=>a+b,0)/7;
     const p7=vals.slice(-14,-7).reduce((a,b)=>a+b,0)/7;
     const pct=((l7-p7)/p7*100).toFixed(1);
     const up=l7>=p7;
     $('kTrend').textContent=(up?'↑':'↓')+Math.abs(pct)+'%';
-    const tc=$('kTrendSub');
-    tc.textContent=(up?'▲ subiendo':'▼ bajando')+' vs semana ant.';
-    tc.className='chip '+(up?'up':'down');
-    const ts=$('kTotalSub');
-    ts.textContent=(up?'▲ ':'▼ ')+Math.abs(pct)+'% tendencia';
-    ts.className='chip '+(up?'up':'down');
-    const as=$('kAvgDaySub');
-    as.className='chip '+(up?'up':'down');
+    $('kTrendSub').textContent=(up?'▲ subiendo':'▼ bajando')+' vs semana ant.';
+    $('kTrendSub').className='chip '+(up?'up':'down');
+    $('kTotalSub').textContent=(up?'▲ ':'▼ ')+Math.abs(pct)+'% tendencia';
+    $('kTotalSub').className='chip '+(up?'up':'down');
+    $('kAvgDaySub').className='chip '+(up?'up':'down');
   }
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // RENDER ORIGEN
-// ════════════════════════════════
+// Regla: si columna Origen tiene "Pedidos Ya" → Pedidos Ya
+//        si está vacía o guión → Local
+// ══════════════════════════════════════════════════════
 function renderOrigen(rows, headers){
   const origenIdx=headers.findIndex(h=>/^origen$/i.test(h.trim()));
-  const valIdx=map.value;
+  const valIdx=map.value;  // siempre columna Total para $
   if(origenIdx<0) return;
+
   const byOrigen={};
   rows.forEach(r=>{
-    const o=String(r[origenIdx]||'').trim()||'Sin dato';
+    const raw=String(r[origenIdx]||'').trim();
+    // Si está vacío o es solo guión, es Local
+    const o=(raw===''||raw==='—'||raw==='-')?'Local':raw;
     const v=valIdx!==null?parseN(r[valIdx]):1;
     if(!byOrigen[o]) byOrigen[o]={sum:0,count:0};
     byOrigen[o].sum+=(v||0);
     byOrigen[o].count++;
   });
+
   const sorted=Object.entries(byOrigen).sort((a,b)=>b[1].sum-a[1].sum);
   const total=sorted.reduce((a,b)=>a+b[1].sum,0);
   const COLORS=['#2a7d40','#e05a1a','#f5c030','#5dbf72','#a0522d'];
 
-  // Donut
   if(chOrigen){ chOrigen.destroy(); chOrigen=null; }
   const ctx=document.getElementById('chartOrigen');
   if(ctx){
@@ -1011,7 +997,6 @@ function renderOrigen(rows, headers){
     });
   }
 
-  // List
   const list=$('origenList');
   if(list){
     list.innerHTML=sorted.map(([k,v],i)=>{
@@ -1020,6 +1005,7 @@ function renderOrigen(rows, headers){
         <span style="display:flex;align-items:center;gap:8px">
           <span style="width:10px;height:10px;border-radius:50%;background:${COLORS[i]};flex-shrink:0"></span>
           <span style="font-weight:500">${k}</span>
+          <span style="color:var(--muted);font-size:11px">${v.count} ventas</span>
         </span>
         <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--green-dark)">$${fmt(v.sum)} <span style="color:var(--muted);font-weight:400">(${pct}%)</span></span>
       </div>`;
@@ -1027,21 +1013,24 @@ function renderOrigen(rows, headers){
   }
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // RENDER TURNOS
-// ════════════════════════════════
+// Columna: Turno (Mañana / Noche) — $ desde columna Total
+// ══════════════════════════════════════════════════════
 function renderTurnos(rows, headers){
   const turnoIdx=headers.findIndex(h=>/^turno$/i.test(h.trim()));
-  const valIdx=map.value;
+  const valIdx=map.value;  // columna Total
   if(turnoIdx<0) return;
+
   const byTurno={};
   rows.forEach(r=>{
     const t=String(r[turnoIdx]||'').trim()||'Sin dato';
-    const v=valIdx!==null?parseN(r[valIdx]):1;
+    const v=valIdx!==null?parseN(r[valIdx]):0;
     if(!byTurno[t]) byTurno[t]={sum:0,count:0};
     byTurno[t].sum+=(v||0);
     byTurno[t].count++;
   });
+
   const sorted=Object.entries(byTurno).sort((a,b)=>b[1].sum-a[1].sum);
   const COLORS=['#1a5430','#3a9e52','#5dbf72','#a8dab5'];
 
@@ -1063,7 +1052,10 @@ function renderTurnos(rows, headers){
       options:{
         responsive:true,
         plugins:{legend:{display:false}},
-        scales:{y:{ticks:{callback:v=>'$'+fmt(v)},grid:{color:'rgba(0,0,0,0.05)'}},x:{grid:{display:false}}}
+        scales:{
+          y:{ticks:{callback:v=>'$'+fmt(v)},grid:{color:'rgba(0,0,0,0.05)'}},
+          x:{grid:{display:false}}
+        }
       }
     });
   }
@@ -1077,7 +1069,7 @@ function renderTurnos(rows, headers){
         <span style="display:flex;align-items:center;gap:8px">
           <span style="width:10px;height:10px;border-radius:50%;background:${COLORS[i]};flex-shrink:0"></span>
           <span style="font-weight:500">${k}</span>
-          <span style="color:var(--muted);font-size:11px">${v.count} pedidos</span>
+          <span style="color:var(--muted);font-size:11px">${v.count} ventas</span>
         </span>
         <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--green-dark)">$${fmt(v.sum)} <span style="color:var(--muted);font-weight:400">(${pct}%)</span></span>
       </div>`;
@@ -1085,13 +1077,15 @@ function renderTurnos(rows, headers){
   }
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // RENDER MEDIOS DE PAGO
-// ════════════════════════════════
+// Columna: Medio de Pago — $ desde columna Total
+// ══════════════════════════════════════════════════════
 function renderMediosPago(rows, headers){
   const medioIdx=headers.findIndex(h=>/medio.*pago|medio_de_pago/i.test(h.trim()));
-  const valIdx=map.value;
+  const valIdx=map.value;  // columna Total
   if(medioIdx<0) return;
+
   const byMedio={};
   rows.forEach(r=>{
     const m=String(r[medioIdx]||'').trim()||'Sin dato';
@@ -1100,6 +1094,7 @@ function renderMediosPago(rows, headers){
     byMedio[m].sum+=(v||0);
     byMedio[m].count++;
   });
+
   const sorted=Object.entries(byMedio).sort((a,b)=>b[1].sum-a[1].sum);
   const total=sorted.reduce((a,b)=>a+b[1].sum,0);
   const ICONS={'efectivo':'💵','online':'💻','mercado':'💙','pedidos':'🛵','transferencia':'🔄','tarjeta':'💳'};
@@ -1123,28 +1118,26 @@ function renderMediosPago(rows, headers){
           <div style="flex:1;height:6px;border-radius:99px;background:var(--border);overflow:hidden">
             <div style="width:${barW}%;height:100%;background:${COLORS[i%COLORS.length]};border-radius:99px;transition:width 0.8s ease"></div>
           </div>
-          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);min-width:50px;text-align:right">${pct}% · ${v.count} tickets</span>
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);min-width:50px;text-align:right">${pct}% · ${v.count} ventas</span>
         </div>
       </div>`;
     }).join('');
   }
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // RENDER TOP PRODUCTOS
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 function renderTopProductos(rows, headers){
   const detIdx=headers.findIndex(h=>/detalle_productos|detalle productos/i.test(h.trim()));
   if(detIdx<0) return;
 
-  // Cada fila puede tener múltiples productos separados por coma
   const conteo={};
   rows.forEach(r=>{
     const cell=String(r[detIdx]||'').trim();
     if(!cell) return;
     const prods=cell.split(',').map(p=>p.trim()).filter(p=>p&&!/opcional|sin dato/i.test(p));
     prods.forEach(p=>{
-      // Limpiar texto (quitar cantidades tipo "x2")
       const clean=p.replace(/\s*x\d+\s*/gi,'').trim();
       if(!clean) return;
       conteo[clean]=(conteo[clean]||0)+1;
@@ -1155,7 +1148,6 @@ function renderTopProductos(rows, headers){
   const totalVendidos=sorted.reduce((a,b)=>a+b[1],0);
   const COLORS=['#2a7d40','#3a9e52','#5dbf72','#e05a1a','#f5c030'];
 
-  // Bar chart
   if(chTopProd){ chTopProd.destroy(); chTopProd=null; }
   const ctx=document.getElementById('chartTopProd');
   if(ctx){
@@ -1180,7 +1172,6 @@ function renderTopProductos(rows, headers){
     });
   }
 
-  // Detail list
   const list=$('topProdList');
   if(list){
     const maxV=sorted[0]?.[1]||1;
@@ -1206,9 +1197,9 @@ function renderTopProductos(rows, headers){
   }
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // RENDER MONTHLY CARDS
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 function renderMonthCards(data){
   if(!data.length){
     $('monthGrid').innerHTML='<div style="font-family:var(--mono);font-size:12px;color:var(--muted);padding:12px">Sin datos de fecha para análisis mensual.</div>';
@@ -1227,7 +1218,7 @@ function renderMonthCards(data){
           <span class="mc-row-val g">$${fmt(m.sum)}</span>
         </div>
         <div class="mc-row">
-          <span class="mc-row-lbl">TICKETS VENDIDOS</span>
+          <span class="mc-row-lbl">CANTIDAD VENTAS</span>
           <span class="mc-row-val o">${fmt(m.count)}</span>
         </div>
         <div class="mc-row">
@@ -1246,9 +1237,9 @@ function renderMonthCards(data){
   `).join('');
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // MONTHLY CHART
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 function renderMonthlyChart(data){
   if(ch.monthly) ch.monthly.destroy();
   if(!data.length) return;
@@ -1267,9 +1258,9 @@ function renderMonthlyChart(data){
   };
   const subMap={
     ventas:'Ventas totales por mes ($)',
-    tickets:'Tickets vendidos por mes (cantidad)',
-    promDia:'Ticket promedio por día del mes ($)',
-    ticketProm:'Ticket promedio por transacción ($)',
+    tickets:'Cantidad de ventas por mes',
+    promDia:'Promedio de venta por día ($)',
+    ticketProm:'Ticket promedio por venta ($)',
   };
   $('mChartSub').textContent=subMap[mMode];
   const c=colors[mMode];
@@ -1290,7 +1281,7 @@ function renderMonthlyChart(data){
         tooltip:{
           backgroundColor:'#1a5430',titleColor:'#6be082',bodyColor:'#cce8d4',
           borderColor:'#2a7d40',borderWidth:1,
-          callbacks:{label:ctx=>` ${isMoney?'$':''}${fmt(ctx.parsed.y)}${!isMoney?' tickets':''}`}
+          callbacks:{label:ctx=>` ${isMoney?'$':''}${fmt(ctx.parsed.y)}${!isMoney?' ventas':''}`}
         }
       },
       scales:{
@@ -1303,10 +1294,6 @@ function renderMonthlyChart(data){
 
 function switchMChart(mode){
   mMode=mode;
-  ['ventas','tickets','promDia','ticketProm'].forEach(k=>{
-    $('tog'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('on',k===mode);
-  });
-  // Toggle buttons use first-char cap keys
   $('togVentas').classList.toggle('on',mode==='ventas');
   $('togTickets').classList.toggle('on',mode==='tickets');
   $('togPromDia').classList.toggle('on',mode==='promDia');
@@ -1314,9 +1301,9 @@ function switchMChart(mode){
   renderMonthlyChart(monthly);
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // MAIN EVOLUTION CHART
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 function renderMain(rows){
   if(ch.main) ch.main.destroy();
   const vals=map.value!==null?rows.map(r=>parseN(r[map.value])).filter(v=>v!==null):[];
@@ -1357,9 +1344,9 @@ function renderMain(rows){
   });
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // DISTRIBUTION CHART
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 function renderDist(rows){
   if(ch.dist) ch.dist.destroy();
   const PALETTE=['#2a7d40','#e05a1a','#f5c030','#5dbf72','#a03020','#c8a030','#3a9e52','#e08050'];
@@ -1408,9 +1395,9 @@ function renderDist(rows){
   }
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // PROJECTION CHART
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 function renderProj(rows){
   if(ch.proj) ch.proj.destroy();
   const vals=map.value!==null?rows.map(r=>parseN(r[map.value])).filter(v=>v!==null):[];
@@ -1467,26 +1454,46 @@ function renderProj(rows){
     </div>`).join('');
 }
 
-// ════════════════════════════════
-// TABLE
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
+// TABLE — con blacklist de columnas no-monetarias
+// ══════════════════════════════════════════════════════
 function renderTable(headers,rows){
   if(!rows.length) return;
-  const numSet=new Set(headers.map((_,i)=>isNumC(rows,i)?i:-1).filter(i=>i>=0));
+
+  // Columnas que son fechas (mostrar con estilo fecha, no $)
   const dateSet=new Set(headers.map((_,i)=>isDateC(rows,i)?i:-1).filter(i=>i>=0));
+
+  // Columnas numéricas con $, EXCLUYENDO las que están en NEVER_MONEY_COLS
+  const numSet=new Set(
+    headers
+      .map((_,i)=>{
+        const colName=String(headers[i]||'').toLowerCase().trim();
+        // Si está en la blacklist → jamás mostrar como $
+        if(NEVER_MONEY_COLS.has(colName)) return -1;
+        // Si es fecha → tampoco
+        if(dateSet.has(i)) return -1;
+        // Si la mayoría de valores son numéricos → mostrar como $
+        return isNumC(rows,i)?i:-1;
+      })
+      .filter(i=>i>=0)
+  );
+
   $('tHead').innerHTML=`<tr>${headers.map(h=>`<th>${h||'—'}</th>`).join('')}</tr>`;
   $('tBody').innerHTML=rows.slice(-100).reverse().map(row=>`
     <tr>${headers.map((_,i)=>{
-      const v=row[i]||'—';
-      if(numSet.has(i)) return`<td class="td-n">$${fmt(parseN(v))}</td>`;
+      const v=row[i]??'—';
+      if(numSet.has(i)){
+        const n=parseN(v);
+        return`<td class="td-n">${n!==null?'$'+fmt(n):'—'}</td>`;
+      }
       if(dateSet.has(i)) return`<td class="td-d">${v}</td>`;
-      return`<td>${v}</td>`;
+      return`<td>${v||'—'}</td>`;
     }).join('')}</tr>`).join('');
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // COL MAPPER UI
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 function buildMapper(headers){
   const none=`<option value="-1">— ninguna —</option>`;
   const opts=headers.map((h,i)=>`<option value="${i}">${h||`Col ${i+1}`}</option>`).join('');
@@ -1504,9 +1511,9 @@ function applyMap(){
   renderAll();
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // RENDER ALL
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 function renderAll(){
   const {headers,rows}=getData();
   if(!rows.length) return;
@@ -1522,32 +1529,47 @@ function renderAll(){
   renderTable(headers,rows);
 }
 
-// ════════════════════════════════
-// TABS
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
+// TABS — con renombrado y pestaña por defecto = Hoja 1
+// ══════════════════════════════════════════════════════
 function buildTabs(){
   const wrap=$('tabsWrap');
-  // Remove old sheet tabs
   wrap.querySelectorAll('.tab[data-sheet]').forEach(t=>t.remove());
+
   sheets.forEach(s=>{
+    const displayName=SHEET_DISPLAY_NAMES[s.name]||s.name;
     const btn=document.createElement('button');
-    btn.className='tab';btn.dataset.sheet=s.name;
+    btn.className='tab';
+    btn.dataset.sheet=s.name;
     btn.id='tab_'+s.name;
     btn.onclick=()=>switchTab(s.name);
-    btn.innerHTML=`📄 ${s.name.toUpperCase()} <span class="tab-count">${fmt(s.rows.length)}</span>`;
+    btn.innerHTML=`📄 ${displayName.toUpperCase()} <span class="tab-count">${fmt(s.rows.length)}</span>`;
     wrap.appendChild(btn);
   });
+
   $('cnt___all__').textContent=fmt(sheets.reduce((a,s)=>a+s.rows.length,0));
+
+  // Marcar la pestaña activa correctamente
+  updateTabHighlight();
 }
+
+function updateTabHighlight(){
+  document.querySelectorAll('.tab').forEach(t=>{
+    const isAll=t.id==='tab___all__';
+    const isSheet=t.dataset.sheet===active;
+    t.classList.toggle('active', active==='__all__'?isAll:isSheet);
+  });
+}
+
 function switchTab(name){
   active=name;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.id==='tab_'+name||t.id==='tab___all__'&&name==='__all__'));
+  updateTabHighlight();
   renderAll();
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // FULL REFRESH
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 async function fullRefresh(){
   $('refIco').classList.add('spin');
   setSt('spin','Actualizando…');
@@ -1564,7 +1586,6 @@ async function fullRefresh(){
     }
 
     if(!loaded.length){
-      // Possibly not published yet
       load(false);
       $('bannerSetup').classList.add('on');
       setSt('err','Sin acceso público');
@@ -1575,10 +1596,17 @@ async function fullRefresh(){
     $('bannerSetup').classList.remove('on');
     sheets=loaded;
     buildTabs();
+
+    // Si la pestaña activa no existe en las hojas cargadas, ir a Hoja 1 o __all__
+    const activeExists=sheets.find(s=>s.name===active);
+    if(!activeExists){
+      active=sheets[0]?.name||'__all__';
+      updateTabHighlight();
+    }
+
     renderAll();
     setSt('ok',`${sheets.length} hojas · ${sheets.reduce((a,s)=>a+s.rows.length,0)} registros`);
-    const now=new Date().toLocaleString('es-AR');
-    $('footerDate').textContent='ÚLTIMA ACTUALIZACIÓN: '+now;
+    $('footerDate').textContent='ÚLTIMA ACTUALIZACIÓN: '+new Date().toLocaleString('es-AR');
 
   }catch(err){
     setSt('err','Error de conexión');
@@ -1590,9 +1618,9 @@ async function fullRefresh(){
   $('refIco').classList.remove('spin');
 }
 
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 // INIT
-// ════════════════════════════════
+// ══════════════════════════════════════════════════════
 fullRefresh();
 setInterval(fullRefresh, REFRESH);
 </script>
