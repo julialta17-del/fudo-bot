@@ -192,7 +192,6 @@ main {
 .btn-green { background:var(--green);color:#fff; }
 .btn-green:hover { background:var(--green2); }
 
-/* KPI Grid para 3 elementos */
 .kpi-grid {
   display:grid;
   grid-template-columns:repeat(3,1fr);
@@ -349,7 +348,7 @@ footer strong { color:rgba(255,255,255,0.7); }
   header,main,footer{padding-left:18px;padding-right:18px;}
   .tabs-wrap{padding-left:18px;}
   .chart-row{grid-template-columns:1fr;}
-  .kpi-grid{grid-template-columns:1fr;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
 }
 </style>
 </head>
@@ -383,10 +382,7 @@ footer strong { color:rgba(255,255,255,0.7); }
 </header>
 
 <div class="tabs-wrap" id="tabsWrap">
-  <button class="tab" onclick="switchTab('__all__')" id="tab___all__">
-    📊 TODAS LAS HOJAS <span class="tab-count" id="cnt___all__">—</span>
-  </button>
-</div>
+  </div>
 
 <main>
 
@@ -790,10 +786,6 @@ function autoDetect(headers,rows){
 }
 
 function getData(){
-  if(active==='__all__'){
-    if(!sheets.length) return{headers:[],rows:[]};
-    return{headers:sheets[0].headers,rows:sheets.flatMap(s=>s.rows)};
-  }
   const s=sheets.find(s=>s.name===active);
   return s?{headers:s.headers,rows:s.rows}:{headers:[],rows:[]};
 }
@@ -1003,11 +995,10 @@ function renderAll(){
 function buildTabs(){
   const wrap=$('tabsWrap'); wrap.querySelectorAll('.tab[data-sheet]').forEach(t=>t.remove());
   sheets.forEach(s=>{ const btn=document.createElement('button'); btn.className='tab'; btn.dataset.sheet=s.name; btn.id='tab_'+s.name; btn.onclick=()=>switchTab(s.name); btn.innerHTML=`📄 ${(SHEET_DISPLAY_NAMES[s.name]||s.name).toUpperCase()} <span class="tab-count">${fmt(s.rows.length)}</span>`; wrap.appendChild(btn); });
-  $('cnt___all__').textContent=fmt(sheets.reduce((a,s)=>a+s.rows.length,0));
   updateTabHighlight();
 }
 
-function updateTabHighlight(){ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',active==='__all__'?t.id==='tab___all__':t.dataset.sheet===active)); }
+function updateTabHighlight(){ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sheet===active)); }
 function switchTab(name){ active=name; updateTabHighlight(); renderAll(); }
 
 async function fullRefresh(){
