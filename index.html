@@ -712,21 +712,16 @@ function parseCSV(txt){
 // DISCOVER ALL SHEETS
 // ════════════════════════════════
 async function discoverSheets(){
-  const url = `https://spreadsheets.google.com/feeds/worksheets/${SHEET_ID}/public/basic?alt=json&_=${Date.now()}`;
-  try{
-    const r=await fetch(url,{cache:'no-store'});
-    if(!r.ok) throw new Error(r.status);
-    const j=await r.json();
-    const entries=j.feed?.entry||[];
-    if(!entries.length) return [{name:'Hoja1'}];
-    return entries.map(e=>{
-      const name=e.title?.$t||'Hoja';
-      return {name};
-    });
-  }catch(e){
-    console.warn('Feed API error:',e);
-    return [{name:'Hoja1'},{name:'Hoja2'},{name:'Hoja3'}];
-  }
+  return [
+    {name:'Hoja 1'},
+    {name:'Historico'},
+    {name:'Analisis_Clientes'},
+    {name:'Dashboard_Macro'},
+    {name:'Maestro_Costos'},
+    {name:'Matriz_Productos'},
+    {name:'Analisis_Medianas'},
+    {name:'campanas'}
+  ];
 }
 
 // ════════════════════════════════
@@ -741,10 +736,11 @@ async function loadSheet(name){
     try{
       const r=await fetch(url,{cache:'no-store'});
       if(!r.ok) continue;
-      const txt=await r.text();
+      const buf=await r.arrayBuffer();
+      const txt=new TextDecoder('utf-8').decode(buf);
       if(txt.trim().startsWith('<')||txt.includes('<!DOCTYPE')) continue;
       const all=parseCSV(txt);
-      if(!all.length||all[0].length<2) continue;
+      if(!all.length||all[0].length<1) continue;
       const rows=all.slice(1).filter(r=>r.some(v=>v));
       if(!rows.length) continue;
       return {name, headers:all[0], rows};
