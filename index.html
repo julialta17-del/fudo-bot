@@ -9,206 +9,207 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
-  --bg: #f0ede6; --bg1: #e8e4db; --white: #ffffff; --card: #ffffff; --green: #2a7d40; --green2: #3a9e52; --green3: #5dbf72; --green-bg: #e8f5ec; --green-dark: #1a5430; --orange: #e05a1a; --orange-bg: #fef0e8; --yellow: #f5c030; --yellow-bg: #fef8e0; --red: #d94040; --red-bg: #fde8e8; --text: #1a2e1e; --text2: #3a5040; --muted: #7a9a82; --border: #c8dcc8; --border2: #a8c8a8; --shadow: 0 2px 12px rgba(42,125,64,0.08); --shadow-lg: 0 8px 32px rgba(42,125,64,0.12); --bebas: 'Bebas Neue', cursive; --sans: 'Outfit', sans-serif; --mono: 'JetBrains Mono', monospace;
+  --bg: #f0ede6; --bg1: #e8e4db; --white: #ffffff; --card: #ffffff; --green: #2a7d40; --green2: #3a9e52; --green3: #5dbf72; --green-bg: #e8f5ec; --green-dark: #1a5430; --orange: #e05a1a; --orange-bg: #fef0e8; --yellow: #f5c030; --yellow-bg: #fef8e0; --red: #d94040; --red-bg: #fde8e8; --text: #1a2e1e; --text2: #3a5040; --muted: #7a9a82; --border: #c8dcc8; --shadow: 0 2px 12px rgba(42,125,64,0.08); --bebas: 'Bebas Neue', cursive; --sans: 'Outfit', sans-serif; --mono: 'JetBrains Mono', monospace;
 }
 *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
-html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 400; min-height: 100vh; }
-body::before { content: ''; position: fixed; inset: 0; pointer-events: none; opacity: 0.025; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 180px; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
 header { position: sticky; top: 0; z-index: 100; background: var(--green-dark); padding: 0 36px; display: flex; align-items: center; justify-content: space-between; height: 68px; box-shadow: 0 2px 20px rgba(0,0,0,0.2); }
-.brand { display: flex; align-items: center; gap: 14px; }
-.brand-name { font-family: var(--bebas); font-size: 26px; letter-spacing: 2px; color: #ffffff; line-height: 1; }
+.brand-name { font-family: var(--bebas); font-size: 26px; letter-spacing: 2px; color: #ffffff; }
 .brand-name span { color: var(--green3); }
-.status-pill { display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; padding: 7px 14px; font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.6); }
-.dot { width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.3); transition:all 0.3s; }
-.dot.ok { background:#6be082; box-shadow:0 0 8px #6be082; }
-.tabs-wrap { background: var(--green-dark); border-bottom: 3px solid rgba(255,255,255,0.08); padding: 0 36px; display: flex; gap: 2px; overflow-x: auto; }
-.tab { padding: 11px 18px 9px; font-family: var(--bebas); font-size: 14px; letter-spacing: 1.5px; color: rgba(255,255,255,0.45); cursor: pointer; border-bottom: 3px solid transparent; background:none; transition: all 0.15s; white-space:nowrap; }
-.tab.active { color:#fff; border-bottom-color: var(--green3); }
-main { padding: 28px 36px 60px; display:flex; flex-direction:column; gap:28px; max-width:1600px; margin:0 auto; }
-.kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
-.kpi { background:var(--white); border:1px solid var(--border); border-radius:16px; padding:20px 18px; box-shadow:var(--shadow); position:relative; overflow:hidden; animation:up 0.4s ease both; }
-.kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--kc,var(--green)); }
-.kpi[data-c=yellow] { --kc:var(--yellow); }
-.kpi-val { font-family:var(--bebas); font-size:40px; color:var(--text); line-height:1.05; margin:4px 0 2px; }
-.kpi-val .u { font-size:22px; color:var(--muted); }
-.card { background:var(--white); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:var(--shadow); }
-.card-head { padding:18px 22px 14px; border-bottom:1px solid var(--bg1); display:flex; justify-content:space-between; }
-.card-title { font-family:var(--bebas); font-size:20px; color:var(--green-dark); }
-.chart-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
-.month-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; margin-top:16px; }
-.mc { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); animation:up 0.4s ease both; }
-.mc-month { font-family:var(--bebas); font-size:20px; color:var(--green-dark); }
-.mc-stats { display:flex; flex-direction:column; gap:7px; margin-top:10px; }
-.mc-row { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
-.mc-row-val { font-family:var(--bebas); font-size:18px; color:var(--green); }
-.tscroll { overflow-x:auto; max-height:340px; }
-table { width:100%; border-collapse:collapse; min-width:500px; }
-th { background:var(--bg1); padding:9px 14px; font-family:var(--mono); font-size:9px; text-align:left; position:sticky; top:0; z-index:2; }
-td { padding:9px 14px; font-size:12px; border-bottom:1px solid var(--bg1); }
-#loader { position:fixed; inset:0; background:rgba(26,84,48,0.88); z-index:300; display:none; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
-#loader.on { display:flex; }
-@keyframes rotate { to { transform:rotate(360deg); } }
+.tabs-wrap { background: var(--green-dark); border-bottom: 3px solid rgba(255,255,255,0.08); padding: 0 36px; display: flex; gap: 2px; }
+.tab { padding: 12px 22px; font-family: var(--bebas); font-size: 15px; color: rgba(255,255,255,0.4); cursor: pointer; border: none; background: none; transition: 0.2s; border-bottom: 3px solid transparent; }
+.tab.active { color:#fff; border-bottom-color: var(--green3); background: rgba(255,255,255,0.05); }
+main { padding: 28px 36px 60px; display: flex; flex-direction: column; gap: 28px; max-width: 1600px; margin: 0 auto; }
+.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.kpi { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 22px; box-shadow: var(--shadow); position: relative; overflow: hidden; animation: up 0.4s ease both; }
+.kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background: var(--kc, var(--green)); }
+.kpi[data-c=yellow] { --kc: var(--yellow); }
+.kpi-val { font-family: var(--bebas); font-size: 44px; color: var(--text); line-height: 1; margin-top: 5px; }
+.kpi-val .u { font-size: 20px; color: var(--muted); }
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+.card-head { padding: 18px 22px; border-bottom: 1px solid var(--bg1); font-family: var(--bebas); font-size: 20px; color: var(--green-dark); display: flex; justify-content: space-between; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin-top: 15px; }
+.mc { background: #fff; padding: 18px; border-radius: 14px; border: 1px solid var(--border); }
+.tscroll { overflow: auto; max-height: 450px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { position: sticky; top: 0; background: var(--bg1); padding: 12px; text-align: left; font-family: var(--mono); font-size: 10px; z-index: 10; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--bg1); }
+#loader { position: fixed; inset: 0; background: rgba(26,84,48,0.98); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: var(--bebas); }
+#loader.on { display: flex; }
+@keyframes spin { to { transform: rotate(360deg); } }
 @keyframes up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 </style>
 </head>
 <body>
 
 <div id="loader" class="on">
-  <div style="width:48px;height:48px;border:3px solid rgba(255,255,255,0.15);border-top-color:#6be082;border-radius:50%;animation:rotate 0.75s linear infinite;"></div>
-  <div style="color:white;font-family:var(--bebas);letter-spacing:3px;">BIG ESTA COCINANDO EL HISTORICO…</div>
+    <div style="width:50px;height:50px;border:5px solid rgba(255,255,255,0.1);border-top-color:#6be082;border-radius:50%;animation:spin 1s linear infinite;"></div>
+    <div style="font-size:22px; margin-top:20px; letter-spacing:3px;">PROCESANDO SOLAPA...</div>
 </div>
 
 <header>
-  <div class="brand">
-    <div class="brand-logo">🥗</div>
     <div class="brand-name">BIG <span>SALADS</span> SEXTA</div>
-  </div>
-  <div class="header-right">
-    <div class="status-pill"><div class="dot" id="dot"></div><span id="stTxt">Iniciando…</span></div>
-    <button class="btn" style="background:#fff; padding:8px 16px; border-radius:8px; cursor:pointer;" onclick="fullRefresh()">ACTUALIZAR</button>
-  </div>
+    <button style="background:#fff; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-family:var(--mono); font-size:10px;" onclick="fullRefresh()">REFRESCAR</button>
 </header>
 
-<div class="tabs-wrap" id="tabsWrap"></div>
+<div class="tabs-wrap">
+    <button class="tab" id="btnResumen" onclick="changeTab('Hoja 1')">RESUMEN DEL DÍA</button>
+    <button class="tab" id="btnHistorico" onclick="changeTab('Historico')">HISTÓRICO</button>
+</div>
 
 <main>
-  <div class="kpi-grid">
-    <div class="kpi"><div style="font-size:9px; font-family:var(--mono); color:var(--muted);">VENTAS TOTALES</div><div class="kpi-val" id="kTotal"><span class="u">$</span>—</div></div>
-    <div class="kpi"><div style="font-size:9px; font-family:var(--mono); color:var(--muted);">MARGEN NETO</div><div class="kpi-val" id="kMargen"><span class="u">$</span>—</div></div>
-    <div class="kpi" data-c="yellow"><div style="font-size:9px; font-family:var(--mono); color:var(--muted);">TICKET PROMEDIO</div><div class="kpi-val" id="kAvgTicket"><span class="u">$</span>—</div></div>
-  </div>
-
-  <div class="chart-row">
-    <div class="card"><div class="card-head"><div class="card-title">📍 ORIGEN</div></div><div class="card-body"><canvas id="chartOrigen" height="150"></canvas><div id="origenList" style="margin-top:10px; font-size:12px;"></div></div></div>
-    <div class="card"><div class="card-head"><div class="card-title">🌙 TURNOS</div></div><div class="card-body"><canvas id="chartTurno" height="150"></canvas></div></div>
-    <div class="card"><div class="card-head"><div class="card-title">💳 PAGOS</div></div><div class="card-body" id="mediosList"></div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><div class="card-title">EVOLUCIÓN MENSUAL (ÚLTIMOS 6 MESES)</div></div>
-    <div class="card-body">
-      <canvas id="chartMonthly" height="180"></canvas>
-      <div class="month-grid" id="monthGrid"></div>
+    <div class="kpi-grid">
+        <div class="kpi"><div style="font-size:10px; color:var(--muted); font-family:var(--mono);">VENTAS TOTALES</div><div class="kpi-val" id="kTotal"><span class="u">$</span>0</div></div>
+        <div class="kpi"><div style="font-size:10px; color:var(--muted); font-family:var(--mono);">MARGEN NETO</div><div class="kpi-val" id="kMargen"><span class="u">$</span>0</div></div>
+        <div class="kpi" data-c="yellow"><div style="font-size:10px; color:var(--muted); font-family:var(--mono);">TICKET PROMEDIO</div><div class="kpi-val" id="kAvg"><span class="u">$</span>0</div></div>
     </div>
-  </div>
 
-  <div class="card">
-    <div class="card-head"><div class="card-title">REGISTROS COMPLETOS</div></div>
-    <div class="tscroll"><table><thead id="tHead"></thead><tbody id="tBody"></tbody></table></div>
-  </div>
+    <div class="chart-row">
+        <div class="card"><div class="card-head">📍 ORIGEN</div><div style="padding:20px;"><canvas id="chartOrigen" height="150"></canvas></div></div>
+        <div class="card"><div class="card-head">🌙 TURNOS</div><div style="padding:20px;"><canvas id="chartTurno" height="150"></canvas></div></div>
+        <div class="card"><div class="card-head">💳 MEDIOS DE PAGO</div><div style="padding:20px;" id="payList"></div></div>
+    </div>
+
+    <div id="sectionHistorico" style="display:none;">
+        <div class="card">
+            <div class="card-head">EVOLUCIÓN MENSUAL (ÚLTIMOS 6 MESES)</div>
+            <div style="padding:20px;">
+                <div class="month-grid" id="monthGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head" id="tableTitle">DETALLE DE LA HOJA</div>
+        <div class="tscroll">
+            <table id="mainTable">
+                <thead><tr id="tHead"></tr></thead>
+                <tbody id="tBody"></tbody>
+            </table>
+        </div>
+    </div>
 </main>
 
 <script>
 const PUB_ID = '2PACX-1vSqXw7W2kUj_BsUyLKYmRIIZyYacKR9nYbaeXRFqSPzBVZuyCuj7Vl_Cf13tTTJAq9jGVXudNqWfiiC';
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-let sheets = [], active = 'Hoja 1', ch = {};
+let currentTab = 'Hoja 1';
+let charts = {};
 
 const fmt = n => new Intl.NumberFormat('es-AR',{maximumFractionDigits:0}).format(Math.round(n));
-const parseN = s => { let c = String(s||'').replace(/[^\d.,\-]/g,'').replace(',','.'); let n = parseFloat(c); return isNaN(n)?0:n; };
+const parseN = s => {
+    if(!s) return 0;
+    let n = parseFloat(String(s).replace(/[^\d.,\-]/g,'').replace(',','.'));
+    return isNaN(n) ? 0 : n;
+};
 
-async function loadSheet(name) {
-  const url = `https://docs.google.com/spreadsheets/d/e/${PUB_ID}/pub?output=csv&sheet=${encodeURIComponent(name)}&_=${Date.now()}`;
-  try {
-    const r = await fetch(url);
-    const txt = await r.text();
-    const rows = txt.split('\n').map(row => {
-      let cells = []; let inQuo = false; let cur = '';
-      for(let char of row) {
-        if(char === '"') inQuo = !inQuo;
-        else if(char === ',' && !inQuo) { cells.push(cur.trim()); cur = ''; }
-        else cur += char;
-      }
-      cells.push(cur.trim()); return cells;
-    });
-    return { name, headers: rows[0], rows: rows.slice(1).filter(r => r.length > 1) };
-  } catch(e) { return null; }
+async function changeTab(name) {
+    currentTab = name;
+    await fullRefresh();
 }
 
 async function fullRefresh() {
-  document.getElementById('loader').classList.add('on');
-  const nombres = ['Hoja 1', 'Historico', 'Analisis_Clientes'];
-  sheets = [];
-  for(const n of nombres) {
-    const s = await loadSheet(n);
-    if(s) sheets.push(s);
-  }
-  buildTabs();
-  render();
-  document.getElementById('loader').classList.remove('on');
-}
-
-function buildTabs() {
-  const wrap = document.getElementById('tabsWrap'); wrap.innerHTML = '';
-  sheets.forEach(s => {
-    const btn = document.createElement('button');
-    btn.className = `tab ${s.name === active ? 'active' : ''}`;
-    btn.innerText = s.name === 'Hoja 1' ? 'RESUMEN DEL DÍA' : s.name.toUpperCase();
-    btn.onclick = () => { active = s.name; buildTabs(); render(); };
-    wrap.appendChild(btn);
-  });
-}
-
-function render() {
-  const sheet = sheets.find(s => s.name === active);
-  if(!sheet) return;
-  const h = sheet.headers.map(x => x.toLowerCase().trim());
-  const r = sheet.rows;
-  const idx = { total: h.indexOf('total'), margen: h.indexOf('margen neto'), fecha: h.indexOf('fecha'), origen: h.indexOf('origen'), turno: h.indexOf('turno'), medio: h.indexOf('medio de pago') };
-
-  let totalV = 0, totalM = 0;
-  const oData = {}, tData = {}, mData = {}, monthly = {};
-
-  r.forEach(row => {
-    const v = parseN(row[idx.total]);
-    totalV += v; totalM += parseN(row[idx.margen]);
+    document.getElementById('loader').classList.add('on');
     
-    let o = row[idx.origen] || 'Local'; oData[o] = (oData[o]||0) + v;
-    let t = row[idx.turno] || 'N/A'; tData[t] = (tData[t]||0) + v;
-    let m = row[idx.medio] || 'Otro'; if(!mData[m]) mData[m]={s:0,c:0}; mData[m].s += v; mData[m].c++;
+    // Forzamos actualización de estilos de botones
+    document.getElementById('btnResumen').className = `tab ${currentTab === 'Hoja 1' ? 'active' : ''}`;
+    document.getElementById('btnHistorico').className = `tab ${currentTab === 'Historico' ? 'active' : ''}`;
 
-    const parts = row[idx.fecha].split('/');
-    if(parts.length === 3) {
-      const mKey = `${parts[2]}-${parts[1].padStart(2,'0')}`;
-      if(!monthly[mKey]) monthly[mKey] = { s:0, t:0, d:new Set(), l: `${MESES[parseInt(parts[1])-1]} ${parts[2]}` };
-      monthly[mKey].s += v; monthly[mKey].t++; monthly[mKey].d.add(parts[0]);
+    // URL específica por solapa para forzar a Google a enviar los datos correctos
+    const url = `https://docs.google.com/spreadsheets/d/e/${PUB_ID}/pub?output=csv&sheet=${encodeURIComponent(currentTab)}&_=${Date.now()}`;
+    
+    try {
+        const r = await fetch(url);
+        const text = await r.text();
+        const rows = text.split('\n').map(row => {
+            let cells = []; let inQ = false; let cur = '';
+            for(let c of row) { if(c === '"') inQ = !inQ; else if(c === ',' && !inQ) { cells.push(cur.trim()); cur = ''; } else cur += c; }
+            cells.push(cur.trim()); return cells;
+        }).filter(r => r.length > 1);
+
+        renderData(rows);
+    } catch(e) { alert("Error al conectar con la solapa " + currentTab); }
+    
+    document.getElementById('loader').classList.remove('on');
+}
+
+function renderData(data) {
+    const headers = data[0].map(h => h.toLowerCase().trim());
+    const rows = data.slice(1);
+
+    const idx = { 
+        total: headers.indexOf('total'), margen: headers.indexOf('margen neto'), 
+        fecha: headers.indexOf('fecha'), origen: headers.indexOf('origen'), 
+        turno: headers.indexOf('turno'), medio: headers.indexOf('medio de pago')
+    };
+
+    // UI Reset
+    document.getElementById('sectionHistorico').style.display = currentTab === 'Historico' ? 'block' : 'none';
+    document.getElementById('tableTitle').innerText = `LISTADO: ${currentTab.toUpperCase()}`;
+
+    let sumV = 0, sumM = 0;
+    const oD = {}, tD = {}, mD = {}, mensual = {};
+
+    rows.forEach(r => {
+        const v = parseN(r[idx.total]);
+        sumV += v;
+        sumM += parseN(r[idx.margen]);
+
+        // Distribución
+        let o = r[idx.origen] || 'Local'; oD[o] = (oD[o]||0) + v;
+        let t = r[idx.turno] || 'N/A'; tD[t] = (tD[t]||0) + v;
+        let m = r[idx.medio] || 'Otro'; if(!mD[m]) mD[m]={s:0,c:0}; mD[m].s += v; mD[m].c++;
+
+        // Mensual (Solo si es Historico)
+        if(currentTab === 'Historico') {
+            const f = r[idx.fecha] || '';
+            const p = f.split('/');
+            if(p.length === 3) {
+                const k = `${p[2]}-${p[1].padStart(2,'0')}`;
+                if(!mensual[k]) mensual[k] = { s:0, t:0, d:new Set(), l:`${MESES[parseInt(p[1])-1]} ${p[2]}` };
+                mensual[k].s += v; mensual[k].t++; mensual[k].d.add(p[0]);
+            }
+        }
+    });
+
+    // KPIs
+    document.getElementById('kTotal').innerText = `$${fmt(sumV)}`;
+    document.getElementById('kMargen').innerText = `$${fmt(sumM)}`;
+    document.getElementById('kAvg').innerText = `$${fmt(sumV/rows.length)}`;
+
+    // Charts
+    updateChart('chartOrigen', 'doughnut', Object.keys(oD), Object.values(oD));
+    updateChart('chartTurno', 'bar', Object.keys(tD), Object.values(tD));
+
+    // PayList
+    document.getElementById('payList').innerHTML = Object.entries(mD).sort((a,b)=>b[1].s-a[1].s).map(e => `
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:4px;">
+            <span>${e[0]} (${e[1].c})</span><b>$${fmt(e[1].s)}</b>
+        </div>`).join('');
+
+    // Grid Mensual
+    if(currentTab === 'Historico') {
+        const keys = Object.keys(mensual).sort().reverse();
+        document.getElementById('monthGrid').innerHTML = keys.map(k => `
+            <div class="mc">
+                <div style="font-family:var(--bebas); font-size:18px; color:var(--green-dark);">${mensual[k].l}</div>
+                <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;"><span>Ventas:</span><b>$${fmt(mensual[k].s)}</b></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--orange);"><span>Tickets/Día:</span><b>${(mensual[k].t/mensual[k].d.size).toFixed(1)}</b></div>
+            </div>`).join('');
     }
-  });
 
-  document.getElementById('kTotal').innerHTML = `<span class="u">$</span>${fmt(totalV)}`;
-  document.getElementById('kMargen').innerHTML = `<span class="u">$</span>${fmt(totalM)}`;
-  document.getElementById('kAvgTicket').innerHTML = `<span class="u">$</span>${fmt(totalV/r.length)}`;
-
-  updateChart('chartOrigen', 'doughnut', Object.keys(oData), Object.values(oData));
-  updateChart('chartTurno', 'bar', Object.keys(tData), Object.values(tData));
-
-  document.getElementById('mediosList').innerHTML = Object.entries(mData).sort((a,b)=>b[1].s-a[1].s).map(e => `
-    <div class="mc-row"><b>${e[0]}</b><span>$${fmt(e[1].s)} (${e[1].c})</span></div>`).join('');
-
-  const sortedM = Object.keys(monthly).sort().slice(-6);
-  updateChart('chartMonthly', 'line', sortedM.map(k=>monthly[k].l), sortedM.map(k=>monthly[k].s));
-  document.getElementById('monthGrid').innerHTML = sortedM.reverse().map(k => `
-    <div class="mc">
-      <div class="mc-month">${monthly[k].l}</div>
-      <div class="mc-stats">
-        <div class="mc-row">Venta <span class="mc-row-val">$${fmt(monthly[k].s)}</span></div>
-        <div class="mc-row">Tickets <span>${monthly[k].t}</span></div>
-        <div class="mc-row">Prom/Día <b style="color:var(--orange)">${(monthly[k].t/monthly[k].d.size).toFixed(1)}</b></div>
-      </div>
-    </div>`).join('');
-
-  document.getElementById('tHead').innerHTML = `<tr>${sheet.headers.slice(0,8).map(h=>`<th>${h}</th>`).join('')}</tr>`;
-  document.getElementById('tBody').innerHTML = r.slice(-50).reverse().map(row => `<tr>${row.slice(0,8).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('');
-  document.getElementById('stTxt').innerText = "Sincronizado";
-  document.getElementById('dot').className = "dot ok";
+    // Tabla
+    document.getElementById('tHead').innerHTML = data[0].map(h => `<th>${h}</th>`).join('');
+    document.getElementById('tBody').innerHTML = rows.slice(-150).reverse().map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
 }
 
 function updateChart(id, type, labels, data) {
-  if(ch[id]) ch[id].destroy();
-  ch[id] = new Chart(document.getElementById(id), {
-    type, data: { labels, datasets:[{ data, backgroundColor:['#2a7d40','#e05a1a','#f5c030','#3a9e52','#5dbf72'] }] },
-    options: { plugins: { legend: { display: type==='doughnut', position:'bottom' } } }
-  });
+    if(charts[id]) charts[id].destroy();
+    charts[id] = new Chart(document.getElementById(id), {
+        type, data: { labels, datasets: [{ data, backgroundColor: ['#2a7d40','#e05a1a','#f5c030','#3a9e52','#5dbf72'] }] },
+        options: { plugins: { legend: { display: type==='doughnut', position: 'bottom' } } }
+    });
 }
 
 fullRefresh();
