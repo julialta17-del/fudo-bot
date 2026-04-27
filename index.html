@@ -164,16 +164,6 @@ main {
 }
 .banner.on { display:flex; }
 .banner-err { border-left-color:var(--red);background:#fff5f5; }
-.banner h3 { font-family:var(--bebas);font-size:17px;letter-spacing:1.5px;color:var(--text); }
-.banner ol { padding-left:18px; }
-.banner li { font-size:13px;color:var(--text2);line-height:1.9; }
-.banner code {
-  background:var(--green-bg);border:1px solid var(--border2);
-  border-radius:4px;padding:1px 6px;
-  font-family:var(--mono);font-size:11px;color:var(--green-dark);
-}
-.banner a { color:var(--orange); }
-.banner .note { font-size:11px;color:var(--muted);font-style:italic; }
 .err-text { font-size:13px;color:var(--red); }
 
 .mapper-bar {
@@ -190,7 +180,6 @@ main {
 }
 .btn-sm { padding:5px 12px;font-size:10px;border-radius:6px; }
 .btn-green { background:var(--green);color:#fff; }
-.btn-green:hover { background:var(--green2); }
 
 .kpi-grid {
   display:grid;
@@ -235,7 +224,6 @@ main {
   font-family:var(--mono);font-size:10px;margin-top:5px;
 }
 .chip.up   { background:var(--green-bg);color:var(--green); }
-.chip.down { background:var(--red-bg);color:var(--red); }
 .chip.neu  { background:var(--yellow-bg);color:#8a6a00; }
 
 @keyframes up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
@@ -363,7 +351,7 @@ footer strong { color:rgba(255,255,255,0.7); }
   <div class="brand">
     <div class="brand-logo">🥗</div>
     <div class="brand-text">
-      <div class="brand-name">BIG <span>SALADS</span>SEXTA</span></div>
+      <div class="brand-name">BIG <span>SALADS</span> SEXTA</div>
       <div class="brand-sub">Dashboard · Análisis de ventas</div>
     </div>
   </div>
@@ -381,22 +369,14 @@ footer strong { color:rgba(255,255,255,0.7); }
   </div>
 </header>
 
-<div class="tabs-wrap" id="tabsWrap">
-  </div>
+<div class="tabs-wrap" id="tabsWrap"></div>
 
 <main>
-
   <div class="banner" id="bannerSetup">
     <h3>⚙️ CONFIGURACIÓN NECESARIA</h3>
     <ol>
-      <li>Abrí: <a href="https://docs.google.com/spreadsheets/d/1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8" target="_blank">Planilla Big Salads en Google Sheets</a></li>
-      <li>Hacé clic en <code>Archivo → Compartir → Publicar en la web</code></li>
-      <li>Desplegable 1: <code>Todo el documento</code></li>
-      <li>Desplegable 2: <code>Valores separados por comas (.csv)</code></li>
-      <li>Clic en <code>Publicar</code> y confirmá</li>
-      <li>Presioná <strong>ACTUALIZAR</strong> en este dashboard</li>
+      <li>Publicar la planilla como CSV en la web.</li>
     </ol>
-    <div class="note">🔒 Publicar en la web solo permite lectura — nadie puede modificar tu planilla.</div>
   </div>
 
   <div class="banner banner-err" id="bannerErr">
@@ -404,14 +384,10 @@ footer strong { color:rgba(255,255,255,0.7); }
   </div>
 
   <div class="mapper-bar" id="mapperBar">
-    <label>FECHA</label>
-    <select id="mDate" onchange="applyMap()"></select>
-    <label>VALOR $</label>
-    <select id="mValue" onchange="applyMap()"></select>
-    <label>CATEGORÍA</label>
-    <select id="mCat" onchange="applyMap()"></select>
+    <label>FECHA</label> <select id="mDate" onchange="applyMap()"></select>
+    <label>VALOR $</label> <select id="mValue" onchange="applyMap()"></select>
+    <label>CATEGORÍA</label> <select id="mCat" onchange="applyMap()"></select>
     <button class="btn btn-green btn-sm" onclick="applyMap()">APLICAR</button>
-    <button class="btn btn-sm" style="background:var(--bg);border:1px solid var(--border)" onclick="document.getElementById('mapperBar').classList.remove('on')">✕</button>
   </div>
 
   <div>
@@ -421,17 +397,17 @@ footer strong { color:rgba(255,255,255,0.7); }
       <div class="sec-note" id="kpiNote">—</div>
     </div>
     <div class="kpi-grid">
-      <div class="kpi" data-c="green" data-ico="💰" style="animation-delay:0s">
+      <div class="kpi" data-c="green" data-ico="💰">
         <div class="kpi-lbl">VENTAS TOTALES</div>
         <div class="kpi-val" id="kTotal"><span class="u">$</span>—</div>
         <div class="chip neu" id="kTotalSub">—</div>
       </div>
-      <div class="kpi" data-c="green" data-ico="🏦" style="animation-delay:0.04s">
+      <div class="kpi" data-c="green" data-ico="🏦">
         <div class="kpi-lbl">EN MANO (MARGEN NETO)</div>
         <div class="kpi-val" id="kMargen"><span class="u">$</span>—</div>
         <div class="chip neu" id="kMargenSub">—</div>
       </div>
-      <div class="kpi" data-c="yellow" data-ico="🎫" style="animation-delay:0.08s">
+      <div class="kpi" data-c="yellow" data-ico="🎫">
         <div class="kpi-lbl">TICKET PROMEDIO</div>
         <div class="kpi-val" id="kAvgTicket"><span class="u">$</span>—</div>
         <div class="kpi-sub" id="kTickets">— transacciones</div>
@@ -440,583 +416,153 @@ footer strong { color:rgba(255,255,255,0.7); }
   </div>
 
   <div>
-    <div class="sec">
-      <div class="sec-title">CANALES · TURNOS · MEDIOS DE PAGO</div>
-      <div class="sec-line"></div>
-    </div>
+    <div class="sec"><div class="sec-title">CANALES · TURNOS · MEDIOS DE PAGO</div><div class="sec-line"></div></div>
     <div class="chart-row" style="grid-template-columns:1fr 1fr 1fr">
       <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">📍 ORIGEN DE VENTAS</div>
-            <div class="card-sub">Local · Pedidos Ya</div>
-          </div>
-        </div>
-        <div class="card-body" style="padding-top:8px;display:flex;flex-direction:column;align-items:center;gap:12px">
-          <canvas id="chartOrigen" height="180"></canvas>
-          <div id="origenList" style="width:100%;font-size:13px;display:flex;flex-direction:column;gap:6px"></div>
-        </div>
+        <div class="card-head"><div class="card-title">📍 ORIGEN DE VENTAS</div></div>
+        <div class="card-body"><canvas id="chartOrigen" height="180"></canvas><div id="origenList" style="width:100%;font-size:13px;display:flex;flex-direction:column;gap:6px"></div></div>
       </div>
-
       <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">🌙 VENTAS POR TURNO</div>
-            <div class="card-sub">Mañana vs Noche</div>
-          </div>
-        </div>
-        <div class="card-body" style="padding-top:8px;display:flex;flex-direction:column;align-items:center;gap:12px">
-          <canvas id="chartTurno" height="180"></canvas>
-          <div id="turnoList" style="width:100%;font-size:13px;display:flex;flex-direction:column;gap:6px"></div>
-        </div>
+        <div class="card-head"><div class="card-title">🌙 VENTAS POR TURNO</div></div>
+        <div class="card-body"><canvas id="chartTurno" height="180"></canvas><div id="turnoList" style="width:100%;font-size:13px;display:flex;flex-direction:column;gap:6px"></div></div>
       </div>
-
       <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">💳 MEDIOS DE PAGO</div>
-            <div class="card-sub">Ingreso $ por método</div>
-          </div>
-        </div>
-        <div class="card-body" style="padding-top:8px;display:flex;flex-direction:column;gap:8px">
-          <div id="mediosList" style="width:100%;font-size:13px;display:flex;flex-direction:column;gap:8px"></div>
-        </div>
+        <div class="card-head"><div class="card-title">💳 MEDIOS DE PAGO</div></div>
+        <div class="card-body"><div id="mediosList" style="width:100%;font-size:13px;display:flex;flex-direction:column;gap:8px"></div></div>
       </div>
     </div>
   </div>
 
-  <div>
-    <div class="sec">
-      <div class="sec-title">🌟 TOP PRODUCTOS MÁS VENDIDOS</div>
-      <div class="sec-line"></div>
-    </div>
-    <div class="chart-row" style="grid-template-columns:1fr 1fr">
+  <div class="chart-row" style="grid-template-columns:1fr 1fr">
       <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">RANKING TOP 5</div>
-            <div class="card-sub">Por cantidad de ventas</div>
-          </div>
-        </div>
-        <div class="card-body" style="padding-top:8px">
-          <canvas id="chartTopProd" height="220"></canvas>
-        </div>
+        <div class="card-head"><div class="card-title">🌟 TOP 5 PRODUCTOS</div></div>
+        <div class="card-body"><canvas id="chartTopProd" height="220"></canvas><div id="topProdList" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;"></div></div>
       </div>
       <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">DETALLE</div>
-            <div class="card-sub">Cantidad · % del total</div>
-          </div>
-        </div>
-        <div class="card-body" style="padding-top:8px">
-          <div id="topProdList" style="display:flex;flex-direction:column;gap:10px"></div>
-        </div>
+        <div class="card-head"><div><div class="card-title">ANÁLISIS MENSUAL</div><div class="card-sub" id="mChartSub">Ventas totales por mes</div></div><div class="toggle-group"><button class="tog on" onclick="switchMChart('ventas')" id="togVentas">$ VENTAS</button><button class="tog" onclick="switchMChart('tickets')" id="togTickets">🎫 TICKETS</button></div></div>
+        <div class="card-body"><canvas id="chartMonthly" height="200"></canvas><div class="month-grid" id="monthGrid"></div></div>
       </div>
-    </div>
   </div>
 
-  <div>
-    <div class="sec">
-      <div class="sec-title">ANÁLISIS POR MES</div>
-      <div class="sec-line"></div>
-      <div class="sec-note">ticket promedio · cantidad vendida · venta total</div>
-    </div>
-
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-head">
-        <div>
-          <div class="card-title">MÉTRICAS MENSUALES</div>
-          <div class="card-sub" id="mChartSub">Ventas totales por mes</div>
-        </div>
-        <div class="toggle-group">
-          <button class="tog on" onclick="switchMChart('ventas')" id="togVentas">$ VENTAS</button>
-          <button class="tog"    onclick="switchMChart('tickets')" id="togTickets">🎫 TICKETS</button>
-          <button class="tog"    onclick="switchMChart('promDia')" id="togPromDia">⌀ PROM/DÍA</button>
-          <button class="tog"    onclick="switchMChart('ticketProm')" id="togTicketProm">⌀ TICKET</button>
-        </div>
-      </div>
-      <div class="card-body" style="padding-top:8px">
-        <canvas id="chartMonthly" height="200"></canvas>
-      </div>
-    </div>
-
-    <div class="month-grid" id="monthGrid">
-      <div style="font-family:var(--mono);font-size:12px;color:var(--muted);padding:20px">Cargando meses…</div>
-    </div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">REGISTROS COMPLETOS</div></div>
+    <div class="tscroll"><table><thead id="tHead"></thead><tbody id="tBody"></tbody></table></div>
   </div>
-
-  <div>
-    <div class="sec">
-      <div class="sec-title">EVOLUCIÓN &amp; DISTRIBUCIÓN</div>
-      <div class="sec-line"></div>
-    </div>
-    <div class="chart-row">
-      <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">VENTAS EN EL TIEMPO</div>
-            <div class="card-sub">Barras + media móvil 7 períodos</div>
-          </div>
-        </div>
-        <div class="card-body" style="padding-top:8px">
-          <canvas id="chartMain" height="230"></canvas>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">DISTRIBUCIÓN</div>
-            <div class="card-sub" id="distSub">Por categoría</div>
-          </div>
-        </div>
-        <div class="card-body" style="padding-top:8px">
-          <canvas id="chartDist" height="210"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div>
-    <div class="sec">
-      <div class="sec-title">PROYECCIONES</div>
-      <div class="sec-line"></div>
-      <div class="sec-note">suavizado exponencial α=0.3</div>
-    </div>
-    <div class="chart-row">
-      <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">PRÓXIMOS PERÍODOS</div>
-            <div class="card-sub">Histórico + curva proyectada</div>
-          </div>
-        </div>
-        <div class="card-body" style="padding-top:8px">
-          <canvas id="chartProj" height="210"></canvas>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">METAS ESTIMADAS</div>
-            <div class="card-sub">Progreso vs. techo proyectado</div>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="pbars" id="projBars">Calculando…</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div>
-    <div class="sec">
-      <div class="sec-title">DATOS CRUDOS</div>
-      <div class="sec-line"></div>
-      <button class="btn btn-sm" style="background:var(--bg);border:1px solid var(--border);color:var(--muted);font-size:10px"
-        onclick="document.getElementById('mapperBar').classList.toggle('on')">
-        ⚙ COLUMNAS
-      </button>
-    </div>
-    <div class="card">
-      <div class="card-head">
-        <div>
-          <div class="card-title">PLANILLA COMPLETA</div>
-          <div class="card-sub" id="tableSub">—</div>
-        </div>
-      </div>
-      <div class="tscroll">
-        <table>
-          <thead id="tHead"></thead>
-          <tbody id="tBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
 </main>
 
-<footer>
-  <div>BIG SALADS SEXTA ® · <strong>DASHBOARD ANALÍTICO</strong> · AUTO-REFRESH 5 MIN</div>
-  <div id="footerDate">—</div>
-</footer>
+<footer><div>BIG SALADS SEXTA ® · DASHBOARD ANALÍTICO</div><div id="footerDate">—</div></footer>
 
 <script>
-// ══════════════════════════════════════════════════════
-// CONFIG
-// ══════════════════════════════════════════════════════
-const SHEET_ID = '1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8';
-const PUB_ID   = '2PACX-1vSqXw7W2kUj_BsUyLKYmRIIZyYacKR9nYbaeXRFqSPzBVZuyCuj7Vl_Cf13tTTJAq9jGVXudNqWfiiC';
-const REFRESH  = 5 * 60 * 1000;
+const PUB_ID = '2PACX-1vSqXw7W2kUj_BsUyLKYmRIIZyYacKR9nYbaeXRFqSPzBVZuyCuj7Vl_Cf13tTTJAq9jGVXudNqWfiiC';
+const REFRESH = 5 * 60 * 1000;
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+let sheets = [], active = 'Hoja 1', map = { date: null, value: null, cat: null }, ch = {}, mMode = 'ventas', monthly = [];
 
-const SHEET_DISPLAY_NAMES = {
-  'Hoja 1': 'Resumen del día'
-};
+const $ = id => document.getElementById(id);
+const fmt = n => n == null || isNaN(n) ? '—' : new Intl.NumberFormat('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
+const parseN = s => { let c = String(s||'').replace(/[^\d.,\-]/g,'').replace(',','.'); let n = parseFloat(c); return isNaN(n)?0:n; };
+const parseDateVal = s => { if(!s) return null; const dmy=String(s).match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/); if(dmy){ const y=dmy[3].length===2?'20'+dmy[3]:dmy[3]; return new Date(`${y}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`); } const d=new Date(s); return isNaN(d.getTime())?null:d; };
 
-const NEVER_MONEY_COLS = new Set([
-  'id', 'fecha_texto', 'fecha', 'hora_exacta', 'hora',
-  'turno', 'cliente', 'origen', 'medio de pago', 'medio_de_pago',
-  'detalle_productos', 'detalle productos'
-]);
-
-// ══════════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════════
-let sheets  = [];
-let active  = 'Hoja 1';
-let map     = { date: null, value: null, cat: null };
-let ch      = {};
-let mMode   = 'ventas';
-let monthly = [];
-
-// ══════════════════════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════════════════════
-const $   = id => document.getElementById(id);
-const fmt = n => n == null || isNaN(n) ? '—'
-  : new Intl.NumberFormat('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
-const fmtD = s => {
-  try{return new Date(s).toLocaleDateString('es-AR',{day:'2-digit',month:'short'})} catch{return s;}
-};
-const MES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
-function parseN(s){
-  if(s===''||s==null) return null;
-  const c = String(s).replace(/[^\d.,\-]/g,'').replace(',','.');
-  const n = parseFloat(c); return isNaN(n)?null:n;
-}
-
-function isNumC(rows,i){
-  let h=0;
-  for(let r=0;r<Math.min(15,rows.length);r++) if(parseN(rows[r][i])!==null) h++;
-  return h >= Math.min(8, rows.length*0.55);
-}
-
-function isDateC(rows,i){
-  let h=0;
-  for(let r=0;r<Math.min(10,rows.length);r++){
-    const v=String(rows[r][i]||'');
-    if(/\d{1,4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,4}/.test(v)||(!isNaN(Date.parse(v))&&v.length>4)) h++;
-  }
-  return h>=4;
-}
-
-function parseDateVal(s){
-  if(!s) return null;
-  const dmy=String(s).match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
-  if(dmy){
-    const y=dmy[3].length===2?'20'+dmy[3]:dmy[3];
-    return new Date(`${y}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`);
-  }
-  const d=new Date(s); return isNaN(d.getTime())?null:d;
-}
-function mKey(d){ return d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`:null; }
-
-function setSt(state,txt){
-  $('dot').className='dot '+state;
-  $('stTxt').textContent=txt;
-}
-function load(on,msg=''){
-  $('loader').classList.toggle('on',on);
-  if(msg) $('loaderTxt').textContent=msg;
-}
-
-function parseCSV(txt){
-  const rows=[];let cur='',inQ=false,row=[];
-  for(let i=0;i<txt.length;i++){
-    const c=txt[i];
-    if(c==='"'){if(inQ&&txt[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;continue;}
-    if(c===','&&!inQ){row.push(cur.trim());cur='';continue;}
-    if((c==='\n'||c==='\r')&&!inQ){
-      if(c==='\r'&&txt[i+1]==='\n')i++;
-      row.push(cur.trim());cur='';
-      if(row.some(v=>v!==''))rows.push(row);
-      row=[];continue;
-    }
-    cur+=c;
-  }
-  if(cur||row.length){row.push(cur.trim());if(row.some(v=>v!==''))rows.push(row);}
-  return rows;
-}
-
-async function discoverSheets(){
-  return [
-    {name:'Hoja 1'},
-    {name:'Historico'},
-    {name:'Analisis_Clientes'},
-    {name:'Dashboard_Macro'},
-    {name:'Maestro_Costos'},
-    {name:'Matriz_Productos'},
-    {name:'Analisis_Medianas'},
-    {name:'campanas'}
-  ];
-}
+function isNumC(rows,i){ let h=0; for(let r=0;r<Math.min(15,rows.length);r++) if(parseN(rows[r][i])!==null) h++; return h >= Math.min(8, rows.length*0.55); }
+function parseCSV(txt){ const rows=[];let cur='',inQ=false,row=[];for(let i=0;i<txt.length;i++){const c=txt[i];if(c==='"'){if(inQ&&txt[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;continue;}if(c===','&&!inQ){row.push(cur.trim());cur='';continue;}if((c==='\n'||c==='\r')&&!inQ){if(c==='\r'&&txt[i+1]==='\n')i++;row.push(cur.trim());cur='';if(row.some(v=>v!==''))rows.push(row);row=[];continue;}cur+=c;}if(cur||row.length){row.push(cur.trim());if(row.some(v=>v!==''))rows.push(row);}return rows;}
 
 async function loadSheet(name){
   const url = `https://docs.google.com/spreadsheets/d/e/${PUB_ID}/pub?output=csv&sheet=${encodeURIComponent(name)}&_=${Date.now()}`;
-  try{
-    const r=await fetch(url,{cache:'no-store'});
-    if(!r.ok) return null;
-    const buf=await r.arrayBuffer();
-    const txt=new TextDecoder('utf-8').decode(buf);
-    const all=parseCSV(txt);
-    if(!all.length||all[0].length<1) return null;
-    const rows=all.slice(1).filter(r=>r.some(v=>v));
-    return {name, headers:all[0], rows};
-  }catch{return null;}
+  try { const r=await fetch(url); const txt=await r.text(); const all=parseCSV(txt); return { name, headers: all[0], rows: all.slice(1).filter(r=>r.some(v=>v)) }; } catch { return null; }
 }
-
-const NON_NUMERIC_COLS = ['id','fecha_texto','fecha','hora_exacta','hora','turno','cliente','origen','medio de pago','medio_de_pago','detalle_productos','detalle productos'];
 
 function autoDetect(headers,rows){
   const h=headers.map(x=>String(x||'').toLowerCase().trim());
-  let dateIdx=h.findIndex(x=>x==='fecha_texto'||x==='fecha');
-  let valIdx=h.findIndex(x=>x==='total');
-  if(valIdx<0){
-    const numCols=headers.map((_,i)=>isNumC(rows,i)?i:-1)
-      .filter(i=>i>=0 && !NON_NUMERIC_COLS.includes(h[i]));
-    valIdx=numCols.find(i=>/^(costo_total_venta|margen_neto)/.test(h[i]))??
-           numCols.find(i=>/total|monto|ingreso|venta|importe/i.test(h[i]))??
-           numCols[0]??-1;
-  }
-  let catIdx=h.findIndex(x=>x==='medio de pago'||x==='medio_de_pago');
-  if(catIdx<0) catIdx=h.findIndex(x=>x==='detalle_productos'||x==='detalle productos');
-  if(catIdx<0) catIdx=h.findIndex(x=>x==='origen');
-  return {date:dateIdx>=0?dateIdx:null, value:valIdx>=0?valIdx:null, cat:catIdx>=0?catIdx:null};
+  let dIdx=h.findIndex(x=>x==='fecha_texto'||x==='fecha');
+  let vIdx=h.findIndex(x=>x==='total');
+  let cIdx=h.findIndex(x=>x==='medio de pago'||x==='medio_de_pago');
+  return {date:dIdx>=0?dIdx:null, value:vIdx>=0?vIdx:null, cat:cIdx>=0?cIdx:null};
 }
-
-function getData(){
-  const s=sheets.find(s=>s.name===active);
-  return s?{headers:s.headers,rows:s.rows}:{headers:[],rows:[]};
-}
-
-function calcMonthly(rows){
-  if(map.date===null||map.value===null) return[];
-  const byM={};
-  for(const row of rows){
-    const d=parseDateVal(row[map.date]);
-    const v=parseN(row[map.value]);
-    if(!d) continue;
-    const k=mKey(d);
-    if(!byM[k]) byM[k]={key:k,year:d.getFullYear(),month:d.getMonth(),sum:0,count:0,days:new Set()};
-    byM[k].count++;
-    if(v!==null){ byM[k].sum+=v; byM[k].days.add(d.toDateString()); }
-  }
-  return Object.values(byM)
-    .sort((a,b)=>a.key.localeCompare(b.key))
-    .map(m=>({
-      ...m,
-      label:`${MES[m.month].slice(0,3).toUpperCase()} ${m.year}`,
-      fullLabel:MES[m.month],
-      avgPerDay: m.days.size>0 ? m.sum/m.days.size : 0,
-      avgTicket:  m.count>0 ? m.sum/m.count : 0,
-      daysCount:  m.days.size
-    }));
-}
-
-let chOrigen=null,chTurno=null,chTopProd=null;
 
 function renderKPIs(rows){
-  const vals=map.value!==null?rows.map(r=>parseN(r[map.value])).filter(v=>v!==null):[];
-  if(!vals.length) return;
-
+  const vals=rows.map(r=>parseN(r[map.value]));
   const total=vals.reduce((a,b)=>a+b,0);
-  const count=rows.length;
-  const avgTicket=total/count;
-
-  let distinctDays=new Set();
-  if(map.date!==null){
-    rows.forEach(r=>{const d=parseDateVal(r[map.date]);if(d)distinctDays.add(d.toDateString());});
-  }
-  const days=distinctDays.size||count;
-  const avgDay=total/days;
-
+  const avgT=total/rows.length;
   const headers=getData().headers;
-  const margenIdx=headers.findIndex(h=>/margen_neto_.*\$|margen.*neto/i.test(h));
-  const margenTotal=margenIdx>=0?rows.reduce((a,r)=>{const v=parseN(r[margenIdx]);return v!==null?a+v:a;},0):null;
-  const margenPct=margenTotal!==null&&total>0?((margenTotal/total)*100).toFixed(1):null;
+  const mIdx=headers.findIndex(h=>/margen.*neto/i.test(h));
+  const totalM=mIdx>=0?rows.reduce((a,r)=>a+parseN(r[mIdx]),0):0;
 
   $('kTotal').innerHTML=`<span class="u">$</span>${fmt(total)}`;
-  $('kMargen').innerHTML=margenTotal!==null ?`<span class="u">$</span>${fmt(margenTotal)}` :`<span style="font-size:14px;color:var(--muted)">—</span>`;
-  if($('kMargenSub')) $('kMargenSub').textContent=margenPct?`${margenPct}% del total`:'';
-
-  $('kAvgTicket').innerHTML=`<span class="u">$</span>${fmt(avgTicket)}`;
-  $('kTickets').textContent=`${fmt(count)} ventas`;
-  $('kpiNote').textContent=`${count} ventas · ${days} días con actividad`;
-  $('tableSub').textContent=`${count} filas · últimas 100 mostradas`;
-
-  renderOrigen(rows, headers);
-  renderTurnos(rows, headers);
-  renderMediosPago(rows, headers);
-  renderTopProductos(rows, headers);
+  $('kMargen').innerHTML=`<span class="u">$</span>${fmt(totalM)}`;
+  $('kAvgTicket').innerHTML=`<span class="u">$</span>${fmt(avgT)}`;
+  $('kTickets').textContent=`${rows.length} ventas`;
+  
+  renderCharts(rows, headers);
 }
 
-function renderOrigen(rows, headers){
-  const origenIdx=headers.findIndex(h=>/^origen$/i.test(h.trim()));
-  const valIdx=map.value;
-  if(origenIdx<0) return;
-  const byOrigen={};
-  rows.forEach(r=>{
-    const raw=String(r[origenIdx]||'').trim();
-    const o=(raw===''||raw==='—'||raw==='-')?'Local':raw;
-    const v=valIdx!==null?parseN(r[valIdx]):1;
-    if(!byOrigen[o]) byOrigen[o]={sum:0,count:0};
-    byOrigen[o].sum+=(v||0);
-    byOrigen[o].count++;
+function renderCharts(rows, headers){
+  const oIdx=headers.findIndex(h=>/^origen$/i.test(h.trim()));
+  if(oIdx>=0){
+    const byO={}; rows.forEach(r=>{ let o=r[oIdx]||'Local'; if(o==='—'||o==='-')o='Local'; byO[o]=(byO[o]||0)+parseN(r[map.value]); });
+    if(ch.origen) ch.origen.destroy();
+    ch.origen=new Chart($('chartOrigen'),{type:'doughnut',data:{labels:Object.keys(byO),datasets:[{data:Object.values(byO),backgroundColor:['#2a7d40','#e05a1a','#f5c030']}]}});
+  }
+  const tIdx=headers.findIndex(h=>/^turno$/i.test(h.trim()));
+  if(tIdx>=0){
+    const byT={}; rows.forEach(r=>{ let t=r[tIdx]||'N/A'; byT[t]=(byT[t]||0)+parseN(r[map.value]); });
+    if(ch.turno) ch.turno.destroy();
+    ch.turno=new Chart($('chartTurno'),{type:'bar',data:{labels:Object.keys(byT),datasets:[{data:Object.values(byT),backgroundColor:'#3a9e52'}]},options:{plugins:{legend:{display:false}}}});
+  }
+  const mIdx=headers.findIndex(h=>/medio.*pago/i.test(h));
+  if(mIdx>=0){
+    const byM={}; rows.forEach(r=>{ let m=r[mIdx]||'Otro'; if(!byM[m])byM[m]={s:0,c:0}; byM[m].s+=parseN(r[map.value]); byM[m].c++; });
+    $('mediosList').innerHTML=Object.entries(byM).sort((a,b)=>b[1].s-a[1].s).map(e=>`<div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span>${e[0]}</span><b>$${fmt(e[1].s)}</b></div>`).join('');
+  }
+  const dIdx=headers.findIndex(h=>/detalle_productos|detalle productos/i.test(h.trim()));
+  if(dIdx>=0){
+    const c={}; rows.forEach(r=>{ (r[dIdx]||'').split(',').forEach(p=>{ const n=p.split('x')[0].trim(); if(n.length>3) c[n]=(c[n]||0)+1; }); });
+    const s=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    if(ch.top) ch.top.destroy();
+    ch.top=new Chart($('chartTopProd'),{type:'bar',data:{labels:s.map(e=>e[0]),datasets:[{data:s.map(e=>e[1]),backgroundColor:'#2a7d40'}]},options:{indexAxis:'y',plugins:{legend:{display:false}}}});
+    $('topProdList').innerHTML=s.map(e=>`<div style="display:flex;justify-content:space-between;font-size:12px;"><span>${e[0]}</span><b>${e[1]} uds</b></div>`).join('');
+  }
+
+  // Lógica mensual robusta
+  const monthlyData = {};
+  rows.forEach(r => {
+    const d = parseDateVal(r[map.date]);
+    if(d) {
+      const k = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+      if(!monthlyData[k]) monthlyData[k] = { v:0, t:0, d:new Set(), l:`${MESES[d.getMonth()]} ${d.getFullYear()}` };
+      monthlyData[k].v += parseN(r[map.value]);
+      monthlyData[k].t++;
+      monthlyData[k].d.add(d.getDate());
+    }
   });
-  const sorted=Object.entries(byOrigen).sort((a,b)=>b[1].sum-a[1].sum);
-  const total=sorted.reduce((a,b)=>a+b[1].sum,0);
-  const COLORS=['#2a7d40','#e05a1a','#f5c030','#5dbf72','#a0522d'];
-  if(chOrigen) chOrigen.destroy();
-  const ctx=$('chartOrigen');
-  if(ctx) chOrigen=new Chart(ctx,{type:'doughnut',data:{labels:sorted.map(([k])=>k),datasets:[{data:sorted.map(([,v])=>v.sum),backgroundColor:COLORS,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}}});
-  const list=$('origenList');
-  if(list) list.innerHTML=sorted.map(([k,v],i)=>{ const pct=total>0?((v.sum/total)*100).toFixed(1):0; return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:8px;background:var(--bg1)"><span style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:${COLORS[i]};flex-shrink:0"></span><span style="font-weight:500">${k}</span><span style="color:var(--muted);font-size:11px">${v.count} ventas</span></span><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--green-dark)">$${fmt(v.sum)} <span style="color:var(--muted);font-weight:400">(${pct}%)</span></span></div>`;}).join('');
+  const sortedK = Object.keys(monthlyData).sort().reverse();
+  if(ch.monthly) ch.monthly.destroy();
+  ch.monthly = new Chart($('chartMonthly'), { type:'line', data: { labels: [...sortedK].reverse().map(k=>monthlyData[k].l), datasets: [{ label:'Ventas', data:[...sortedK].reverse().map(k=>monthlyData[k].v), borderColor:'#2a7d40', tension:0.3 }] } });
+  $('monthGrid').innerHTML = sortedK.map(k => `<div class="mc"><div class="mc-month">${monthlyData[k].l}</div><div class="mc-stats"><div class="mc-row">Ventas <span class="mc-row-val g">$${fmt(monthlyData[k].v)}</span></div><div class="mc-row">Tickets/Día <b style="color:var(--orange)">${(monthlyData[k].t/monthlyData[k].d.size).toFixed(1)}</b></div></div></div>`).join('');
 }
 
-function renderTurnos(rows, headers){
-  const turnoIdx=headers.findIndex(h=>/^turno$/i.test(h.trim()));
-  const valIdx=map.value;
-  if(turnoIdx<0) return;
-  const byTurno={};
-  rows.forEach(r=>{ const t=String(r[turnoIdx]||'').trim()||'Sin dato'; const v=valIdx!==null?parseN(r[valIdx]):0; if(!byTurno[t]) byTurno[t]={sum:0,count:0}; byTurno[t].sum+=(v||0); byTurno[t].count++; });
-  const sorted=Object.entries(byTurno).sort((a,b)=>b[1].sum-a[1].sum);
-  const COLORS=['#1a5430','#3a9e52','#5dbf72','#a8dab5'];
-  if(chTurno) chTurno.destroy();
-  const ctx=$('chartTurno');
-  if(ctx) chTurno=new Chart(ctx,{type:'bar',data:{labels:sorted.map(([k])=>k),datasets:[{label:'Ventas $',data:sorted.map(([,v])=>v.sum),backgroundColor:COLORS,borderRadius:8,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$'+fmt(v)},grid:{color:'rgba(0,0,0,0.05)'}},x:{grid:{display:false}}}}});
-  const list=$('turnoList');
-  if(list){ const total=sorted.reduce((a,b)=>a+b[1].sum,0); list.innerHTML=sorted.map(([k,v],i)=>{ const pct=total>0?((v.sum/total)*100).toFixed(1):0; return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:8px;background:var(--bg1)"><span style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:${COLORS[i]};flex-shrink:0"></span><span style="font-weight:500">${k}</span><span style="color:var(--muted);font-size:11px">${v.count} ventas</span></span><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--green-dark)">$${fmt(v.sum)} <span style="color:var(--muted);font-weight:400">(${pct}%)</span></span></div>`;}).join(''); }
-}
-
-function renderMediosPago(rows, headers){
-  const medioIdx=headers.findIndex(h=>/medio.*pago|medio_de_pago/i.test(h.trim()));
-  const valIdx=map.value;
-  if(medioIdx<0) return;
-  const byMedio={};
-  rows.forEach(r=>{ const m=String(r[medioIdx]||'').trim()||'Sin dato'; const v=valIdx!==null?parseN(r[valIdx]):0; if(!byMedio[m]) byMedio[m]={sum:0,count:0}; byMedio[m].sum+=(v||0); byMedio[m].count++; });
-  const sorted=Object.entries(byMedio).sort((a,b)=>b[1].sum-a[1].sum);
-  const total=sorted.reduce((a,b)=>a+b[1].sum,0);
-  const COLORS=['#2a7d40','#3a9e52','#5dbf72','#e05a1a','#f5c030','#a8dab5'];
-  const list=$('mediosList');
-  if(list) list.innerHTML=sorted.map(([k,v],i)=>{ const pct=total>0?((v.sum/total)*100).toFixed(1):0; const barW=total>0?((v.sum/total)*100).toFixed(0):0; return `<div style="padding:8px 10px;border-radius:10px;background:var(--bg1);display:flex;flex-direction:column;gap:5px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:7px;font-weight:500">💳 ${k}</span><span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--green-dark)">$${fmt(v.sum)}</span></div><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;border-radius:99px;background:var(--border);overflow:hidden"><div style="width:${barW}%;height:100%;background:${COLORS[i%COLORS.length]};border-radius:99px;transition:width 0.8s ease"></div></div><span style="font-size:11px;color:var(--muted);font-family:var(--mono);min-width:50px;text-align:right">${pct}% · ${v.count} ventas</span></div></div>`;}).join('');
-}
-
-function renderTopProductos(rows, headers){
-  const detIdx=headers.findIndex(h=>/detalle_productos|detalle productos/i.test(h.trim()));
-  if(detIdx<0) return;
-  const conteo={};
-  rows.forEach(r=>{ const cell=String(r[detIdx]||'').trim(); if(!cell) return; cell.split(',').forEach(p=>{ const clean=p.replace(/\s*x\d+\s*/gi,'').trim(); if(clean) conteo[clean]=(conteo[clean]||0)+1; }); });
-  const sorted=Object.entries(conteo).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const totalVendidos=sorted.reduce((a,b)=>a+b[1],0);
-  const COLORS=['#2a7d40','#3a9e52','#5dbf72','#e05a1a','#f5c030'];
-  if(chTopProd) chTopProd.destroy();
-  const ctx=$('chartTopProd');
-  if(ctx) chTopProd=new Chart(ctx,{type:'bar',data:{labels:sorted.map(([k])=>k.slice(0,22)),datasets:[{label:'Vendidos',data:sorted.map(([,v])=>v),backgroundColor:COLORS,borderRadius:8,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{stepSize:1}},y:{grid:{display:false}}}}});
-  const list=$('topProdList');
-  if(list){ const maxV=sorted[0]?.[1]||1; list.innerHTML=sorted.map(([k,v],i)=>{ const pct=totalVendidos>0?((v/totalVendidos)*100).toFixed(1):0; const barW=((v/maxV)*100).toFixed(0); return `<div style="display:flex;flex-direction:column;gap:5px;padding:8px 10px;border-radius:10px;background:var(--bg1)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;background:${COLORS[i]};color:#fff;font-family:var(--bebas);font-size:14px;display:flex;align-items:center;justify-content:center">${i+1}</span><span style="font-weight:500;font-size:13px">${k}</span></span><span style="font-family:var(--mono);font-weight:700;color:var(--green-dark)">${v} uds.</span></div><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;border-radius:99px;background:var(--border);overflow:hidden"><div style="width:${barW}%;height:100%;background:${COLORS[i]};border-radius:99px;transition:width 0.8s ease"></div></div><span style="font-size:11px;color:var(--muted);font-family:var(--mono);min-width:40px;text-align:right">${pct}%</span></div></div>`;}).join(''); }
-}
-
-function renderMonthCards(data){
-  if(!data.length){ $('monthGrid').innerHTML='<div style="font-family:var(--mono);font-size:12px;color:var(--muted);padding:12px">Sin datos de fecha para análisis mensual.</div>'; return; }
-  const maxSum=Math.max(...data.map(m=>m.sum));
-  $('monthGrid').innerHTML=data.slice(-12).reverse().map((m,i)=>`
-    <div class="mc" style="animation-delay:${i*0.04}s">
-      <div class="mc-head">
-        <div class="mc-month">${m.fullLabel}</div>
-        <div class="mc-year">${m.year}<br><span style="color:var(--muted)">${m.daysCount} días</span></div>
-      </div>
-      <div class="mc-stats">
-        <div class="mc-row"><span class="mc-row-lbl">VENTA TOTAL</span><span class="mc-row-val g">$${fmt(m.sum)}</span></div>
-        <div class="mc-row"><span class="mc-row-lbl">CANTIDAD VENTAS</span><span class="mc-row-val o">${fmt(m.count)}</span></div>
-        <div class="mc-row"><span class="mc-row-lbl">TICKET PROMEDIO</span><span class="mc-row-val y">$${fmt(m.avgTicket)}</span></div>
-        <div class="mc-row"><span class="mc-row-lbl">PROM. POR DÍA</span><span class="mc-row-val g">$${fmt(m.avgPerDay)}</span></div>
-      </div>
-      <div class="mc-bar-wrap"><div class="mc-bar" style="width:${Math.round(m.sum/maxSum*100)}%"></div></div>
-    </div>`).join('');
-}
-
-function renderMonthlyChart(data){
-  if(ch.monthly) ch.monthly.destroy(); if(!data.length) return;
-  const labels=data.map(m=>m.label);
-  const dataMap={ventas:data.map(m=>m.sum),tickets:data.map(m=>m.count),promDia:data.map(m=>m.avgPerDay),ticketProm:data.map(m=>m.avgTicket)};
-  const isMoney=mMode!=='tickets';
-  ch.monthly=new Chart($('chartMonthly').getContext('2d'),{type:'bar',data:{labels,datasets:[{data:dataMap[mMode],backgroundColor:'rgba(42,125,64,0.25)',borderColor:'#2a7d40',borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7a9a82',font:{size:10}},grid:{color:'rgba(200,220,200,0.4)'}},y:{ticks:{color:'#7a9a82',callback:v=>(isMoney?'$':'')+fmt(v)},grid:{color:'rgba(200,220,200,0.4)'}}}}});
-}
-
-function switchMChart(mode){ mMode=mode; ['Ventas','Tickets','PromDia','TicketProm'].forEach(m=>$('tog'+m).classList.toggle('on',m.toLowerCase()===mode.toLowerCase())); renderMonthlyChart(monthly); }
-
-function renderMain(rows){
-  if(ch.main) ch.main.destroy();
-  const vals=map.value!==null?rows.map(r=>parseN(r[map.value])).filter(v=>v!==null):[];
-  if(!vals.length) return;
-  const rolling=vals.map((v,i)=>{ const w=vals.slice(Math.max(0,i-6),i+1); return w.reduce((a,b)=>a+b,0)/w.length; });
-  ch.main=new Chart($('chartMain').getContext('2d'),{data:{labels:rows.map((r,i)=>map.date?fmtD(r[map.date]):`#${i+1}`),datasets:[{type:'bar',label:'Venta',data:vals,backgroundColor:'rgba(42,125,64,0.22)',borderColor:'rgba(42,125,64,0.5)',borderWidth:1,borderRadius:4,order:2},{type:'line',label:'Media móvil 7',data:rolling,borderColor:'#e05a1a',borderWidth:2.5,pointRadius:0,tension:0.4,order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a9a82',boxWidth:12}},tooltip:{backgroundColor:'#1a5430',callbacks:{label:ctx=>` $${fmt(ctx.parsed.y)}`}}},scales:{x:{ticks:{color:'#7a9a82',maxTicksLimit:14},grid:{color:'rgba(200,220,200,0.4)'}},y:{ticks:{color:'#7a9a82',callback:v=>'$'+fmt(v)},grid:{color:'rgba(200,220,200,0.4)'}}}}});
-}
-
-function renderDist(rows){
-  if(ch.dist) ch.dist.destroy(); if(map.cat===null||map.value===null) return;
-  const grp={}; rows.forEach(r=>{ const c=r[map.cat]||'Otro'; const v=parseN(r[map.value]); if(v!==null) grp[c]=(grp[c]||0)+v; });
-  const ents=Object.entries(grp).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  ch.dist=new Chart($('chartDist').getContext('2d'),{type:'doughnut',data:{labels:ents.map(e=>e[0]),datasets:[{data:ents.map(e=>e[1]),backgroundColor:['#2a7d40','#e05a1a','#f5c030','#5dbf72','#a03020','#c8a030','#3a9e52','#e08050'],borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#3a5040',boxWidth:12}},tooltip:{backgroundColor:'#1a5430',callbacks:{label:c=>` $${fmt(c.parsed)}`}}}}});
-}
-
-function renderProj(rows){
-  if(ch.proj) ch.proj.destroy(); const vals=map.value!==null?rows.map(r=>parseN(r[map.value])).filter(v=>v!==null):[]; if(vals.length<3) return;
-  const avg=vals.reduce((a,b)=>a+b,0)/vals.length; let s=vals[vals.length-1]; const proj=[];
-  for(let i=1;i<=6;i++){ s=s*(0.7)+avg*0.3; proj.push(Math.round(s*(0.95+Math.random()*0.1))); }
-  ch.proj=new Chart($('chartProj').getContext('2d'),{type:'line',data:{labels:[...Array(6).fill('H'),...Array(6).fill('P')],datasets:[{label:'Histórico',data:[...vals.slice(-6),...Array(6).fill(null)],borderColor:'#2a7d40',borderWidth:2.5,pointRadius:4,tension:0.3},{label:'Proyección',data:[...Array(6).fill(null),vals[vals.length-1],...proj],borderColor:'#e05a1a',borderWidth:2.5,borderDash:[6,4],pointRadius:3,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#3a5040',boxWidth:12}},tooltip:{backgroundColor:'#1a5430',callbacks:{label:c=>` $${fmt(c.parsed.y)}`}}},scales:{x:{ticks:{color:'#7a9a82'},grid:{color:'rgba(200,220,200,0.4)'}},y:{ticks:{color:'#7a9a82',callback:v=>'$'+fmt(v)},grid:{color:'rgba(200,220,200,0.4)'}}}}});
-  const total=vals.reduce((a,b)=>a+b,0); const maxV=Math.max(...vals);
-  const rows2=[{l:'Ventas actuales',v:total,max:total},{l:'Proyección próx. 6',v:proj.reduce((a,b)=>a+b,0),max:total},{l:'Ticket promedio',v:avg,max:maxV}];
-  $('projBars').innerHTML=rows2.map(({l,v,max})=>`<div class="prow"><div class="prow-lbl">${l}</div><div class="ptrack"><div class="pfill" style="width:${Math.min(100,Math.round(v/Math.max(max,1)*100))}%"></div></div><div class="pval">$${fmt(v)}</div></div>`).join('');
-}
-
-function renderTable(headers,rows){
-  if(!rows.length) return;
-  const dateSet=new Set(headers.map((_,i)=>isDateC(rows,i)?i:-1).filter(i=>i>=0));
-  const numSet=new Set(headers.map((_,i)=>!NEVER_MONEY_COLS.has(String(headers[i]).toLowerCase().trim()) && !dateSet.has(i) && isNumC(rows,i)?i:-1).filter(i=>i>=0));
-  $('tHead').innerHTML=`<tr>${headers.map(h=>`<th>${h||'—'}</th>`).join('')}</tr>`;
-  $('tBody').innerHTML=rows.slice(-100).reverse().map(row=>`<tr>${headers.map((_,i)=>{ const v=row[i]??'—'; if(numSet.has(i)){ const n=parseN(v); return`<td class="td-n">${n!==null?'$'+fmt(n):'—'}</td>`; } return dateSet.has(i)?`<td class="td-d">${v}</td>`:`<td>${v}</td>`; }).join('')}</tr>`).join('');
-}
-
-function buildMapper(headers){
-  const opts=headers.map((h,i)=>`<option value="${i}">${h||`Col ${i+1}`}</option>`).join('');
-  ['mDate','mValue','mCat'].forEach(id=>{ $(id).innerHTML='<option value="-1">— ninguna —</option>'+opts; if(map[id.slice(1).toLowerCase()]!==null) $(id).value=map[id.slice(1).toLowerCase()]; });
-}
-function applyMap(){ map.date=parseInt($('mDate').value); map.value=parseInt($('mValue').value); map.cat=parseInt($('mCat').value); renderAll(); }
-
-function renderAll(){
-  const {headers,rows}=getData(); if(!rows.length) return;
-  if(map.date===null) map=autoDetect(headers,rows);
-  buildMapper(headers); monthly=calcMonthly(rows);
-  renderKPIs(rows); renderMonthCards(monthly); renderMonthlyChart(monthly); renderMain(rows); renderDist(rows); renderProj(rows); renderTable(headers,rows);
-}
-
-function buildTabs(){
-  const wrap=$('tabsWrap'); wrap.querySelectorAll('.tab[data-sheet]').forEach(t=>t.remove());
-  sheets.forEach(s=>{ const btn=document.createElement('button'); btn.className='tab'; btn.dataset.sheet=s.name; btn.id='tab_'+s.name; btn.onclick=()=>switchTab(s.name); btn.innerHTML=`📄 ${(SHEET_DISPLAY_NAMES[s.name]||s.name).toUpperCase()} <span class="tab-count">${fmt(s.rows.length)}</span>`; wrap.appendChild(btn); });
-  updateTabHighlight();
-}
-
-function updateTabHighlight(){ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.sheet===active)); }
-function switchTab(name){ active=name; updateTabHighlight(); renderAll(); }
+function getData(){ return sheets.find(s=>s.name===active) || {headers:[],rows:[]}; }
 
 async function fullRefresh(){
-  $('refIco').classList.add('spin'); setSt('spin','Actualizando…');
-  try{
-    load(true,'BIG ESTA COCINANDO…'); const discovered=await discoverSheets(); const loaded=[];
-    for(const sh of discovered){ const d=await loadSheet(sh.name); if(d) loaded.push(d); }
-    if(!loaded.length){ load(false); $('bannerSetup').classList.add('on'); setSt('err','Sin acceso'); return; }
-    $('bannerSetup').classList.remove('on'); sheets=loaded; buildTabs();
-    if(!sheets.find(s=>s.name===active)) active=sheets[0].name;
-    renderAll(); setSt('ok',`${sheets.length} hojas`);
-    $('footerDate').textContent='ÚLTIMA ACTUALIZACIÓN: '+new Date().toLocaleString('es-AR');
-  }catch(err){ setSt('err','Error'); }
-  load(false); $('refIco').classList.remove('spin');
+  $('loader').classList.add('on');
+  const targets = ['Hoja 1', 'Historico'];
+  sheets = [];
+  for(const t of targets){ const s=await loadSheet(t); if(s) sheets.push(s); }
+  const wrap=$('tabsWrap'); wrap.innerHTML='';
+  sheets.forEach(s=>{
+    const btn=document.createElement('button');
+    btn.className=`tab ${s.name===active?'active':''}`;
+    btn.innerText=s.name.toUpperCase();
+    btn.onclick=()=>{ active=s.name; fullRefresh(); };
+    wrap.appendChild(btn);
+  });
+  const d=getData(); map=autoDetect(d.headers,d.rows);
+  renderKPIs(d.rows);
+  $('tHead').innerHTML=`<tr>${d.headers.slice(0,8).map(h=>`<th>${h}</th>`).join('')}</tr>`;
+  $('tBody').innerHTML=d.rows.slice(-50).reverse().map(r=>`<tr>${r.slice(0,8).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('');
+  $('loader').classList.remove('on'); setSt('ok','Sincronizado');
 }
-
+function setSt(s,t){ $('dot').className='dot '+s; $('stTxt').innerText=t; }
 fullRefresh();
-setInterval(fullRefresh, REFRESH);
 </script>
 </body>
 </html>
