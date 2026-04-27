@@ -16,12 +16,10 @@
         body { background: var(--bg); font-family: var(--sans); color: #1a2e1e; padding-bottom: 50px; }
         header { background: var(--green-dark); padding: 0 30px; display: flex; align-items: center; justify-content: space-between; height: 70px; color: white; position: sticky; top:0; z-index:100; }
         
-        /* Tabs */
         .tabs-wrap { background: var(--green-dark); padding: 0 30px; display: flex; gap: 5px; border-bottom: 4px solid rgba(255,255,255,0.1); position: sticky; top:70px; z-index:99; }
         .tab { padding: 15px 25px; font-family: var(--bebas); font-size: 16px; color: rgba(255,255,255,0.5); cursor: pointer; border: none; background: none; transition: 0.3s; }
         .tab.active { color: white; border-bottom: 4px solid #5dbf72; background: rgba(255,255,255,0.05); }
 
-        /* Filtros */
         .filter-bar { background: white; padding: 15px 30px; border-bottom: 1px solid var(--border); display: none; gap: 15px; align-items: center; flex-wrap: wrap; }
         .filter-bar.active { display: flex; }
         .filter-group { display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono'; font-size: 11px; }
@@ -85,11 +83,11 @@
     <div class="grid-charts">
         <div class="card">
             <div class="card-head"><span id="chartTitle">VENTAS</span></div>
-            <div style="padding:20px;"><canvas id="chartMain" height="300"></canvas></div>
+            <div style="padding:20px; height: 350px;"><canvas id="chartMain"></canvas></div>
         </div>
         <div class="card">
             <div class="card-head">PROYECCIÓN SEMESTRAL</div>
-            <div style="padding:20px;"><canvas id="chartProj" height="300"></canvas></div>
+            <div style="padding:20px; height: 350px;"><canvas id="chartProj"></canvas></div>
         </div>
     </div>
 
@@ -113,10 +111,10 @@ let charts = {};
 const $ = id => document.getElementById(id);
 const fmt = v => new Intl.NumberFormat('es-AR', {style: 'currency', currency: 'ARS', maximumFractionDigits: 0}).format(v);
 
-// Helper para parsear fechas DD/MM/YYYY a Objeto Date
 function parseFecha(str) {
     if(!str) return null;
     const p = str.split('/');
+    if(p.length !== 3) return null;
     return new Date(p[2], p[1]-1, p[0]);
 }
 
@@ -135,7 +133,8 @@ async function loadSheet(name) {
         result.push(cur.trim());
         return result;
     });
-    return { name, headers: rows[0], rows: rows.slice(1).filter(r => r.length > 5) };
+    // Limpieza de filas vacías o incompletas
+    return { name, headers: rows[0], rows: rows.slice(1).filter(r => r.length > 5 && r[0] !== "") };
 }
 
 function renderAll() {
@@ -143,7 +142,7 @@ function renderAll() {
     if (!current) return;
 
     const h = current.headers;
-    let rows = current.rows;
+    let rows = [...current.rows]; // Clonar para no afectar el original
     
     const idx = {
         fecha: h.findIndex(x => x === 'Fecha'),
@@ -152,7 +151,7 @@ function renderAll() {
         origen: h.findIndex(x => x === 'Origen')
     };
 
-    // Aplicar Filtros solo si estamos en Historico
+    // Filtros lógicos
     if (active === 'Historico') {
         $('filterBar').classList.add('active');
         const from = $('dateFrom').value ? new Date($('dateFrom').value + "T00:00:00") : null;
@@ -161,7 +160,7 @@ function renderAll() {
 
         rows = rows.filter(r => {
             const f = parseFecha(r[idx.fecha]);
-            const matchDate = (!from || f >= from) && (!to || f <= to);
+            const matchDate = (!from || (f && f >= from)) && (!to || (f && f <= to));
             const matchOri = ori === 'TODOS' || r[idx.origen] === ori;
             return matchDate && matchOri;
         });
@@ -169,10 +168,10 @@ function renderAll() {
         $('filterBar').classList.remove('active');
     }
 
-    // Actualizar Tabla
+    // Actualizar Tabla con los datos de la hoja ACTIVA
     $('tHead').innerHTML = h.map(title => `<th>${title}</th>`).join('');
-    $('tBody').innerHTML = rows.slice(-50).reverse().map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
-    $('rowCount').textContent = `${rows.length} registros`;
+    $('tBody').innerHTML = rows.slice().reverse().slice(0, 50).map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+    $('rowCount').textContent = `${rows.length} registros cargados`;
 
     if (active === 'Historico') {
         renderHistorico(rows, idx);
@@ -190,18 +189,20 @@ function renderDia(rows, idx) {
         <div class="kpi"><div class="kpi-lbl">VENTA HOJA</div><div class="kpi-val">${fmt(totalV)}</div></div>
         <div class="kpi"><div class="kpi-lbl">MARGEN HOJA</div><div class="kpi-val" style="color:var(--green)">${fmt(totalM)}</div></div>
         <div class="kpi"><div class="kpi-lbl">PEDIDOS</div><div class="kpi-val">${rows.length}</div></div>
-        <div class="kpi"><div class="kpi-lbl">TICKET PROM.</div><div class="kpi-val">${fmt(totalV/rows.length)}</div></div>
+        <div class="kpi"><div class="kpi-lbl">TICKET PROM.</div><div class="kpi-val">${fmt(totalV/(rows.length || 1))}</div></div>
     `;
 
     updateChart('chartMain', 'bar', rows.slice(-15).map((_,i)=>i+1), [
-        { label: 'Venta $', data: rows.slice(-15).map(r => parseFloat(r[idx.total])), backgroundColor: '#3a9e52' }
+        { label: 'Venta $', data: rows.slice(-15).map(r => parseFloat(r[idx.total]) || 0), backgroundColor: '#3a9e52' }
     ]);
+    
+    // Proyección vacía o genérica para vista diaria
+    updateChart('chartProj', 'line', [], []);
 }
 
 function renderHistorico(rows, idx) {
     $('chartTitle').textContent = "ANÁLISIS TEMPORAL FILTRADO";
     
-    // Agrupar por mes para el gráfico y KPIs
     const totalV = rows.reduce((a,b) => a + (parseFloat(b[idx.total]) || 0), 0);
     const totalM = rows.reduce((a,b) => a + (parseFloat(b[idx.margen]) || 0), 0);
 
@@ -209,13 +210,13 @@ function renderHistorico(rows, idx) {
         <div class="kpi"><div class="kpi-lbl">VENTA PERIODO</div><div class="kpi-val">${fmt(totalV)}</div></div>
         <div class="kpi"><div class="kpi-lbl">MARGEN NETO</div><div class="kpi-val" style="color:var(--green)">${fmt(totalM)}</div></div>
         <div class="kpi"><div class="kpi-lbl">% RENTABILIDAD</div><div class="kpi-val">${((totalM/totalV)*100 || 0).toFixed(1)}%</div></div>
-        <div class="kpi"><div class="kpi-lbl">TICKET PROM.</div><div class="kpi-val">${fmt(totalV/rows.length || 0)}</div></div>
+        <div class="kpi"><div class="kpi-lbl">TICKET PROM.</div><div class="kpi-val">${fmt(totalV/(rows.length || 1))}</div></div>
     `;
 
-    // Lógica de gráfico por días si el rango es corto, o por meses si es largo
+    // Agrupación por fecha
     const grouping = {};
     rows.forEach(r => {
-        const f = r[idx.fecha]; // DD/MM/YYYY
+        const f = r[idx.fecha];
         if(!grouping[f]) grouping[f] = 0;
         grouping[f] += parseFloat(r[idx.total]) || 0;
     });
@@ -227,7 +228,6 @@ function renderHistorico(rows, idx) {
         { label: 'Venta Diaria', data: dataV, borderColor: '#2a7d40', tension: 0.3, fill: true, backgroundColor: 'rgba(42,125,64,0.1)' }
     ]);
 
-    // Proyección (Se mantiene sobre el histórico total para no perder tendencia)
     const avg = totalV / (labels.length || 1);
     updateChart('chartProj', 'line', ['P1','P2','P3','P4','P5','P6'], [
         { label: 'Proyección $', data: Array(6).fill(0).map((_,i)=> avg * 30 * (1+(i*0.01))), borderColor: '#e05a1a', borderDash: [5,5] }
@@ -239,7 +239,11 @@ function updateChart(id, type, labels, datasets) {
     charts[id] = new Chart($(id), {
         type: type,
         data: { labels, datasets },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } }
+        }
     });
 }
 
@@ -248,17 +252,28 @@ async function fullRefresh() {
     try {
         const [h1, hist] = await Promise.all([loadSheet('Hoja 1'), loadSheet('Historico')]);
         sheets = [h1, hist];
+        
+        // Renderizar los botones de las pestañas
         $('tabsWrap').innerHTML = sheets.map(s => `
             <button class="tab ${active === s.name ? 'active' : ''}" onclick="changeTab('${s.name}')">${s.name.toUpperCase()}</button>
         `).join('');
+        
         renderAll();
-    } catch (e) { alert("Error de conexión con Sheets."); }
+    } catch (e) { 
+        console.error(e);
+        alert("Error de conexión con Sheets."); 
+    }
     $('loader').classList.remove('on');
 }
 
 function changeTab(name) {
     active = name;
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.textContent === name.toUpperCase()));
+    // Actualizar clases visuales de pestañas
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(t => {
+        if(t.textContent === name.toUpperCase()) t.classList.add('active');
+        else t.classList.remove('active');
+    });
     renderAll();
 }
 
