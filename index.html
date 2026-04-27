@@ -9,206 +9,216 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
-  --bg: #f0ede6; --bg1: #e8e4db; --white: #ffffff; --card: #ffffff; --green: #2a7d40; --green2: #3a9e52; --green3: #5dbf72; --green-bg: #e8f5ec; --green-dark: #1a5430; --orange: #e05a1a; --orange-bg: #fef0e8; --yellow: #f5c030; --yellow-bg: #fef8e0; --red: #d94040; --red-bg: #fde8e8; --text: #1a2e1e; --text2: #3a5040; --muted: #7a9a82; --border: #c8dcc8; --border2: #a8c8a8; --shadow: 0 2px 12px rgba(42,125,64,0.08); --shadow-lg: 0 8px 32px rgba(42,125,64,0.12); --bebas: 'Bebas Neue', cursive; --sans: 'Outfit', sans-serif; --mono: 'JetBrains Mono', monospace;
+  --bg: #f0ede6; --bg1: #e8e4db; --white: #ffffff; --green: #2a7d40;
+  --green2: #3a9e52; --green3: #5dbf72; --green-dark: #1a5430;
+  --orange: #e05a1a; --yellow: #f5c030; --text: #1a2e1e;
+  --muted: #7a9a82; --border: #c8dcc8; --bebas: 'Bebas Neue', cursive;
+  --sans: 'Outfit', sans-serif; --mono: 'JetBrains Mono', monospace;
 }
 *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
-html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 400; min-height: 100vh; }
-body::before { content: ''; position: fixed; inset: 0; pointer-events: none; opacity: 0.025; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 180px; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
 header { position: sticky; top: 0; z-index: 100; background: var(--green-dark); padding: 0 36px; display: flex; align-items: center; justify-content: space-between; height: 68px; box-shadow: 0 2px 20px rgba(0,0,0,0.2); }
 .brand { display: flex; align-items: center; gap: 14px; }
-.brand-name { font-family: var(--bebas); font-size: 26px; letter-spacing: 2px; color: #ffffff; line-height: 1; }
+.brand-name { font-family: var(--bebas); font-size: 26px; letter-spacing: 2px; color: #ffffff; }
 .brand-name span { color: var(--green3); }
-.status-pill { display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; padding: 7px 14px; font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.6); }
-.dot { width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.3); transition:all 0.3s; }
-.dot.ok { background:#6be082; box-shadow:0 0 8px #6be082; }
-.tabs-wrap { background: var(--green-dark); border-bottom: 3px solid rgba(255,255,255,0.08); padding: 0 36px; display: flex; gap: 2px; overflow-x: auto; }
-.tab { padding: 11px 18px 9px; font-family: var(--bebas); font-size: 14px; letter-spacing: 1.5px; color: rgba(255,255,255,0.45); cursor: pointer; border-bottom: 3px solid transparent; background:none; transition: all 0.15s; white-space:nowrap; }
-.tab.active { color:#fff; border-bottom-color: var(--green3); }
-main { padding: 28px 36px 60px; display:flex; flex-direction:column; gap:28px; max-width:1600px; margin:0 auto; }
-.kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
-.kpi { background:var(--white); border:1px solid var(--border); border-radius:16px; padding:20px 18px; box-shadow:var(--shadow); position:relative; overflow:hidden; animation:up 0.4s ease both; }
-.kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--kc,var(--green)); }
-.kpi[data-c=yellow] { --kc:var(--yellow); }
-.kpi-val { font-family:var(--bebas); font-size:40px; color:var(--text); line-height:1.05; margin:4px 0 2px; }
-.kpi-val .u { font-size:22px; color:var(--muted); }
-.card { background:var(--white); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:var(--shadow); }
-.card-head { padding:18px 22px 14px; border-bottom:1px solid var(--bg1); display:flex; justify-content:space-between; }
-.card-title { font-family:var(--bebas); font-size:20px; color:var(--green-dark); }
-.chart-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
-.month-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; margin-top:16px; }
-.mc { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); animation:up 0.4s ease both; }
-.mc-month { font-family:var(--bebas); font-size:20px; color:var(--green-dark); }
-.mc-stats { display:flex; flex-direction:column; gap:7px; margin-top:10px; }
-.mc-row { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
-.mc-row-val { font-family:var(--bebas); font-size:18px; color:var(--green); }
-.tscroll { overflow-x:auto; max-height:340px; }
-table { width:100%; border-collapse:collapse; min-width:500px; }
-th { background:var(--bg1); padding:9px 14px; font-family:var(--mono); font-size:9px; text-align:left; position:sticky; top:0; z-index:2; }
-td { padding:9px 14px; font-size:12px; border-bottom:1px solid var(--bg1); }
-#loader { position:fixed; inset:0; background:rgba(26,84,48,0.88); z-index:300; display:none; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
-#loader.on { display:flex; }
-@keyframes rotate { to { transform:rotate(360deg); } }
-@keyframes up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.tabs-wrap { background: var(--green-dark); border-bottom: 3px solid rgba(255,255,255,0.08); padding: 0 36px; display: flex; overflow-x: auto; }
+.tab { padding: 12px 20px; font-family: var(--bebas); font-size: 15px; letter-spacing: 1px; color: rgba(255,255,255,0.45); cursor: pointer; border: none; background: none; transition: 0.2s; white-space: nowrap; border-bottom: 3px solid transparent; }
+.tab.active { color:#fff; border-bottom-color: var(--green3); background: rgba(255,255,255,0.05); }
+main { padding: 28px 36px; display: flex; flex-direction: column; gap: 28px; max-width: 1600px; margin: 0 auto; }
+.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.kpi { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 22px; box-shadow: 0 2px 12px rgba(42,125,64,0.08); position: relative; overflow: hidden; }
+.kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background: var(--kc, var(--green)); }
+.kpi-lbl { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; }
+.kpi-val { font-family: var(--bebas); font-size: 48px; color: var(--text); line-height: 1; margin-top: 5px; }
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.card-head { padding: 18px 22px; border-bottom: 1px solid var(--bg1); font-family: var(--bebas); font-size: 20px; color: var(--green-dark); display: flex; justify-content: space-between; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+.tscroll { overflow: auto; max-height: 500px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { position: sticky; top: 0; background: var(--bg1); padding: 12px; text-align: left; font-family: var(--mono); font-size: 10px; z-index: 10; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--bg1); }
+.month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.mc { background: #fff; padding: 18px; border-radius: 14px; border: 1px solid var(--border); }
+#loader { position: fixed; inset: 0; background: rgba(26,84,48,0.98); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
+#loader.on { display: flex; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
 <div id="loader" class="on">
-  <div style="width:48px;height:48px;border:3px solid rgba(255,255,255,0.15);border-top-color:#6be082;border-radius:50%;animation:rotate 0.75s linear infinite;"></div>
-  <div style="color:white;font-family:var(--bebas);letter-spacing:3px;">BIG ESTA COCINANDO EL HISTORICO…</div>
+    <div style="width:50px;height:50px;border:5px solid rgba(255,255,255,0.1);border-top-color:#6be082;border-radius:50%;animation:spin 1s linear infinite;"></div>
+    <div style="font-family:var(--bebas);font-size:22px;margin-top:20px;letter-spacing:3px;">PROCESANDO DATOS...</div>
 </div>
 
 <header>
-  <div class="brand">
-    <div class="brand-logo">🥗</div>
-    <div class="brand-name">BIG <span>SALADS</span> SEXTA</div>
-  </div>
-  <div class="header-right">
-    <div class="status-pill"><div class="dot" id="dot"></div><span id="stTxt">Iniciando…</span></div>
-    <button class="btn" style="background:#fff; padding:8px 16px; border-radius:8px; cursor:pointer;" onclick="fullRefresh()">ACTUALIZAR</button>
-  </div>
+    <div class="brand">
+        <div class="brand-name">BIG <span>SALADS</span> SEXTA</div>
+    </div>
+    <button class="btn" style="background:#fff; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-family:var(--mono); font-size:10px;" onclick="fullRefresh()">ACTUALIZAR DATOS</button>
 </header>
 
 <div class="tabs-wrap" id="tabsWrap"></div>
 
 <main>
-  <div class="kpi-grid">
-    <div class="kpi"><div style="font-size:9px; font-family:var(--mono); color:var(--muted);">VENTAS TOTALES</div><div class="kpi-val" id="kTotal"><span class="u">$</span>—</div></div>
-    <div class="kpi"><div style="font-size:9px; font-family:var(--mono); color:var(--muted);">MARGEN NETO</div><div class="kpi-val" id="kMargen"><span class="u">$</span>—</div></div>
-    <div class="kpi" data-c="yellow"><div style="font-size:9px; font-family:var(--mono); color:var(--muted);">TICKET PROMEDIO</div><div class="kpi-val" id="kAvgTicket"><span class="u">$</span>—</div></div>
-  </div>
-
-  <div class="chart-row">
-    <div class="card"><div class="card-head"><div class="card-title">📍 ORIGEN</div></div><div class="card-body"><canvas id="chartOrigen" height="150"></canvas><div id="origenList" style="margin-top:10px; font-size:12px;"></div></div></div>
-    <div class="card"><div class="card-head"><div class="card-title">🌙 TURNOS</div></div><div class="card-body"><canvas id="chartTurno" height="150"></canvas></div></div>
-    <div class="card"><div class="card-head"><div class="card-title">💳 PAGOS</div></div><div class="card-body" id="mediosList"></div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><div class="card-title">EVOLUCIÓN MENSUAL (ÚLTIMOS 6 MESES)</div></div>
-    <div class="card-body">
-      <canvas id="chartMonthly" height="180"></canvas>
-      <div class="month-grid" id="monthGrid"></div>
+    <div class="kpi-grid">
+        <div class="kpi">
+            <div class="kpi-lbl">VENTAS TOTALES</div>
+            <div class="kpi-val" id="kTotal">$0</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-lbl">MARGEN NETO</div>
+            <div class="kpi-val" id="kMargen">$0</div>
+        </div>
+        <div class="kpi" style="--kc:var(--yellow)">
+            <div class="kpi-lbl">TICKET PROMEDIO</div>
+            <div class="kpi-val" id="kAvg">$0</div>
+        </div>
     </div>
-  </div>
 
-  <div class="card">
-    <div class="card-head"><div class="card-title">REGISTROS COMPLETOS</div></div>
-    <div class="tscroll"><table><thead id="tHead"></thead><tbody id="tBody"></tbody></table></div>
-  </div>
+    <div class="grid-2-1">
+        <div class="card">
+            <div class="card-head">DETALLE DE VENTAS</div>
+            <div class="tscroll">
+                <table>
+                    <thead><tr id="tHead"></tr></thead>
+                    <tbody id="tBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-head">PAGOS Y PRODUCTOS</div>
+            <div style="padding:20px;">
+                <div id="payBody"></div>
+                <hr style="margin:20px 0; border:0; border-top:1px solid var(--bg1);">
+                <div id="prodBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">ANÁLISIS POR MES (HISTÓRICO)</div>
+        <div style="padding:20px;">
+            <div class="month-grid" id="monthGrid"></div>
+        </div>
+    </div>
 </main>
 
 <script>
 const PUB_ID = '2PACX-1vSqXw7W2kUj_BsUyLKYmRIIZyYacKR9nYbaeXRFqSPzBVZuyCuj7Vl_Cf13tTTJAq9jGVXudNqWfiiC';
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-let sheets = [], active = 'Hoja 1', ch = {};
+let sheets = [], active = 'Hoja 1';
 
 const fmt = n => new Intl.NumberFormat('es-AR',{maximumFractionDigits:0}).format(Math.round(n));
-const parseN = s => { let c = String(s||'').replace(/[^\d.,\-]/g,'').replace(',','.'); let n = parseFloat(c); return isNaN(n)?0:n; };
+const parseN = s => {
+    if(!s) return 0;
+    let n = parseFloat(String(s).replace(/[^\d.,\-]/g,'').replace(',','.'));
+    return isNaN(n) ? 0 : n;
+};
 
-async function loadSheet(name) {
-  const url = `https://docs.google.com/spreadsheets/d/e/${PUB_ID}/pub?output=csv&sheet=${encodeURIComponent(name)}&_=${Date.now()}`;
-  try {
-    const r = await fetch(url);
-    const txt = await r.text();
-    const rows = txt.split('\n').map(row => {
-      let cells = []; let inQuo = false; let cur = '';
-      for(let char of row) {
-        if(char === '"') inQuo = !inQuo;
-        else if(char === ',' && !inQuo) { cells.push(cur.trim()); cur = ''; }
-        else cur += char;
-      }
-      cells.push(cur.trim()); return cells;
-    });
-    return { name, headers: rows[0], rows: rows.slice(1).filter(r => r.length > 1) };
-  } catch(e) { return null; }
+// Parser robusto para CSV
+function parseCSV(txt) {
+    const rows = []; let cur = ''; let inQ = false; let row = [];
+    for (let i = 0; i < txt.length; i++) {
+        const c = txt[i];
+        if (c === '"') inQ = !inQ;
+        else if (c === ',' && !inQ) { row.push(cur.trim()); cur = ''; }
+        else if (c === '\n' && !inQ) { row.push(cur.trim()); rows.push(row); row = []; cur = ''; }
+        else cur += c;
+    }
+    if (cur || row.length) { row.push(cur.trim()); rows.push(row); }
+    return rows.filter(r => r.length > 1);
 }
 
 async function fullRefresh() {
-  document.getElementById('loader').classList.add('on');
-  const nombres = ['Hoja 1', 'Historico', 'Analisis_Clientes'];
-  sheets = [];
-  for(const n of nombres) {
-    const s = await loadSheet(n);
-    if(s) sheets.push(s);
-  }
-  buildTabs();
-  render();
-  document.getElementById('loader').classList.remove('on');
-}
-
-function buildTabs() {
-  const wrap = document.getElementById('tabsWrap'); wrap.innerHTML = '';
-  sheets.forEach(s => {
-    const btn = document.createElement('button');
-    btn.className = `tab ${s.name === active ? 'active' : ''}`;
-    btn.innerText = s.name === 'Hoja 1' ? 'RESUMEN DEL DÍA' : s.name.toUpperCase();
-    btn.onclick = () => { active = s.name; buildTabs(); render(); };
-    wrap.appendChild(btn);
-  });
-}
-
-function render() {
-  const sheet = sheets.find(s => s.name === active);
-  if(!sheet) return;
-  const h = sheet.headers.map(x => x.toLowerCase().trim());
-  const r = sheet.rows;
-  const idx = { total: h.indexOf('total'), margen: h.indexOf('margen neto'), fecha: h.indexOf('fecha'), origen: h.indexOf('origen'), turno: h.indexOf('turno'), medio: h.indexOf('medio de pago') };
-
-  let totalV = 0, totalM = 0;
-  const oData = {}, tData = {}, mData = {}, monthly = {};
-
-  r.forEach(row => {
-    const v = parseN(row[idx.total]);
-    totalV += v; totalM += parseN(row[idx.margen]);
-    
-    let o = row[idx.origen] || 'Local'; oData[o] = (oData[o]||0) + v;
-    let t = row[idx.turno] || 'N/A'; tData[t] = (tData[t]||0) + v;
-    let m = row[idx.medio] || 'Otro'; if(!mData[m]) mData[m]={s:0,c:0}; mData[m].s += v; mData[m].c++;
-
-    const parts = row[idx.fecha].split('/');
-    if(parts.length === 3) {
-      const mKey = `${parts[2]}-${parts[1].padStart(2,'0')}`;
-      if(!monthly[mKey]) monthly[mKey] = { s:0, t:0, d:new Set(), l: `${MESES[parseInt(parts[1])-1]} ${parts[2]}` };
-      monthly[mKey].s += v; monthly[mKey].t++; monthly[mKey].d.add(parts[0]);
+    document.getElementById('loader').classList.add('on');
+    // Forzamos la carga de ambas solapas
+    const targets = ['Hoja 1', 'Historico'];
+    sheets = [];
+    for(const t of targets) {
+        try {
+            const r = await fetch(`https://docs.google.com/spreadsheets/d/e/${PUB_ID}/pub?output=csv&sheet=${encodeURIComponent(t)}&_=${Date.now()}`);
+            const data = parseCSV(await r.text());
+            if(data.length > 0) sheets.push({ name: t, headers: data[0], rows: data.slice(1) });
+        } catch(e) {}
     }
-  });
-
-  document.getElementById('kTotal').innerHTML = `<span class="u">$</span>${fmt(totalV)}`;
-  document.getElementById('kMargen').innerHTML = `<span class="u">$</span>${fmt(totalM)}`;
-  document.getElementById('kAvgTicket').innerHTML = `<span class="u">$</span>${fmt(totalV/r.length)}`;
-
-  updateChart('chartOrigen', 'doughnut', Object.keys(oData), Object.values(oData));
-  updateChart('chartTurno', 'bar', Object.keys(tData), Object.values(tData));
-
-  document.getElementById('mediosList').innerHTML = Object.entries(mData).sort((a,b)=>b[1].s-a[1].s).map(e => `
-    <div class="mc-row"><b>${e[0]}</b><span>$${fmt(e[1].s)} (${e[1].c})</span></div>`).join('');
-
-  const sortedM = Object.keys(monthly).sort().slice(-6);
-  updateChart('chartMonthly', 'line', sortedM.map(k=>monthly[k].l), sortedM.map(k=>monthly[k].s));
-  document.getElementById('monthGrid').innerHTML = sortedM.reverse().map(k => `
-    <div class="mc">
-      <div class="mc-month">${monthly[k].l}</div>
-      <div class="mc-stats">
-        <div class="mc-row">Venta <span class="mc-row-val">$${fmt(monthly[k].s)}</span></div>
-        <div class="mc-row">Tickets <span>${monthly[k].t}</span></div>
-        <div class="mc-row">Prom/Día <b style="color:var(--orange)">${(monthly[k].t/monthly[k].d.size).toFixed(1)}</b></div>
-      </div>
-    </div>`).join('');
-
-  document.getElementById('tHead').innerHTML = `<tr>${sheet.headers.slice(0,8).map(h=>`<th>${h}</th>`).join('')}</tr>`;
-  document.getElementById('tBody').innerHTML = r.slice(-50).reverse().map(row => `<tr>${row.slice(0,8).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('');
-  document.getElementById('stTxt').innerText = "Sincronizado";
-  document.getElementById('dot').className = "dot ok";
+    renderTabs();
+    renderData();
+    document.getElementById('loader').classList.remove('on');
 }
 
-function updateChart(id, type, labels, data) {
-  if(ch[id]) ch[id].destroy();
-  ch[id] = new Chart(document.getElementById(id), {
-    type, data: { labels, datasets:[{ data, backgroundColor:['#2a7d40','#e05a1a','#f5c030','#3a9e52','#5dbf72'] }] },
-    options: { plugins: { legend: { display: type==='doughnut', position:'bottom' } } }
-  });
+function renderTabs() {
+    const w = document.getElementById('tabsWrap'); w.innerHTML = '';
+    sheets.forEach(s => {
+        const b = document.createElement('button');
+        b.className = `tab ${s.name === active ? 'active' : ''}`;
+        b.innerText = s.name === 'Hoja 1' ? 'RESUMEN DEL DÍA' : 'HISTÓRICO';
+        b.onclick = () => { active = s.name; renderTabs(); renderData(); };
+        w.appendChild(b);
+    });
+}
+
+function renderData() {
+    const s = sheets.find(x => x.name === active);
+    if(!s) return;
+    const h = s.headers.map(v => v.toLowerCase().trim());
+    const r = s.rows;
+
+    const idx = { 
+        total: h.indexOf('total'), margen: h.indexOf('margen neto'), 
+        fecha: h.indexOf('fecha'), medio: h.indexOf('medio de pago'),
+        prod: h.indexOf('detalle productos')
+    };
+
+    let tV = 0, tM = 0;
+    const medios = {}, prods = {}, mensual = {};
+
+    r.forEach(row => {
+        const val = parseN(row[idx.total]);
+        tV += val; tM += parseN(row[idx.margen]);
+
+        // Medios
+        const m = row[idx.medio] || 'S/D';
+        medios[m] = (medios[m] || 0) + val;
+
+        // Productos
+        (row[idx.prod] || '').split(',').forEach(p => {
+            const name = p.split('x')[0].trim();
+            if(name.length > 2) prods[name] = (prods[name] || 0) + 1;
+        });
+
+        // Mensual
+        const f = row[idx.fecha] || '';
+        const parts = f.split('/');
+        if(parts.length === 3) {
+            const key = `${parts[2]}-${parts[1].padStart(2,'0')}`;
+            if(!mensual[key]) mensual[key] = { v:0, c:0, days:new Set(), n: `${MESES[parseInt(parts[1])-1]} ${parts[2]}` };
+            mensual[key].v += val; mensual[key].c++;
+            mensual[key].days.add(parts[0]); // Guardamos el día para el promedio
+        }
+    });
+
+    document.getElementById('kTotal').innerText = `$${fmt(tV)}`;
+    document.getElementById('kMargen').innerText = `$${fmt(tM)}`;
+    document.getElementById('kAvg').innerText = `$${fmt(tV/r.length)}`;
+
+    document.getElementById('payBody').innerHTML = '<b>VENTAS POR MEDIO</b><br><br>' + Object.entries(medios).sort((a,b)=>b[1]-a[1]).map(e => `<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;"><span>${e[0]}</span><b>$${fmt(e[1])}</b></div>`).join('');
+    document.getElementById('prodBody').innerHTML = '<b>TOP PRODUCTOS</b><br><br>' + Object.entries(prods).sort((a,b)=>b[1]-a[1]).slice(0,8).map(e => `<div style="font-size:12px;margin-bottom:5px;display:flex;justify-content:space-between;"><span>${e[0]}</span><b>${e[1]} uds</b></div>`).join('');
+
+    document.getElementById('tHead').innerHTML = s.headers.map(col => `<th>${col}</th>`).join('');
+    document.getElementById('tBody').innerHTML = r.slice().reverse().map(row => `<tr>${row.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+
+    document.getElementById('monthGrid').innerHTML = Object.keys(mensual).sort().reverse().map(k => {
+        const m = mensual[k];
+        const promDia = (m.c / m.days.size).toFixed(1);
+        return `
+        <div class="mc">
+            <div style="font-family:var(--bebas); font-size:18px; color:var(--green-dark);">${m.n}</div>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;"><span>Ventas:</span><b>$${fmt(m.v)}</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Tickets Mes:</span><b>${m.c}</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--orange);"><span>Prom. Tickets/Día:</span><b>${promDia}</b></div>
+        </div>`;
+    }).join('');
 }
 
 fullRefresh();
