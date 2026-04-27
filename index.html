@@ -626,6 +626,7 @@ footer strong { color:rgba(255,255,255,0.7); }
 // CONFIG
 // ════════════════════════════════
 const SHEET_ID = '1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8';
+const PUB_ID   = '2PACX-1vSqXw7W2kUj_BsUyLKYmRIIZyYacKR9nYbaeXRFqSPzBVZuyCuj7Vl_Cf13tTTJAq9jGVXudNqWfiiC';
 const REFRESH  = 5 * 60 * 1000;
 
 // ════════════════════════════════
@@ -729,8 +730,8 @@ async function discoverSheets(){
 // ════════════════════════════════
 async function loadSheet(name){
   const urls=[
-    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}&_=${Date.now()}`,
-    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&_=${Date.now()}`
+    `https://docs.google.com/spreadsheets/d/e/${PUB_ID}/pub?output=csv&sheet=${encodeURIComponent(name)}&_=${Date.now()}`,
+    `https://docs.google.com/spreadsheets/d/e/${PUB_ID}/pub?output=csv&_=${Date.now()}`
   ];
   for(const url of urls){
     try{
