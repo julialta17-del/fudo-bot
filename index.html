@@ -451,40 +451,124 @@ footer strong { color:rgba(255,255,255,0.7); }
   <!-- ── KPIs GENERALES ── -->
   <div>
     <div class="sec">
-      <div class="sec-title">INDICADORES GENERALES</div>
+      <div class="sec-title">RESUMEN GENERAL</div>
       <div class="sec-line"></div>
       <div class="sec-note" id="kpiNote">—</div>
     </div>
-    <div class="kpi-grid">
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
       <div class="kpi" data-c="green" data-ico="💰" style="animation-delay:0s">
         <div class="kpi-lbl">VENTAS TOTALES</div>
         <div class="kpi-val" id="kTotal"><span class="u">$</span>—</div>
         <div class="chip neu" id="kTotalSub">—</div>
       </div>
-      <div class="kpi" data-c="orange" data-ico="🎫" style="animation-delay:0.04s">
-        <div class="kpi-lbl">TICKETS VENDIDOS</div>
-        <div class="kpi-val" id="kTickets">—</div>
-        <div class="kpi-sub">transacciones totales</div>
+      <div class="kpi" data-c="green" data-ico="🏦" style="animation-delay:0.04s">
+        <div class="kpi-lbl">EN MANO (MARGEN NETO)</div>
+        <div class="kpi-val" id="kMargen"><span class="u">$</span>—</div>
+        <div class="chip neu" id="kMargenSub">—</div>
       </div>
-      <div class="kpi" data-c="yellow" data-ico="📊" style="animation-delay:0.08s">
+      <div class="kpi" data-c="yellow" data-ico="🎫" style="animation-delay:0.08s">
         <div class="kpi-lbl">TICKET PROMEDIO</div>
         <div class="kpi-val" id="kAvgTicket"><span class="u">$</span>—</div>
-        <div class="kpi-sub">por transacción</div>
+        <div class="kpi-sub" id="kTickets">— transacciones</div>
       </div>
-      <div class="kpi" data-c="green" data-ico="📅" style="animation-delay:0.12s">
-        <div class="kpi-lbl">PROMEDIO DIARIO</div>
-        <div class="kpi-val" id="kAvgDay"><span class="u">$</span>—</div>
-        <div class="chip neu" id="kAvgDaySub">—</div>
-      </div>
-      <div class="kpi" data-c="orange" data-ico="🏆" style="animation-delay:0.16s">
+      <div class="kpi" data-c="orange" data-ico="🏆" style="animation-delay:0.12s">
         <div class="kpi-lbl">MEJOR DÍA</div>
         <div class="kpi-val" id="kBest"><span class="u">$</span>—</div>
         <div class="kpi-sub" id="kBestDate">—</div>
+      </div>
+      <div class="kpi" data-c="green" data-ico="📅" style="animation-delay:0.16s">
+        <div class="kpi-lbl">PROMEDIO DIARIO</div>
+        <div class="kpi-val" id="kAvgDay"><span class="u">$</span>—</div>
+        <div class="chip neu" id="kAvgDaySub">—</div>
       </div>
       <div class="kpi" data-c="green" data-ico="📈" style="animation-delay:0.20s">
         <div class="kpi-lbl">TENDENCIA 7 DÍAS</div>
         <div class="kpi-val" id="kTrend">—</div>
         <div class="chip neu" id="kTrendSub">vs semana anterior</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ORIGEN · TURNOS · MEDIOS DE PAGO ── -->
+  <div>
+    <div class="sec">
+      <div class="sec-title">CANALES · TURNOS · MEDIOS DE PAGO</div>
+      <div class="sec-line"></div>
+    </div>
+    <div class="chart-row" style="grid-template-columns:1fr 1fr 1fr">
+
+      <!-- Origen donut -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">📍 ORIGEN DE VENTAS</div>
+            <div class="card-sub">Local · Pedidos Ya · Online</div>
+          </div>
+        </div>
+        <div class="card-body" style="padding-top:8px;display:flex;flex-direction:column;align-items:center;gap:12px">
+          <canvas id="chartOrigen" height="180"></canvas>
+          <div id="origenList" style="width:100%;font-size:13px;display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
+
+      <!-- Turnos bar -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">🌙 VENTAS POR TURNO</div>
+            <div class="card-sub">Mañana vs Noche</div>
+          </div>
+        </div>
+        <div class="card-body" style="padding-top:8px;display:flex;flex-direction:column;align-items:center;gap:12px">
+          <canvas id="chartTurno" height="180"></canvas>
+          <div id="turnoList" style="width:100%;font-size:13px;display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
+
+      <!-- Medios de pago -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">💳 MEDIOS DE PAGO</div>
+            <div class="card-sub">Ingreso $ por método</div>
+          </div>
+        </div>
+        <div class="card-body" style="padding-top:8px;display:flex;flex-direction:column;gap:8px">
+          <div id="mediosList" style="width:100%;font-size:13px;display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── TOP PRODUCTOS ── -->
+  <div>
+    <div class="sec">
+      <div class="sec-title">🌟 TOP PRODUCTOS MÁS VENDIDOS</div>
+      <div class="sec-line"></div>
+    </div>
+    <div class="chart-row" style="grid-template-columns:1fr 1fr">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">RANKING TOP 5</div>
+            <div class="card-sub">Por cantidad de ventas</div>
+          </div>
+        </div>
+        <div class="card-body" style="padding-top:8px">
+          <canvas id="chartTopProd" height="220"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">DETALLE</div>
+            <div class="card-sub">Cantidad · % del total</div>
+          </div>
+        </div>
+        <div class="card-body" style="padding-top:8px">
+          <div id="topProdList" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -754,14 +838,29 @@ async function loadSheet(name){
 // AUTO-DETECT COLUMNS
 // ════════════════════════════════
 function autoDetect(headers,rows){
-  const dateIdx=headers.findIndex((h,i)=>
-    /fecha|date|dia|día|periodo/i.test(h)||isDateC(rows,i));
-  const numCols=headers.map((_,i)=>isNumC(rows,i)?i:-1).filter(i=>i>=0);
-  let valIdx=headers.findIndex((h,i)=>
-    /venta|total|monto|ingreso|revenue|sales|importe|precio|valor/i.test(h)&&numCols.includes(i));
-  if(valIdx<0) valIdx=numCols[0]??-1;
-  const catIdx=headers.findIndex((h,i)=>
-    /categ|tipo|product|item|articulo|nombre|descrip/i.test(h)&&i!==dateIdx&&i!==valIdx);
+  const h=headers.map(x=>String(x||'').toLowerCase().trim());
+
+  // Fecha
+  let dateIdx=h.findIndex(x=>x==='fecha_texto'||x==='fecha');
+  if(dateIdx<0) dateIdx=headers.findIndex((_,i)=>isDateC(rows,i));
+
+  // Valor $: Costo_Total_Venta > Total > numéricas con nombre monetario
+  let valIdx=h.findIndex(x=>x==='costo_total_venta');
+  if(valIdx<0) valIdx=h.findIndex(x=>x==='total');
+  if(valIdx<0) valIdx=h.findIndex(x=>x==='margen_neto_$'||x==='margen neto $');
+  if(valIdx<0){
+    const numCols=headers.map((_,i)=>isNumC(rows,i)?i:-1).filter(i=>i>=0&&i!==dateIdx);
+    valIdx=headers.findIndex((hh,i)=>/total|monto|ingreso|venta|importe|precio|valor|costo|margen/i.test(hh)&&numCols.includes(i));
+    if(valIdx<0) valIdx=numCols[0]??-1;
+  }
+
+  // Categoría: Detalle_Productos > Medio de Pago > Origen > Cliente
+  let catIdx=h.findIndex(x=>x==='detalle_productos'||x==='detalle productos');
+  if(catIdx<0) catIdx=h.findIndex(x=>x==='medio de pago'||x==='medio_de_pago');
+  if(catIdx<0) catIdx=h.findIndex(x=>x==='origen');
+  if(catIdx<0) catIdx=h.findIndex(x=>x==='cliente');
+  if(catIdx<0) catIdx=headers.findIndex((hh,i)=>/categ|tipo|product|item|articulo|nombre|descrip|detalle/i.test(hh)&&i!==dateIdx&&i!==valIdx);
+
   return {date:dateIdx>=0?dateIdx:null, value:valIdx>=0?valIdx:null, cat:catIdx>=0?catIdx:null};
 }
 
@@ -809,6 +908,9 @@ function calcMonthly(rows){
 // ════════════════════════════════
 // RENDER KPIs
 // ════════════════════════════════
+// Charts refs for Resumen
+let chOrigen=null,chTurno=null,chTopProd=null;
+
 function renderKPIs(rows){
   const vals=map.value!==null?rows.map(r=>parseN(r[map.value])).filter(v=>v!==null):[];
   if(!vals.length) return;
@@ -827,13 +929,29 @@ function renderKPIs(rows){
   const days=distinctDays.size||count;
   const avgDay=total/days;
 
+  // Extra columns
+  const headers=getData().headers;
+  const margenIdx=headers.findIndex(h=>/margen_neto_.*\$|margen.*neto/i.test(h));
+  const margenTotal=margenIdx>=0?rows.reduce((a,r)=>{const v=parseN(r[margenIdx]);return v!==null?a+v:a;},0):null;
+  const margenPct=margenTotal!==null&&total>0?((margenTotal/total)*100).toFixed(1):null;
+
   $('kTotal').innerHTML=`<span class="u">$</span>${fmt(total)}`;
-  $('kTickets').textContent=fmt(count);
+  if($('kMargen')){
+    $('kMargen').innerHTML=margenTotal!==null?`<span class="u">$</span>${fmt(margenTotal)}`:`<span style="font-size:14px;color:var(--muted)">—</span>`;
+    if($('kMargenSub')) $('kMargenSub').textContent=margenPct?`${margenPct}% del total`:'';
+  }
+  $('kTickets').textContent=`${fmt(count)} transacciones`;
   $('kAvgTicket').innerHTML=`<span class="u">$</span>${fmt(avgTicket)}`;
   $('kAvgDay').innerHTML=`<span class="u">$</span>${fmt(avgDay)}`;
   $('kBest').innerHTML=`<span class="u">$</span>${fmt(max)}`;
   $('kpiNote').textContent=`${count} registros · ${days} días con ventas`;
   $('tableSub').textContent=`${count} filas · últimas 100 mostradas`;
+
+  // Render secciones especiales
+  renderOrigen(rows, headers);
+  renderTurnos(rows, headers);
+  renderMediosPago(rows, headers);
+  renderTopProductos(rows, headers);
 
   let bestDate='';
   if(map.date!==null) bestDate=rows[maxIdx]?.[map.date]||'';
@@ -855,6 +973,234 @@ function renderKPIs(rows){
     ts.className='chip '+(up?'up':'down');
     const as=$('kAvgDaySub');
     as.className='chip '+(up?'up':'down');
+  }
+}
+
+// ════════════════════════════════
+// RENDER ORIGEN
+// ════════════════════════════════
+function renderOrigen(rows, headers){
+  const origenIdx=headers.findIndex(h=>/^origen$/i.test(h.trim()));
+  const valIdx=map.value;
+  if(origenIdx<0) return;
+  const byOrigen={};
+  rows.forEach(r=>{
+    const o=String(r[origenIdx]||'').trim()||'Sin dato';
+    const v=valIdx!==null?parseN(r[valIdx]):1;
+    if(!byOrigen[o]) byOrigen[o]={sum:0,count:0};
+    byOrigen[o].sum+=(v||0);
+    byOrigen[o].count++;
+  });
+  const sorted=Object.entries(byOrigen).sort((a,b)=>b[1].sum-a[1].sum);
+  const total=sorted.reduce((a,b)=>a+b[1].sum,0);
+  const COLORS=['#2a7d40','#e05a1a','#f5c030','#5dbf72','#a0522d'];
+
+  // Donut
+  if(chOrigen){ chOrigen.destroy(); chOrigen=null; }
+  const ctx=document.getElementById('chartOrigen');
+  if(ctx){
+    chOrigen=new Chart(ctx,{
+      type:'doughnut',
+      data:{
+        labels:sorted.map(([k])=>k),
+        datasets:[{data:sorted.map(([,v])=>v.sum),backgroundColor:COLORS,borderWidth:2,borderColor:'#fff'}]
+      },
+      options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}}
+    });
+  }
+
+  // List
+  const list=$('origenList');
+  if(list){
+    list.innerHTML=sorted.map(([k,v],i)=>{
+      const pct=total>0?((v.sum/total)*100).toFixed(1):0;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:8px;background:var(--bg1)">
+        <span style="display:flex;align-items:center;gap:8px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${COLORS[i]};flex-shrink:0"></span>
+          <span style="font-weight:500">${k}</span>
+        </span>
+        <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--green-dark)">$${fmt(v.sum)} <span style="color:var(--muted);font-weight:400">(${pct}%)</span></span>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ════════════════════════════════
+// RENDER TURNOS
+// ════════════════════════════════
+function renderTurnos(rows, headers){
+  const turnoIdx=headers.findIndex(h=>/^turno$/i.test(h.trim()));
+  const valIdx=map.value;
+  if(turnoIdx<0) return;
+  const byTurno={};
+  rows.forEach(r=>{
+    const t=String(r[turnoIdx]||'').trim()||'Sin dato';
+    const v=valIdx!==null?parseN(r[valIdx]):1;
+    if(!byTurno[t]) byTurno[t]={sum:0,count:0};
+    byTurno[t].sum+=(v||0);
+    byTurno[t].count++;
+  });
+  const sorted=Object.entries(byTurno).sort((a,b)=>b[1].sum-a[1].sum);
+  const COLORS=['#1a5430','#3a9e52','#5dbf72','#a8dab5'];
+
+  if(chTurno){ chTurno.destroy(); chTurno=null; }
+  const ctx=document.getElementById('chartTurno');
+  if(ctx){
+    chTurno=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:sorted.map(([k])=>k),
+        datasets:[{
+          label:'Ventas $',
+          data:sorted.map(([,v])=>v.sum),
+          backgroundColor:COLORS,
+          borderRadius:8,
+          borderSkipped:false
+        }]
+      },
+      options:{
+        responsive:true,
+        plugins:{legend:{display:false}},
+        scales:{y:{ticks:{callback:v=>'$'+fmt(v)},grid:{color:'rgba(0,0,0,0.05)'}},x:{grid:{display:false}}}
+      }
+    });
+  }
+
+  const list=$('turnoList');
+  if(list){
+    const total=sorted.reduce((a,b)=>a+b[1].sum,0);
+    list.innerHTML=sorted.map(([k,v],i)=>{
+      const pct=total>0?((v.sum/total)*100).toFixed(1):0;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:8px;background:var(--bg1)">
+        <span style="display:flex;align-items:center;gap:8px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${COLORS[i]};flex-shrink:0"></span>
+          <span style="font-weight:500">${k}</span>
+          <span style="color:var(--muted);font-size:11px">${v.count} pedidos</span>
+        </span>
+        <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--green-dark)">$${fmt(v.sum)} <span style="color:var(--muted);font-weight:400">(${pct}%)</span></span>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ════════════════════════════════
+// RENDER MEDIOS DE PAGO
+// ════════════════════════════════
+function renderMediosPago(rows, headers){
+  const medioIdx=headers.findIndex(h=>/medio.*pago|medio_de_pago/i.test(h.trim()));
+  const valIdx=map.value;
+  if(medioIdx<0) return;
+  const byMedio={};
+  rows.forEach(r=>{
+    const m=String(r[medioIdx]||'').trim()||'Sin dato';
+    const v=valIdx!==null?parseN(r[valIdx]):0;
+    if(!byMedio[m]) byMedio[m]={sum:0,count:0};
+    byMedio[m].sum+=(v||0);
+    byMedio[m].count++;
+  });
+  const sorted=Object.entries(byMedio).sort((a,b)=>b[1].sum-a[1].sum);
+  const total=sorted.reduce((a,b)=>a+b[1].sum,0);
+  const ICONS={'efectivo':'💵','online':'💻','mercado':'💙','pedidos':'🛵','transferencia':'🔄','tarjeta':'💳'};
+  const getIcon=k=>{
+    const kl=k.toLowerCase();
+    return Object.entries(ICONS).find(([key])=>kl.includes(key))?.[1]||'💳';
+  };
+  const COLORS=['#2a7d40','#3a9e52','#5dbf72','#e05a1a','#f5c030','#a8dab5'];
+
+  const list=$('mediosList');
+  if(list){
+    list.innerHTML=sorted.map(([k,v],i)=>{
+      const pct=total>0?((v.sum/total)*100).toFixed(1):0;
+      const barW=total>0?((v.sum/total)*100).toFixed(0):0;
+      return `<div style="padding:8px 10px;border-radius:10px;background:var(--bg1);display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="display:flex;align-items:center;gap:7px;font-weight:500">${getIcon(k)} ${k}</span>
+          <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--green-dark)">$${fmt(v.sum)}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;height:6px;border-radius:99px;background:var(--border);overflow:hidden">
+            <div style="width:${barW}%;height:100%;background:${COLORS[i%COLORS.length]};border-radius:99px;transition:width 0.8s ease"></div>
+          </div>
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);min-width:50px;text-align:right">${pct}% · ${v.count} tickets</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ════════════════════════════════
+// RENDER TOP PRODUCTOS
+// ════════════════════════════════
+function renderTopProductos(rows, headers){
+  const detIdx=headers.findIndex(h=>/detalle_productos|detalle productos/i.test(h.trim()));
+  if(detIdx<0) return;
+
+  // Cada fila puede tener múltiples productos separados por coma
+  const conteo={};
+  rows.forEach(r=>{
+    const cell=String(r[detIdx]||'').trim();
+    if(!cell) return;
+    const prods=cell.split(',').map(p=>p.trim()).filter(p=>p&&!/opcional|sin dato/i.test(p));
+    prods.forEach(p=>{
+      // Limpiar texto (quitar cantidades tipo "x2")
+      const clean=p.replace(/\s*x\d+\s*/gi,'').trim();
+      if(!clean) return;
+      conteo[clean]=(conteo[clean]||0)+1;
+    });
+  });
+
+  const sorted=Object.entries(conteo).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const totalVendidos=sorted.reduce((a,b)=>a+b[1],0);
+  const COLORS=['#2a7d40','#3a9e52','#5dbf72','#e05a1a','#f5c030'];
+
+  // Bar chart
+  if(chTopProd){ chTopProd.destroy(); chTopProd=null; }
+  const ctx=document.getElementById('chartTopProd');
+  if(ctx){
+    chTopProd=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:sorted.map(([k])=>k.length>22?k.slice(0,22)+'…':k),
+        datasets:[{
+          label:'Vendidos',
+          data:sorted.map(([,v])=>v),
+          backgroundColor:COLORS,
+          borderRadius:8,
+          borderSkipped:false
+        }]
+      },
+      options:{
+        indexAxis:'y',
+        responsive:true,
+        plugins:{legend:{display:false}},
+        scales:{x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{stepSize:1}},y:{grid:{display:false}}}
+      }
+    });
+  }
+
+  // Detail list
+  const list=$('topProdList');
+  if(list){
+    const maxV=sorted[0]?.[1]||1;
+    list.innerHTML=sorted.map(([k,v],i)=>{
+      const pct=totalVendidos>0?((v/totalVendidos)*100).toFixed(1):0;
+      const barW=((v/maxV)*100).toFixed(0);
+      return `<div style="display:flex;flex-direction:column;gap:5px;padding:8px 10px;border-radius:10px;background:var(--bg1)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="display:flex;align-items:center;gap:8px">
+            <span style="width:24px;height:24px;border-radius:50%;background:${COLORS[i]};color:#fff;font-family:var(--bebas);font-size:14px;display:flex;align-items:center;justify-content:center">${i+1}</span>
+            <span style="font-weight:500;font-size:13px">${k}</span>
+          </span>
+          <span style="font-family:var(--mono);font-weight:700;color:var(--green-dark)">${v} uds.</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;height:6px;border-radius:99px;background:var(--border);overflow:hidden">
+            <div style="width:${barW}%;height:100%;background:${COLORS[i]};border-radius:99px;transition:width 0.8s ease"></div>
+          </div>
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);min-width:40px;text-align:right">${pct}%</span>
+        </div>
+      </div>`;
+    }).join('');
   }
 }
 
