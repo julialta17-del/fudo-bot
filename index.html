@@ -3,82 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BIG SALADS · Cloud Dashboard</title>
+    <title>BIG SALADS Sexta · Management Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        :root { --green: #2a7d40; --light-green: #5dbf72; --dark: #1a5430; --bg: #f0ede6; }
+        :root { --green: #2a7d40; --light: #5dbf72; --dark: #12331c; --bg: #f4f7f4; }
         body { font-family: 'Outfit', sans-serif; background: var(--bg); margin: 0; color: #333; }
         
-        /* Pantalla de Bloqueo */
-        #auth-screen { position: fixed; inset: 0; background: var(--dark); z-index: 2000; display: flex; align-items: center; justify-content: center; color: white; text-align: center; }
-        .login-card { background: rgba(255,255,255,0.1); padding: 40px; border-radius: 24px; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); width: 90%; max-width: 400px; }
-        .btn-login { background: var(--light-green); color: white; border: none; padding: 16px 32px; border-radius: 12px; font-family: 'Bebas Neue'; font-size: 24px; cursor: pointer; margin-top: 24px; width: 100%; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .btn-login:hover { background: #4ca65f; transform: translateY(-2px); }
+        /* Login impecable */
+        #auth-screen { position: fixed; inset: 0; background: var(--dark); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: rgba(255,255,255,0.05); padding: 50px; border-radius: 30px; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .btn-login { background: var(--light); color: white; border: none; padding: 18px 40px; border-radius: 15px; font-family: 'Bebas Neue'; font-size: 26px; cursor: pointer; transition: 0.3s; width: 100%; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .btn-login:hover { transform: translateY(-3px); background: #4ca65f; }
 
-        header { background: var(--dark); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .logo { font-family: 'Bebas Neue'; font-size: 28px; letter-spacing: 1px; }
+        header { background: var(--dark); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .logo { font-family: 'Bebas Neue'; font-size: 32px; letter-spacing: 1px; }
+        .logo span { color: var(--light); }
+
+        .tabs { background: white; display: flex; padding: 0 30px; gap: 20px; border-bottom: 1px solid #ddd; }
+        .tab { padding: 20px 10px; cursor: pointer; font-family: 'Bebas Neue'; font-size: 18px; color: #999; position: relative; transition: 0.3s; }
+        .tab.active { color: var(--green); }
+        .tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: var(--green); border-radius: 2px 2px 0 0; }
+
+        main { padding: 30px; max-width: 1400px; margin: 0 auto; display: none; }
+        main.active { display: block; animation: fadeIn 0.5s; }
+
+        /* KPIs Estilo "Premium" */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .kpi { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); position: relative; overflow: hidden; border: 1px solid #eee; }
+        .kpi::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 8px; background: var(--green); }
+        .kpi-lbl { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .kpi-val { font-family: 'Bebas Neue'; font-size: 45px; color: var(--dark); line-height: 1; }
+        .kpi-sub { font-size: 13px; margin-top: 10px; color: var(--green); font-weight: 600; }
+
+        .chart-container { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #eee; margin-bottom: 30px; }
         
-        .tabs { background: var(--dark); display: flex; overflow-x: auto; padding: 0 10px; border-bottom: 4px solid rgba(255,255,255,0.1); }
-        .tab { padding: 15px 20px; cursor: pointer; color: rgba(255,255,255,0.5); font-family: 'Bebas Neue'; font-size: 16px; white-space: nowrap; transition: 0.3s; }
-        .tab.active { color: white; border-bottom: 4px solid var(--light-green); background: rgba(255,255,255,0.05); }
-
-        main { padding: 20px; max-width: 1200px; margin: 0 auto; display: none; }
-        main.active { display: block; }
-
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .kpi { background: white; padding: 20px; border-radius: 16px; border-left: 6px solid var(--green); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .kpi-lbl { font-size: 10px; color: #7a9a82; font-weight: bold; text-transform: uppercase; }
-        .kpi-val { font-size: 28px; font-weight: bold; color: var(--dark); font-family: 'Bebas Neue'; margin-top: 4px; }
-
-        .charts { display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 25px; }
-        @media (min-width: 900px) { .charts { grid-template-columns: 2fr 1fr; } }
-        
-        .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .card-title { font-family: 'Bebas Neue'; font-size: 20px; color: var(--dark); margin-bottom: 15px; display: flex; justify-content: space-between; }
-
-        .table-wrap { overflow-x: auto; background: white; border-radius: 16px; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #f8fbf8; padding: 12px; text-align: left; color: var(--dark); border-bottom: 2px solid #eee; }
-        td { padding: 12px; border-bottom: 1px solid #f9f9f9; }
-
-        #loader { font-size: 12px; color: var(--light-green); font-weight: normal; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <div id="auth-screen">
     <div class="login-card">
-        <div class="logo" style="font-size: 48px;">BIG SALADS <span style="color:var(--light-green)">CLOUD</span></div>
-        <p style="opacity: 0.7; font-size: 14px;">Mendoza, Argentina</p>
-        <button class="btn-login" id="authorize_button">ENTRAR AL DASHBOARD</button>
+        <div class="logo">BIG SALADS <span>SEXTA</span></div>
+        <p style="color: rgba(255,255,255,0.6); margin-top: 10px; font-size: 14px;">GESTIÓN ESTRATÉGICA DE VENTAS</p>
+        <button class="btn-login" id="authorize_button">ENTRAR AL SISTEMA</button>
     </div>
 </div>
 
 <header>
-    <div class="logo">BIG SALADS <span id="loader"></span></div>
-    <div style="font-size: 11px; opacity: 0.7;">V.3.0</div>
+    <div class="logo">BIG SALADS <span>HUB</span></div>
+    <div id="sync-status" style="font-size: 12px; color: var(--light);">● DATOS SINCRONIZADOS</div>
 </header>
 
 <div class="tabs">
     <div class="tab active" onclick="setTab('Hoja 1', this)">RESUMEN DIARIO</div>
-    <div class="tab" onclick="setTab('Historico', this)">ANÁLISIS MENSUAL</div>
+    <div class="tab" onclick="setTab('Historico', this)">ANÁLISIS HISTÓRICO</div>
 </div>
 
 <main id="main-content">
     <div class="kpi-grid" id="kpi-container"></div>
-    <div class="charts">
-        <div class="card">
-            <div class="card-title">EVOLUCIÓN TEMPORAL</div>
-            <div style="height: 300px;"><canvas id="chart-main"></canvas></div>
-        </div>
-        <div class="card">
-            <div class="card-title">REPARTO POR ORIGEN</div>
-            <div style="height: 300px;"><canvas id="chart-pie"></canvas></div>
-        </div>
-    </div>
-    <div class="table-wrap">
-        <table><thead id="t-head"></thead><tbody id="t-body"></tbody></table>
+    <div class="chart-container">
+        <div style="font-family: 'Bebas Neue'; font-size: 24px; margin-bottom: 20px; color: var(--dark);">TENDENCIA DE VENTAS</div>
+        <canvas id="mainChart" height="120"></canvas>
     </div>
 </main>
 
@@ -86,12 +73,12 @@
 <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
 <script>
-    // CONFIGURACIÓN (Tus datos están aquí)
-    const CLIENT_ID = '89958085370-j4jbkoa7t3u4o0br5erg3j9h3nrcif3g.apps.googleusercontent.com'; 
-    const API_KEY = 'AIzaSyAVQoifZYh3oc2T1p9xMYKNhe_XtIYQjYc'; // <--- PEGA TU API KEY AQUÍ
+    // PEGA TUS CREDENCIALES AQUÍ
+    const CLIENT_ID = '89958085370-j4jbkoa7t3u4o0obr5erg3j9h3nrcif3g.apps.googleusercontent.com';
+    const API_KEY = 'AIzaSyAVQoifZYh3oc2T1p9xMYKNhe_XtIYQjYc'; 
     const SPREADSHEET_ID = '1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8';
 
-    let gapiInited = false, gisInited = false, tokenClient, activeSheet = 'Hoja 1', myCharts = {};
+    let gapiInited = false, gisInited = false, tokenClient, activeSheet = 'Hoja 1', myChart = null;
 
     function gapiLoaded() { gapi.load('client', async () => {
         await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"] });
@@ -107,62 +94,85 @@
     function checkAuth() { if (gapiInited && gisInited) document.getElementById('authorize_button').onclick = () => tokenClient.requestAccessToken(); }
 
     async function loadData() {
-        document.getElementById('loader').innerText = '● ACTUALIZANDO...';
+        document.getElementById('sync-status').innerText = '○ CARGANDO...';
         try {
-            const resp = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: `${activeSheet}!A1:Z2000` });
-            renderDashboard(resp.result.values);
-        } catch (e) { alert("Error de conexión. Revisa los permisos."); }
-        document.getElementById('loader').innerText = '';
+            const range = activeSheet === 'Hoja 1' ? 'Hoja 1!A1:Z100' : 'Historico!A1:Z5000';
+            const resp = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: range });
+            processData(resp.result.values);
+        } catch (e) { console.error(e); }
+        document.getElementById('sync-status').innerText = '● DATOS SINCRONIZADOS';
         document.getElementById('main-content').classList.add('active');
     }
 
-    function renderDashboard(rows) {
-        const headers = rows[0], data = rows.slice(1).filter(r => r[0]);
-        const fmt = v => new Intl.NumberFormat('es-AR', {style: 'currency', currency: 'ARS', maximumFractionDigits: 0}).format(v);
-        
+    function processData(rows) {
+        const headers = rows[0];
+        const data = rows.slice(1).filter(r => r[0]);
+        const parse = v => parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
+        const fmt = v => new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(v);
+
         const idx = {
-            total: headers.findIndex(h => h.includes('Total')),
-            margen: headers.findIndex(h => h.includes('Margen')),
-            fecha: headers.findIndex(h => h.includes('Fecha')),
-            origen: headers.findIndex(h => h.includes('Origen'))
+            total: headers.findIndex(h => h.toLowerCase().includes('total')),
+            margen: headers.findIndex(h => h.toLowerCase().includes('margen')),
+            fecha: headers.findIndex(h => h.toLowerCase().includes('fecha'))
         };
 
-        const parseNum = v => parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
-        const totalV = data.reduce((a, b) => a + parseNum(b[idx.total]), 0);
-        const totalM = data.reduce((a, b) => a + parseNum(b[idx.margen]), 0);
+        const totalVenta = data.reduce((a, b) => a + parse(b[idx.total]), 0);
+        const totalMargen = data.reduce((a, b) => a + parse(b[idx.margen]), 0);
+        const rentabilidad = (totalMargen / totalVenta) * 100 || 0;
 
+        // Render KPIs
         document.getElementById('kpi-container').innerHTML = `
-            <div class="kpi"><div class="kpi-lbl">VENTAS</div><div class="kpi-val">${fmt(totalV)}</div></div>
-            <div class="kpi"><div class="kpi-lbl">MARGEN</div><div class="kpi-val" style="color:var(--green)">${fmt(totalM)}</div></div>
-            <div class="kpi"><div class="kpi-lbl">RENT.</div><div class="kpi-val">${((totalM/totalV)*100 || 0).toFixed(1)}%</div></div>
+            <div class="kpi">
+                <div class="kpi-lbl">${activeSheet === 'Hoja 1' ? 'VENTA DEL DÍA' : 'VENTA HISTÓRICA TOTAL'}</div>
+                <div class="kpi-val">${fmt(totalVenta)}</div>
+                <div class="kpi-sub">Sincronizado con Fudo</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-lbl">MARGEN NETO</div>
+                <div class="kpi-val" style="color: var(--green)">${fmt(totalMargen)}</div>
+                <div class="kpi-sub">Ganancia estimada</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-lbl">RENTABILIDAD</div>
+                <div class="kpi-val">${rentabilidad.toFixed(1)}%</div>
+                <div class="kpi-sub">Eficiencia de costos</div>
+            </div>
         `;
 
-        document.getElementById('t-head').innerHTML = `<tr>${headers.slice(0,5).map(h => `<th>${h}</th>`).join('')}</tr>`;
-        document.getElementById('t-body').innerHTML = data.slice(-10).reverse().map(r => `<tr>${r.slice(0,5).map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
-        
-        updateCharts(data, idx, parseNum);
+        renderChart(data, idx, parse);
     }
 
-    function updateCharts(data, idx, parseNum) {
-        if(myCharts.main) myCharts.main.destroy();
-        if(myCharts.pie) myCharts.pie.destroy();
+    function renderChart(data, idx, parse) {
+        if(myChart) myChart.destroy();
+        
+        // Si es histórico, agrupamos o filtramos para que no se vea solo un mes
+        const chartData = activeSheet === 'Historico' ? data.slice(-30) : data;
 
-        const recent = data.slice(-15);
-        myCharts.main = new Chart(document.getElementById('chart-main'), {
+        myChart = new Chart(document.getElementById('mainChart'), {
             type: 'line',
             data: {
-                labels: recent.map(r => r[idx.fecha]),
-                datasets: [{ label: 'Venta $', data: recent.map(r => parseNum(r[idx.total])), borderColor: '#2a7d40', backgroundColor: 'rgba(42,125,64,0.1)', fill: true, tension: 0.4 }]
+                labels: chartData.map(r => r[idx.fecha]),
+                datasets: [{
+                    label: 'Venta $',
+                    data: chartData.map(r => parse(r[idx.total])),
+                    borderColor: '#2a7d40',
+                    backgroundColor: 'rgba(93, 191, 114, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#2a7d40'
+                }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-
-        const dist = {};
-        data.forEach(r => { const o = r[idx.origen] || 'Otros'; dist[o] = (dist[o] || 0) + 1; });
-        myCharts.pie = new Chart(document.getElementById('chart-pie'), {
-            type: 'doughnut',
-            data: { labels: Object.keys(dist), datasets: [{ data: Object.values(dist), backgroundColor: ['#1a5430', '#5dbf72', '#f5c030', '#e05a1a'] }] },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    x: { grid: { display: false } }
+                }
+            }
         });
     }
 
