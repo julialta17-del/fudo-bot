@@ -837,21 +837,24 @@ async function loadSheet(name){
 // ════════════════════════════════
 // AUTO-DETECT COLUMNS
 // ════════════════════════════════
+// Columnas NO numéricas que deben ignorarse aunque contengan números
+const NON_NUMERIC_COLS = ['id','fecha_texto','fecha','hora_exacta','hora'];
+
 function autoDetect(headers,rows){
   const h=headers.map(x=>String(x||'').toLowerCase().trim());
 
-  // Fecha
+  // Fecha: buscar Fecha_Texto exacto
   let dateIdx=h.findIndex(x=>x==='fecha_texto'||x==='fecha');
-  if(dateIdx<0) dateIdx=headers.findIndex((_,i)=>isDateC(rows,i));
 
-  // Valor $: Costo_Total_Venta > Total > numéricas con nombre monetario
-  let valIdx=h.findIndex(x=>x==='costo_total_venta');
-  if(valIdx<0) valIdx=h.findIndex(x=>x==='total');
-  if(valIdx<0) valIdx=h.findIndex(x=>x==='margen_neto_$'||x==='margen neto $');
+  // Valor $: columna "Total" exacta (precio de venta de cada transacción)
+  // Excluir Id, Fecha_Texto, Hora_Exacta explícitamente
+  let valIdx=h.findIndex(x=>x==='total');
   if(valIdx<0){
-    const numCols=headers.map((_,i)=>isNumC(rows,i)?i:-1).filter(i=>i>=0&&i!==dateIdx);
-    valIdx=headers.findIndex((hh,i)=>/total|monto|ingreso|venta|importe|precio|valor|costo|margen/i.test(hh)&&numCols.includes(i));
-    if(valIdx<0) valIdx=numCols[0]??-1;
+    // Fallback: cualquier col numérica con nombre monetario, excluyendo las no-numéricas
+    const numCols=headers.map((_,i)=>isNumC(rows,i)?i:-1)
+      .filter(i=>i>=0 && !NON_NUMERIC_COLS.includes(h[i]));
+    valIdx=headers.findIndex((hh,i)=>/^(costo_total_venta|margen_neto)/.test(h[i])&&numCols.includes(i));
+    if(valIdx<0) valIdx=numCols.find(i=>/total|monto|ingreso|venta|importe/i.test(h[i]))??numCols[0]??-1;
   }
 
   // Categoría: Detalle_Productos > Medio de Pago > Origen > Cliente
@@ -859,7 +862,6 @@ function autoDetect(headers,rows){
   if(catIdx<0) catIdx=h.findIndex(x=>x==='medio de pago'||x==='medio_de_pago');
   if(catIdx<0) catIdx=h.findIndex(x=>x==='origen');
   if(catIdx<0) catIdx=h.findIndex(x=>x==='cliente');
-  if(catIdx<0) catIdx=headers.findIndex((hh,i)=>/categ|tipo|product|item|articulo|nombre|descrip|detalle/i.test(hh)&&i!==dateIdx&&i!==valIdx);
 
   return {date:dateIdx>=0?dateIdx:null, value:valIdx>=0?valIdx:null, cat:catIdx>=0?catIdx:null};
 }
