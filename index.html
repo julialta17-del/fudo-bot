@@ -1004,7 +1004,7 @@ function switchTab(name){ active=name; updateTabHighlight(); renderAll(); }
 async function fullRefresh(){
   $('refIco').classList.add('spin'); setSt('spin','Actualizando…');
   try{
-    load(true,'DESCUBRIENDO HOJAS…'); const discovered=await discoverSheets(); const loaded=[];
+    load(true,'BIG ESTA COCINANDO…'); const discovered=await discoverSheets(); const loaded=[];
     for(const sh of discovered){ const d=await loadSheet(sh.name); if(d) loaded.push(d); }
     if(!loaded.length){ load(false); $('bannerSetup').classList.add('on'); setSt('err','Sin acceso'); return; }
     $('bannerSetup').classList.remove('on'); sheets=loaded; buildTabs();
