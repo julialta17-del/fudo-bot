@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BIG SALADS SEXTA · Dashboard Inteligente</title>
+    <title>BIG SALADS SEXTA· Dashboard Inteligente</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
@@ -16,12 +16,10 @@
         body { background: var(--bg); font-family: var(--sans); color: #1a2e1e; padding-bottom: 50px; }
         header { background: var(--green-dark); padding: 0 30px; display: flex; align-items: center; justify-content: space-between; height: 70px; color: white; position: sticky; top:0; z-index:100; }
         
-        /* Tabs */
         .tabs-wrap { background: var(--green-dark); padding: 0 30px; display: flex; gap: 5px; border-bottom: 4px solid rgba(255,255,255,0.1); position: sticky; top:70px; z-index:99; }
         .tab { padding: 15px 25px; font-family: var(--bebas); font-size: 16px; color: rgba(255,255,255,0.5); cursor: pointer; border: none; background: none; transition: 0.3s; }
         .tab.active { color: white; border-bottom: 4px solid #5dbf72; background: rgba(255,255,255,0.05); }
 
-        /* Filtros */
         .filter-bar { background: white; padding: 15px 30px; border-bottom: 1px solid var(--border); display: none; gap: 15px; align-items: center; flex-wrap: wrap; }
         .filter-bar.active { display: flex; }
         .filter-group { display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono'; font-size: 11px; }
@@ -61,14 +59,8 @@
 <div class="tabs-wrap" id="tabsWrap"></div>
 
 <div class="filter-bar" id="filterBar">
-    <div class="filter-group">
-        <label>DESDE:</label>
-        <input type="date" id="dateFrom" onchange="renderAll()">
-    </div>
-    <div class="filter-group">
-        <label>HASTA:</label>
-        <input type="date" id="dateTo" onchange="renderAll()">
-    </div>
+    <div class="filter-group"><label>DESDE:</label><input type="date" id="dateFrom" onchange="renderAll()"></div>
+    <div class="filter-group"><label>HASTA:</label><input type="date" id="dateTo" onchange="renderAll()"></div>
     <div class="filter-group">
         <label>ORIGEN:</label>
         <select id="filterOrigen" onchange="renderAll()">
@@ -87,11 +79,13 @@
             <div class="card-head"><span id="chartTitle">VENTAS</span></div>
             <div style="padding:20px;"><canvas id="chartMain" height="300"></canvas></div>
         </div>
-        <div class="card">
-            <div class="card-head">PROYECCIÓN SEMESTRAL</div>
+        <div class="card" id="sideCard">
+            <div class="card-head" id="sideTitle">PROYECCIÓN</div>
             <div style="padding:20px;"><canvas id="chartProj" height="300"></canvas></div>
         </div>
     </div>
+
+    <div id="extraContent"></div>
 
     <div class="card">
         <div class="card-head">
@@ -107,7 +101,7 @@
 <script>
 const PUB_ID = '2PACX-1vSqXw7W2kUj_BsUyLKYmRIIZyYacKR9nYbaeXRFqSPzBVZuyCuj7Vl_Cf13tTTJAq9jGVXudNqWfiiC';
 let sheets = [];
-let active = 'Resumen del día';
+let active = 'Hoja 1';
 let charts = {};
 
 const $ = id => document.getElementById(id);
@@ -138,26 +132,28 @@ async function loadSheet(name) {
 }
 
 function renderAll() {
-    // CLAVE: Buscar los datos de la hoja que está marcada como 'active'
     const current = sheets.find(s => s.name === active);
     if (!current) return;
 
     const h = current.headers;
     let rows = current.rows;
     
-    const idx = {
-        fecha: h.findIndex(x => x === 'Fecha'),
-        total: h.findIndex(x => x === 'Total'),
-        margen: h.findIndex(x => x === 'Margen_Neto_$'),
-        origen: h.findIndex(x => x === 'Origen')
-    };
+    // Mapeo dinámico de índices
+    const idx = {};
+    h.forEach((name, i) => {
+        if(name === 'Fecha') idx.fecha = i;
+        if(name === 'Total') idx.total = i;
+        if(name === 'Margen_Neto_$') idx.margen = i;
+        if(name === 'Origen') idx.origen = i;
+        if(name === 'Medio_Pago') idx.pago = i;
+        if(name === 'Producto') idx.prod = i;
+    });
 
     if (active === 'Historico') {
         $('filterBar').classList.add('active');
         const from = $('dateFrom').value ? new Date($('dateFrom').value + "T00:00:00") : null;
         const to = $('dateTo').value ? new Date($('dateTo').value + "T23:59:59") : null;
         const ori = $('filterOrigen').value;
-
         rows = rows.filter(r => {
             const f = parseFecha(r[idx.fecha]);
             const matchDate = (!from || f >= from) && (!to || f <= to);
@@ -168,7 +164,6 @@ function renderAll() {
         $('filterBar').classList.remove('active');
     }
 
-    // Actualizar Tabla (ahora sí con las filas de la hoja activa)
     $('tHead').innerHTML = h.map(title => `<th>${title}</th>`).join('');
     $('tBody').innerHTML = rows.slice(-50).reverse().map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
     $('rowCount').textContent = `${rows.length} registros`;
@@ -184,21 +179,67 @@ function renderDia(rows, idx) {
     const totalV = rows.reduce((a, b) => a + (parseFloat(b[idx.total]) || 0), 0);
     const totalM = rows.reduce((a, b) => a + (parseFloat(b[idx.margen]) || 0), 0);
     
-    $('chartTitle').textContent = "ÚLTIMOS PEDIDOS CARGADOS";
+    // KPIs Principales
     $('kpiContainer').innerHTML = `
         <div class="kpi"><div class="kpi-lbl">VENTA HOJA</div><div class="kpi-val">${fmt(totalV)}</div></div>
         <div class="kpi"><div class="kpi-lbl">MARGEN HOJA</div><div class="kpi-val" style="color:var(--green)">${fmt(totalM)}</div></div>
         <div class="kpi"><div class="kpi-lbl">PEDIDOS</div><div class="kpi-val">${rows.length}</div></div>
-        <div class="kpi"><div class="kpi-lbl">TICKET PROM.</div><div class="kpi-val">${fmt(totalV/rows.length)}</div></div>
+        <div class="kpi"><div class="kpi-lbl">TICKET PROM.</div><div class="kpi-val">${fmt(totalV/rows.length || 0)}</div></div>
     `;
 
+    // Gráfico de Ventas (Últimos 15)
+    $('chartTitle').textContent = "ÚLTIMOS PEDIDOS";
     updateChart('chartMain', 'bar', rows.slice(-15).map((_,i)=>i+1), [
-        { label: 'Venta $', data: rows.slice(-15).map(r => parseFloat(r[idx.total])), backgroundColor: '#3a9e52' }
+        { label: 'Venta $', data: rows.slice(-15).map(r => parseFloat(r[idx.total]) || 0), backgroundColor: '#3a9e52' }
     ]);
+
+    // Desglose por Origen (Local vs Pedidos Ya)
+    const oris = {};
+    rows.forEach(r => { oris[r[idx.origen]] = (oris[r[idx.origen]] || 0) + (parseFloat(r[idx.total]) || 0); });
+    $('sideTitle').textContent = "DISTRIBUCIÓN POR ORIGEN";
+    updateChart('chartProj', 'doughnut', Object.keys(oris), [
+        { data: Object.values(oris), backgroundColor: ['#2a7d40', '#e05a1a'] }
+    ]);
+
+    // Tablas de Resumen Extra (Productos y Medios de Pago)
+    const prods = {};
+    const pagos = {};
+    rows.forEach(r => {
+        prods[r[idx.prod]] = (prods[r[idx.prod]] || 0) + 1;
+        pagos[r[idx.pago]] = (pagos[r[idx.pago]] || 0) + (parseFloat(r[idx.total]) || 0);
+    });
+
+    const topProds = Object.entries(prods).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    
+    $('extraContent').innerHTML = `
+        <div class="grid-charts" style="margin-top:20px">
+            <div class="card">
+                <div class="card-head">MEDIOS DE PAGO</div>
+                <div style="padding:15px">
+                    ${Object.entries(pagos).map(([k,v]) => `
+                        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee">
+                            <span>${k}</span><b>${fmt(v)}</b>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-head">TOP PRODUCTOS</div>
+                <div style="padding:15px">
+                    ${topProds.map(([k,v]) => `
+                        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee">
+                            <span>${k}</span><b>${v} u.</b>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function renderHistorico(rows, idx) {
-    $('chartTitle').textContent = "ANÁLISIS TEMPORAL FILTRADO";
+    $('extraContent').innerHTML = ""; // Limpiar extras en histórico
+    $('sideTitle').textContent = "PROYECCIÓN SEMESTRAL";
     
     const totalV = rows.reduce((a,b) => a + (parseFloat(b[idx.total]) || 0), 0);
     const totalM = rows.reduce((a,b) => a + (parseFloat(b[idx.margen]) || 0), 0);
@@ -217,14 +258,11 @@ function renderHistorico(rows, idx) {
         grouping[f] += parseFloat(r[idx.total]) || 0;
     });
 
-    const labels = Object.keys(grouping);
-    const dataV = Object.values(grouping);
-
-    updateChart('chartMain', 'line', labels, [
-        { label: 'Venta Diaria', data: dataV, borderColor: '#2a7d40', tension: 0.3, fill: true, backgroundColor: 'rgba(42,125,64,0.1)' }
+    updateChart('chartMain', 'line', Object.keys(grouping), [
+        { label: 'Venta Diaria', data: Object.values(grouping), borderColor: '#2a7d40', tension: 0.3, fill: true, backgroundColor: 'rgba(42,125,64,0.1)' }
     ]);
 
-    const avg = totalV / (labels.length || 1);
+    const avg = totalV / (Object.keys(grouping).length || 1);
     updateChart('chartProj', 'line', ['P1','P2','P3','P4','P5','P6'], [
         { label: 'Proyección $', data: Array(6).fill(0).map((_,i)=> avg * 30 * (1+(i*0.01))), borderColor: '#e05a1a', borderDash: [5,5] }
     ]);
@@ -248,16 +286,13 @@ async function fullRefresh() {
             <button class="tab ${active === s.name ? 'active' : ''}" onclick="changeTab('${s.name}')">${s.name.toUpperCase()}</button>
         `).join('');
         renderAll();
-    } catch (e) { alert("Error de conexión con Sheets."); }
+    } catch (e) { alert("Error de conexión."); }
     $('loader').classList.remove('on');
 }
 
 function changeTab(name) {
     active = name;
-    // Esto asegura que el botón se vea activo al hacer click
-    document.querySelectorAll('.tab').forEach(t => {
-        t.classList.toggle('active', t.textContent === name.toUpperCase());
-    });
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.textContent === name.toUpperCase()));
     renderAll();
 }
 
