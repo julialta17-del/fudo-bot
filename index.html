@@ -1,176 +1,735 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BIG SALADS · Intelligence Hub</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-    <style>
-        :root { --green: #2a7d40; --dark-green: #0a1a0f; --bg: #1e272e; --white: #ffffff; --red: #d90429; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg); margin: 0; color: #2b2d42; }
-        #auth-screen { position: fixed; inset: 0; background: var(--dark-green); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .btn-login { background: var(--red); color: white; border: none; padding: 18px 40px; border-radius: 15px; font-family: 'Bebas Neue'; font-size: 26px; cursor: pointer; width: 100%; box-shadow: 0 10px 20px rgba(217, 4, 41, 0.3); }
-        header { background: var(--dark-green); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--red); }
-        .logo-header { font-family: 'Bebas Neue'; font-size: 32px; color: white; }
-        .logo-header span { color: var(--red); }
-        .tabs { background: var(--white); display: flex; padding: 0 30px; border-bottom: 1px solid #ced4da; position: sticky; top: 0; z-index: 100; }
-        .tab { padding: 20px 15px; cursor: pointer; font-family: 'Bebas Neue'; font-size: 19px; color: #adb5bd; }
-        .tab.active { color: var(--red); border-bottom: 4px solid var(--red); }
-        main { padding: 25px; max-width: 1400px; margin: 0 auto; display: none; }
-        main.active { display: block; }
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
-        .kpi { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border-top: 6px solid var(--green); }
-        .kpi.red-kpi { border-top-color: var(--red); }
-        .kpi-lbl { font-size: 11px; font-weight: 700; color: #6c757d; text-transform: uppercase; }
-        .kpi-val { font-family: 'Bebas Neue'; font-size: 40px; color: #0a1a0f; margin-top: 5px; }
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; }
-        .card { background: var(--white); padding: 25px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .card-h { font-family: 'Bebas Neue'; font-size: 24px; color: #0a1a0f; border-bottom: 2px solid #f1f3f5; padding-bottom: 12px; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        td { padding: 12px 8px; border-bottom: 1px solid #f8f9fa; }
-        .filters { background: #ffffff; padding: 20px; border-radius: 20px; margin-bottom: 25px; display: flex; gap: 15px; align-items: flex-end; }
-        input[type="date"] { padding: 10px; border-radius: 10px; border: 1px solid #adb5bd; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIG SALADS · SEXTA</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --g: #1a7a43;
+  --g-light: #e8f5ee;
+  --g-mid: #2fa05a;
+  --r: #d90429;
+  --r-light: #fdeaed;
+  --dark: #0d1f14;
+  --ink: #131c11;
+  --muted: #6b7c6e;
+  --bg: #f0f4f1;
+  --surface: #ffffff;
+  --border: rgba(0,0,0,0.08);
+  --amber: #e8840c;
+  --amber-light: #fff4e6;
+  --blue: #1a63b5;
+  --blue-light: #eaf1fb;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+/* AUTH */
+#auth-screen {
+  position: fixed; inset: 0; background: var(--dark);
+  z-index: 2000; display: flex; align-items: center; justify-content: center;
+}
+.auth-inner { text-align: center; }
+.auth-logo { font-family: 'Syne', sans-serif; font-size: 72px; color: #fff; letter-spacing: -2px; line-height: 1; }
+.auth-logo em { color: var(--g-mid); font-style: normal; }
+.auth-sub { color: var(--muted); font-size: 13px; letter-spacing: 4px; text-transform: uppercase; margin: 12px 0 40px; }
+.btn-auth {
+  background: var(--g); color: #fff; border: none;
+  padding: 16px 48px; border-radius: 100px;
+  font-family: 'Syne', sans-serif; font-size: 18px;
+  cursor: pointer; letter-spacing: 1px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-auth:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(26,122,67,0.4); }
+
+/* HEADER */
+header {
+  background: var(--dark); color: #fff;
+  padding: 0 32px;
+  display: flex; justify-content: space-between; align-items: center;
+  height: 60px; position: sticky; top: 0; z-index: 500;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.logo { font-family: 'Syne', sans-serif; font-size: 22px; letter-spacing: -0.5px; }
+.logo em { color: var(--g-mid); font-style: normal; }
+.status-dot { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+
+/* TABS */
+.tabs {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; padding: 0 32px; gap: 4px;
+  position: sticky; top: 60px; z-index: 400;
+}
+.tab {
+  padding: 16px 20px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  letter-spacing: 0.3px;
+}
+.tab.active { color: var(--g); border-color: var(--g); }
+.tab:hover:not(.active) { color: var(--ink); }
+
+/* MAIN */
+main { padding: 28px 32px; max-width: 1440px; margin: 0 auto; display: none; }
+main.active { display: block; }
+
+/* FILTERS */
+.filters {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px 20px;
+  display: flex; gap: 16px; align-items: flex-end;
+  margin-bottom: 24px;
+}
+.filter-field label { display: block; font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+input[type="date"] {
+  padding: 9px 14px; border: 1px solid var(--border);
+  border-radius: 10px; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; background: var(--bg); color: var(--ink);
+  outline: none;
+}
+input[type="date"]:focus { border-color: var(--g); }
+.btn-filter {
+  background: var(--g); color: #fff; border: none;
+  padding: 10px 24px; border-radius: 10px;
+  font-family: 'Syne', sans-serif; font-size: 15px;
+  cursor: pointer; letter-spacing: 0.5px;
+}
+
+/* KPI GRID */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.kpi {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; padding: 22px 24px;
+  position: relative; overflow: hidden;
+}
+.kpi::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--kpi-accent, var(--g));
+}
+.kpi-icon { font-size: 22px; margin-bottom: 12px; }
+.kpi-lbl { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; }
+.kpi-val { font-family: 'Syne', sans-serif; font-size: 32px; color: var(--ink); margin-top: 4px; letter-spacing: -1px; }
+.kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.kpi.accent-red { --kpi-accent: var(--r); }
+.kpi.accent-amber { --kpi-accent: var(--amber); }
+.kpi.accent-blue { --kpi-accent: var(--blue); }
+
+/* TREND BADGE */
+.trend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 100px; }
+.trend.up { background: var(--g-light); color: var(--g); }
+.trend.down { background: var(--r-light); color: var(--r); }
+
+/* GRID */
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; margin-bottom: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 20px; }
+
+/* CARD */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 24px;
+}
+.card-h {
+  font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+  color: var(--ink); margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-h .lbl { font-size: 11px; font-weight: 500; color: var(--muted); margin-left: auto; text-transform: uppercase; letter-spacing: 0.8px; }
+
+/* TABLES */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table td { padding: 10px 0; font-size: 14px; border-bottom: 1px solid var(--border); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table .num { text-align: right; font-weight: 500; font-family: 'Syne', sans-serif; font-size: 15px; }
+.data-table .rank { font-size: 11px; font-weight: 700; color: var(--muted); width: 24px; }
+.medal-1 { color: #f59e0b; }
+.medal-2 { color: #94a3b8; }
+.medal-3 { color: #b45309; }
+
+/* PILL BAR */
+.pill-bar-wrap { display: flex; flex-direction: column; gap: 10px; }
+.pill-bar-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.pill-bar-label { min-width: 90px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill-bar-track { flex: 1; background: var(--bg); border-radius: 100px; height: 8px; overflow: hidden; }
+.pill-bar-fill { height: 100%; border-radius: 100px; transition: width 0.6s ease; }
+.pill-bar-val { min-width: 80px; text-align: right; font-weight: 500; font-size: 12px; color: var(--muted); }
+
+/* SPLIT CARD */
+.split-row { display: flex; gap: 0; }
+.split-half { flex: 1; padding: 16px; text-align: center; }
+.split-half:first-child { border-right: 1px solid var(--border); }
+.split-half .big { font-family: 'Syne', sans-serif; font-size: 28px; letter-spacing: -1px; }
+.split-half .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+.split-half .tickets { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* HORA HEATMAP */
+.heatmap-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; }
+.heat-cell {
+  aspect-ratio: 1; border-radius: 6px; display: flex;
+  align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 500; color: rgba(255,255,255,0.8);
+  cursor: default; transition: transform 0.1s;
+}
+.heat-cell:hover { transform: scale(1.1); }
+.heat-labels { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-top: 4px; }
+.heat-lbl { font-size: 9px; color: var(--muted); text-align: center; }
+
+/* MARGEN GAUGE */
+.gauge-wrap { display: flex; align-items: center; justify-content: center; padding: 8px 0 0; }
+
+/* NO DATA */
+.no-data { padding: 40px; text-align: center; color: var(--muted); font-size: 14px; }
+
+/* LOADING */
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(13,31,20,0.7);
+  z-index: 999; display: flex; align-items: center; justify-content: center;
+}
+.spinner {
+  width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: var(--g-mid); border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
 </head>
 <body>
-<div id="auth-screen"><div class="login-card"><div style="font-family:'Bebas Neue'; font-size:60px; color:white; margin-bottom:20px;">BIG SALADS 🥗</div><button class="btn-login" id="authorize_button">INGRESAR 🚀</button></div></div>
-<header><div class="logo-header">BIG SALADS <span>STATS</span></div><div id="sync-status" style="font-size: 11px;">🟢 EN LÍNEA</div></header>
-<div class="tabs"><div class="tab active" onclick="setTab('Hoja 1', this)">📅 HOY</div><div class="tab" onclick="setTab('Historico', this)">📈 ESTRATEGIA</div></div>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-inner">
+    <div class="auth-logo">BIG<em>SALADS</em></div>
+    <div class="auth-sub">SEXTA · Dashboard</div>
+    <button class="btn-auth" id="authorize_button">Ingresar al panel</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">Big<em>Salads</em> Stats</div>
+  <div class="status-dot"><div class="dot"></div>En línea</div>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="setTab('Hoja 1', this)">Hoy</div>
+  <div class="tab" onclick="setTab('Historico', this)">Histórico</div>
+</div>
+
+<!-- MAIN -->
 <main id="main-content">
-    <div id="historico-filters" class="filters" style="display:none;">
-        <div><small>Desde:</small><br><input type="date" id="date-from"></div>
-        <div><small>Hasta:</small><br><input type="date" id="date-to"></div>
-        <button class="btn-login" style="width:auto; padding:10px 25px; font-size:18px;" onclick="loadData()">FILTRAR 🔍</button>
-    </div>
-    <div class="kpi-grid" id="kpi-container"></div>
-    <div class="dashboard-grid" id="dashboard-content"></div>
+  <div id="historico-filters" class="filters" style="display:none;">
+    <div class="filter-field"><label>Desde</label><input type="date" id="date-from"></div>
+    <div class="filter-field"><label>Hasta</label><input type="date" id="date-to"></div>
+    <button class="btn-filter" onclick="loadData()">Filtrar</button>
+  </div>
+  <div class="kpi-grid" id="kpi-container"></div>
+  <div id="dashboard-content"></div>
 </main>
 
 <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
 <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 <script>
-    // --- USA TUS LLAVES ---
-    const CLIENT_ID = '89958085370-j4jbkoa7t3u4o0br5erg3j9h3nrcif3g.apps.googleusercontent.com';
-    const API_KEY = 'AIzaSyAVQoifZYh3oc2T1p9xMYKNhe_XtIYQjYc'; 
-    const SPREADSHEET_ID = '1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8';
+const CLIENT_ID = '89958085370-j4jbkoa7t3u4o0br5erg3j9h3nrcif3g.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyAVQoifZYh3oc2T1p9xMYKNhe_XtIYQjYc';
+const SPREADSHEET_ID = '1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8';
 
-    let gapiInited = false, gisInited = false, tokenClient, activeSheet = 'Hoja 1', myCharts = {};
+let gapiInited = false, gisInited = false, tokenClient, activeSheet = 'Hoja 1', myCharts = {};
 
-    function gapiLoaded() { gapi.load('client', async () => {
-        await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"] });
-        gapiInited = true; checkAuth();
-    });}
-    function gisLoaded() {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID, scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
-            callback: (resp) => { if (resp.access_token) { document.getElementById('auth-screen').style.display = 'none'; loadData(); } }
-        });
-        gisInited = true; checkAuth();
-        const ahora = new Date();
-        document.getElementById('date-from').value = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString().split('T')[0];
-        document.getElementById('date-to').value = ahora.toISOString().split('T')[0];
+function gapiLoaded() {
+  gapi.load('client', async () => {
+    await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"] });
+    gapiInited = true; checkAuth();
+  });
+}
+function gisLoaded() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    callback: (resp) => {
+      if (resp.access_token) {
+        document.getElementById('auth-screen').style.display = 'none';
+        loadData();
+      }
     }
-    function checkAuth() { if (gapiInited && gisInited) document.getElementById('authorize_button').onclick = () => tokenClient.requestAccessToken(); }
+  });
+  gisInited = true; checkAuth();
+  const hoy = new Date();
+  document.getElementById('date-from').value = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
+  document.getElementById('date-to').value = hoy.toISOString().split('T')[0];
+}
+function checkAuth() {
+  if (gapiInited && gisInited) document.getElementById('authorize_button').onclick = () => tokenClient.requestAccessToken();
+}
 
-    async function loadData() {
-        const range = activeSheet === 'Hoja 1' ? 'Hoja 1!A1:Z1000' : 'Historico!A1:Z25000';
-        const resp = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: range });
-        processData(resp.result.values);
+async function loadData() {
+  const overlay = document.createElement('div');
+  overlay.className = 'loading-overlay'; overlay.id = 'loading';
+  overlay.innerHTML = '<div class="spinner"></div>';
+  document.body.appendChild(overlay);
+  try {
+    const range = activeSheet === 'Hoja 1' ? 'Hoja 1!A1:Z1000' : 'Historico!A1:Z25000';
+    const resp = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range });
+    processData(resp.result.values);
+  } catch(e) {
+    console.error(e);
+  } finally {
+    document.getElementById('loading')?.remove();
+  }
+}
+
+// ============================================================
+// PARSEO ROBUSTO — maneja todos los formatos argentinos
+// ============================================================
+function parse(v) {
+  if (v == null || v === '' || v === '-' || v === '—') return 0;
+  let s = String(v).trim();
+  // Quitar símbolo $, espacios
+  s = s.replace(/[$\s]/g, '');
+  // Quitar paréntesis de negativos (1.200,50) → -1200.50
+  const neg = s.startsWith('(') && s.endsWith(')');
+  s = s.replace(/[()]/g, '');
+
+  // Detectar el formato:
+  // Formato ES-AR: puntos como miles, coma como decimal → "1.234.567,89"
+  // Formato EN:    comas como miles, punto como decimal  → "1,234,567.89"
+
+  const hasPunto = s.includes('.');
+  const hasComa  = s.includes(',');
+
+  if (hasPunto && hasComa) {
+    // El último separador indica el decimal
+    const lastPunto = s.lastIndexOf('.');
+    const lastComa  = s.lastIndexOf(',');
+    if (lastComa > lastPunto) {
+      // ES-AR: "1.234,56" → puntos = miles, coma = decimal
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      // EN: "1,234.56" → comas = miles, punto = decimal
+      s = s.replace(/,/g, '');
     }
+  } else if (hasComa && !hasPunto) {
+    // Solo coma → es decimal ES-AR: "1234,56"
+    s = s.replace(',', '.');
+  } else if (hasPunto && !hasComa) {
+    // Solo punto → puede ser miles ("1.200") o decimal ("1.5")
+    const partes = s.split('.');
+    const ultimaParte = partes[partes.length - 1];
+    if (partes.length > 1 && ultimaParte.length === 3) {
+      // Patrón "1.200" o "1.234.567" → miles, sin decimal
+      s = s.replace(/\./g, '');
+    }
+    // Si no, lo dejamos como está (es un decimal normal)
+  }
 
-    function processData(rows) {
-        const headers = rows[0];
-        let data = rows.slice(1).filter(r => r[0]);
-        const fmt = v => new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(v);
-        
-        // --- LIMPIEZA DE NÚMEROS (PARA ARREGLAR EL MARGEN) ---
-        const parse = v => {
-            if (!v || v === "" || v === "-") return 0;
-            let s = String(v).trim().replace(/[$\s]/g, '');
-            // Si el código detecta que hay puntos como miles y coma como decimal
-            if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-            else if (s.includes(',')) s = s.replace(',', '.');
-            else if (s.includes('.') && s.split('.').pop().length === 3) s = s.replace('.', ''); // Caso 1.200
-            
-            let n = parseFloat(s);
-            return isNaN(n) ? 0 : n;
-        };
+  const n = parseFloat(s);
+  const result = isNaN(n) ? 0 : n;
+  return neg ? -result : result;
+}
 
-        const findCol = (keys) => headers.findIndex(h => keys.some(k => h.toLowerCase().includes(k.toLowerCase())));
-        const idx = {
-            total: findCol(['total', 'monto', 'venta']),
-            margen: findCol(['margen', 'ganancia', 'neto']),
-            fecha: findCol(['fecha']),
-            hora: findCol(['hora']),
-            origen: findCol(['origen']),
-            pago: findCol(['pago']),
-            producto: findCol(['producto'])
-        };
+function fmt(v, short = false) {
+  if (short && Math.abs(v) >= 1000000) return '$' + (v/1000000).toFixed(1) + 'M';
+  if (short && Math.abs(v) >= 1000) return '$' + Math.round(v/1000) + 'K';
+  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
+}
 
-        if(activeSheet === 'Historico') {
-            const f = document.getElementById('date-from').value, t = document.getElementById('date-to').value;
-            if(f && t) data = data.filter(r => { 
-                const d = new Date(r[idx.fecha]);
-                return d >= new Date(f) && d <= new Date(t);
-            });
+function processData(rows) {
+  if (!rows || rows.length < 2) { document.getElementById('main-content').classList.add('active'); return; }
+
+  const headers = rows[0];
+  // Filtramos filas que tengan al menos algún dato en columna 0 o 1
+  let data = rows.slice(1).filter(r => r && (r[0] || r[1]));
+
+  const findCol = (keys) => headers.findIndex(h => keys.some(k => (h||'').toLowerCase().includes(k.toLowerCase())));
+
+  const idx = {
+    total:    findCol(['total', 'monto', 'venta']),
+    margen:   findCol(['margen', 'ganancia', 'neto']),
+    costo:    findCol(['costo']),
+    fecha:    findCol(['fecha']),
+    hora:     findCol(['hora']),
+    origen:   findCol(['origen', 'canal']),
+    pago:     findCol(['pago', 'forma']),
+    producto: findCol(['producto', 'item', 'descripcion']),
+    ticket:   findCol(['ticket', 'pedido', 'orden', 'numero', 'nro']),
+  };
+
+  // Filtro de fecha para Histórico
+  if (activeSheet === 'Historico') {
+    const f = document.getElementById('date-from').value;
+    const t = document.getElementById('date-to').value;
+    if (f && t) {
+      const dF = new Date(f + 'T00:00:00');
+      const dT = new Date(t + 'T23:59:59');
+      data = data.filter(r => {
+        const raw = r[idx.fecha];
+        if (!raw) return false;
+        // Soporta DD/MM/YYYY y YYYY-MM-DD
+        let d;
+        if (String(raw).includes('/')) {
+          const parts = String(raw).split('/');
+          d = new Date(`${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`);
+        } else {
+          d = new Date(raw);
         }
+        return d >= dF && d <= dT;
+      });
+    }
+  }
 
-        let tVenta = 0, tMargen = 0, tM = 0, cM = 0, tN = 0, cN = 0;
-        const origenes = {}, pagos = {}, prods = {}, prodsM = {};
+  // ============================================================
+  // DEDUPLICACIÓN DE TICKETS
+  // Si hay columna de ticket/pedido, contamos tickets únicos
+  // Si no, contamos filas únicas (cada fila = 1 pedido)
+  // ============================================================
+  const ticketSet = new Set();
+  let totalTickets = 0;
 
-        data.forEach(r => {
-            const v = parse(r[idx.total]);
-            const mRaw = parse(r[idx.margen]);
-            // Ajuste de seguridad: el margen no puede ser mayor a la venta ni negativo
-            const m = (mRaw > v || mRaw < 0) ? (v * 0.35) : mRaw; 
+  // Agregadores
+  let tVenta = 0, tMargen = 0;
+  let tManana = 0, cManana = 0, tNoche = 0, cNoche = 0;
+  const origenes = {}, pagos = {}, prods = {}, prodsMargen = {}, horas = {};
 
-            const h = parseInt(r[idx.hora]) || 0;
-            tVenta += v; tMargen += m;
+  // Para detectar margen automático (si no hay columna de margen)
+  let tieneMargen = idx.margen >= 0;
+  let tieneCosto = idx.costo >= 0;
 
-            if(h < 17) { tM += v; cM++; } else { tN += v; cN++; }
+  data.forEach(r => {
+    const venta  = idx.total >= 0 ? parse(r[idx.total]) : 0;
 
-            const orgRaw = String(r[idx.origen]).trim();
-            const org = (orgRaw === "0" || orgRaw === "") ? "🏠 Local" : orgRaw;
-            origenes[org] = (origenes[org] || 0) + v;
+    // Calcular margen
+    let margen = 0;
+    if (tieneMargen) {
+      margen = parse(r[idx.margen]);
+      // Validación: margen no puede superar venta ni ser negativo absurdo
+      if (margen < 0 || margen > venta * 2) margen = venta * 0.35; // fallback 35%
+    } else if (tieneCosto) {
+      const costo = parse(r[idx.costo]);
+      margen = venta - costo;
+    }
+    // Si no hay ninguna de las dos columnas, margen = 0 (no inventamos)
 
-            const pg = r[idx.pago] || 'Otros';
-            pagos[pg] = (pagos[pg] || 0) + v;
-            
-            const pr = r[idx.producto];
-            if(pr) { 
-                prods[pr] = (prods[pr] || 0) + 1; // Contamos filas como unidades
-                prodsM[pr] = (prodsM[pr] || 0) + m; 
-            }
-        });
+    tVenta  += venta;
+    tMargen += margen;
 
-        document.getElementById('kpi-container').innerHTML = `
-            <div class="kpi"><div class="kpi-lbl">💰 Venta Total</div><div class="kpi-val">${fmt(tVenta)}</div></div>
-            <div class="kpi"><div class="kpi-lbl">🌿 Ganancia Real</div><div class="kpi-val" style="color:var(--green)">${fmt(tMargen)}</div></div>
-            <div class="kpi red-kpi"><div class="kpi-lbl">🎫 Total Tickets</div><div class="kpi-val">${data.length}</div></div>
-            <div class="kpi red-kpi"><div class="kpi-lbl">🛒 Ticket Promedio</div><div class="kpi-val">${fmt(tVenta/data.length || 0)}</div></div>
-        `;
-
-        document.getElementById('dashboard-content').innerHTML = `
-            <div class="card"><div class="card-h">☀️ Mañana vs Noche 🌙</div><table><tr><td>Mañana</td><td>${cM} tickets</td><td><strong>${fmt(tM)}</strong></td></tr><tr><td>Noche</td><td>${cN} tickets</td><td><strong>${fmt(tN)}</strong></td></tr></table></div>
-            <div class="card"><div class="card-h">💳 Ventas por Pago ($)</div><div style="height:280px"><canvas id="chartPagos"></canvas></div></div>
-            <div class="card"><div class="card-h">📍 Ventas por Origen ($)</div><div style="height:280px"><canvas id="chartOrigenes"></canvas></div></div>
-            <div class="card"><div class="card-h">🔝 Top 5 Productos</div><table>${Object.entries(prods).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v]) => `<tr><td>${k}</td><td style="text-align:right"><strong>${v} u.</strong></td></tr>`).join('')}</table></div>
-        `;
-
-        renderCharts(pagos, origenes);
-        document.getElementById('main-content').classList.add('active');
+    // Contar tickets únicos
+    if (idx.ticket >= 0 && r[idx.ticket]) {
+      const tid = String(r[idx.ticket]).trim();
+      if (!ticketSet.has(tid)) { ticketSet.add(tid); totalTickets++; }
+    } else {
+      totalTickets++; // cada fila = 1 ticket
     }
 
-    function renderCharts(pagos, origenes) {
-        const commonOptions = { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } };
-        if(myCharts.pagos) myCharts.pagos.destroy();
-        myCharts.pagos = new Chart(document.getElementById('chartPagos'), { type: 'bar', data: { labels: Object.keys(pagos), datasets: [{ data: Object.values(pagos), backgroundColor: '#d90429', borderRadius: 8 }] }, options: commonOptions });
-        if(myCharts.orig) myCharts.orig.destroy();
-        myCharts.orig = new Chart(document.getElementById('chartOrigenes'), { type: 'bar', data: { labels: Object.keys(origenes), datasets: [{ data: Object.values(origenes), backgroundColor: '#2a7d40', borderRadius: 8 }] }, options: commonOptions });
+    // Turno: mañana vs noche
+    const horaRaw = r[idx.hora] ? String(r[idx.hora]).trim() : '';
+    let horaNum = NaN;
+    if (horaRaw.includes(':')) horaNum = parseInt(horaRaw.split(':')[0]);
+    else horaNum = parseInt(horaRaw);
+
+    if (!isNaN(horaNum)) {
+      if (horaNum < 17) { tManana += venta; cManana++; }
+      else              { tNoche  += venta; cNoche++; }
+      // Heatmap de horas
+      horas[horaNum] = (horas[horaNum] || 0) + venta;
     }
 
-    function setTab(name, el) { activeSheet = name; document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); el.classList.add('active'); document.getElementById('historico-filters').style.display = name === 'Historico' ? 'flex' : 'none'; loadData(); }
+    // Origen
+    if (idx.origen >= 0) {
+      let org = String(r[idx.origen] || '').trim();
+      if (!org || org === '0') org = 'Local';
+      origenes[org] = (origenes[org] || 0) + venta;
+    }
+
+    // Pago
+    if (idx.pago >= 0) {
+      const pg = String(r[idx.pago] || 'Otro').trim() || 'Otro';
+      pagos[pg] = (pagos[pg] || 0) + venta;
+    }
+
+    // Productos — contamos OCURRENCIAS ÚNICAS (filas), no unidades sumadas
+    if (idx.producto >= 0 && r[idx.producto]) {
+      const pr = String(r[idx.producto]).trim();
+      prods[pr]       = (prods[pr] || 0) + 1;
+      prodsMargen[pr] = (prodsMargen[pr] || 0) + margen;
+    }
+  });
+
+  // Si no encontró tickets únicos, usar conteo de filas
+  if (totalTickets === 0) totalTickets = data.length;
+
+  const ticketProm   = totalTickets > 0 ? tVenta / totalTickets : 0;
+  const margenPct    = tVenta > 0 ? (tMargen / tVenta * 100) : 0;
+
+  // ============================================================
+  // RENDER KPIs
+  // ============================================================
+  document.getElementById('kpi-container').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-lbl">Venta Total</div>
+      <div class="kpi-val">${fmt(tVenta, true)}</div>
+      <div class="kpi-sub">${fmt(tVenta)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">🌿</div>
+      <div class="kpi-lbl">Ganancia</div>
+      <div class="kpi-val" style="color:var(--g)">${fmt(tMargen, true)}</div>
+      <div class="kpi-sub">${margenPct.toFixed(1)}% de margen</div>
+    </div>
+    <div class="kpi accent-red">
+      <div class="kpi-icon">🎫</div>
+      <div class="kpi-lbl">Tickets</div>
+      <div class="kpi-val">${totalTickets.toLocaleString('es-AR')}</div>
+      <div class="kpi-sub">${data.length} filas procesadas</div>
+    </div>
+    <div class="kpi accent-amber">
+      <div class="kpi-icon">🛒</div>
+      <div class="kpi-lbl">Ticket Promedio</div>
+      <div class="kpi-val">${fmt(ticketProm, true)}</div>
+      <div class="kpi-sub">${fmt(ticketProm)}</div>
+    </div>
+    <div class="kpi accent-blue">
+      <div class="kpi-icon">📈</div>
+      <div class="kpi-lbl">Margen %</div>
+      <div class="kpi-val" style="color:var(--blue)">${margenPct.toFixed(1)}%</div>
+      <div class="kpi-sub">Sobre ventas totales</div>
+    </div>
+  `;
+
+  // ============================================================
+  // RENDER CONTENIDO
+  // ============================================================
+  const dc = document.getElementById('dashboard-content');
+
+  // Top 5 productos por unidades y por margen
+  const top5Unidades = Object.entries(prods).sort((a,b) => b[1] - a[1]).slice(0, 5);
+  const top5Margen   = Object.entries(prodsMargen).sort((a,b) => b[1] - a[1]).slice(0, 5);
+  const medals = ['medal-1','medal-2','medal-3','',''];
+
+  // Pill bars para pagos y origenes
+  const maxPago = Math.max(...Object.values(pagos), 1);
+  const maxOrigen = Math.max(...Object.values(origenes), 1);
+  const pagoColors = ['#1a7a43','#2fa05a','#5db87a','#8ed4a0','#b8e8c6'];
+  const origenColors = ['#d90429','#e84d6b','#f08098','#f5aabc','#fad4dc'];
+
+  const pillBarsHtml = (obj, max, colors) => Object.entries(obj)
+    .sort((a,b) => b[1] - a[1])
+    .map(([k,v], i) => `
+      <div class="pill-bar-row">
+        <div class="pill-bar-label" title="${k}">${k}</div>
+        <div class="pill-bar-track"><div class="pill-bar-fill" style="width:${(v/max*100).toFixed(1)}%;background:${colors[i] || '#999'}"></div></div>
+        <div class="pill-bar-val">${fmt(v, true)}</div>
+      </div>`).join('');
+
+  // Heatmap de horas (8 a 22)
+  const horaKeys = Array.from({length: 15}, (_, i) => i + 8);
+  const maxHora = Math.max(...horaKeys.map(h => horas[h] || 0), 1);
+  const heatmapHtml = horaKeys.map(h => {
+    const v = horas[h] || 0;
+    const pct = v / maxHora;
+    const intensity = Math.round(pct * 100);
+    const bg = `rgba(26,122,67,${0.1 + pct * 0.9})`;
+    const label = v > 0 ? `${h}h` : `${h}h`;
+    return `<div class="heat-cell" style="background:${bg}" title="${h}:00 — ${fmt(v)}">${label}</div>`;
+  }).join('');
+
+  dc.innerHTML = `
+    <!-- ROW 1: Turno + Margen gauge + Heatmap horas -->
+    <div class="grid-3" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-h">Turno <span class="lbl">Ventas</span></div>
+        <div class="split-row">
+          <div class="split-half">
+            <div style="font-size:24px;margin-bottom:6px;">☀️</div>
+            <div class="big" style="color:var(--amber)">${fmt(tManana, true)}</div>
+            <div class="label">Mañana</div>
+            <div class="tickets">${cManana} tickets</div>
+          </div>
+          <div class="split-half">
+            <div style="font-size:24px;margin-bottom:6px;">🌙</div>
+            <div class="big" style="color:var(--blue)">${fmt(tNoche, true)}</div>
+            <div class="label">Noche</div>
+            <div class="tickets">${cNoche} tickets</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;">
+            <span>Participación mañana</span>
+            <span>${tVenta > 0 ? (tManana/tVenta*100).toFixed(0) : 0}%</span>
+          </div>
+          <div style="background:var(--bg);border-radius:100px;height:8px;overflow:hidden;">
+            <div style="width:${tVenta > 0 ? (tManana/tVenta*100).toFixed(1) : 0}%;height:100%;background:var(--amber);border-radius:100px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Distribución de Ganancia</div>
+        <div style="height:180px;position:relative;">
+          <canvas id="chartMargen" role="img" aria-label="Donut de ganancia vs costo"></canvas>
+        </div>
+        <div style="display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:12px;color:var(--muted);">
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#1a7a43;display:inline-block;"></span>Ganancia</span>
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#e8e8e8;display:inline-block;"></span>Costos</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Actividad por Hora <span class="lbl">Venta $</span></div>
+        <div class="heatmap-grid" style="margin-bottom:4px;">${heatmapHtml}</div>
+        <div class="heat-labels">${horaKeys.map(h => `<div class="heat-lbl">${h}</div>`).join('')}</div>
+        <div style="margin-top:12px;font-size:11px;color:var(--muted);">
+          Hora pico: <strong>${horaKeys.reduce((a,b) => (horas[b]||0) > (horas[a]||0) ? b : a, 8)}:00</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Pagos + Origenes -->
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-h">Forma de Pago <span class="lbl">por venta $</span></div>
+        <div class="pill-bar-wrap">${pillBarsHtml(pagos, maxPago, pagoColors)}</div>
+      </div>
+      <div class="card">
+        <div class="card-h">Canal de Venta <span class="lbl">por venta $</span></div>
+        <div class="pill-bar-wrap">${pillBarsHtml(origenes, maxOrigen, origenColors)}</div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Top productos por cantidad y por margen -->
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-h">Top Productos <span class="lbl">por cantidad</span></div>
+        <table class="data-table">
+          ${top5Unidades.map(([k,v], i) => `
+            <tr>
+              <td class="rank ${medals[i]}">${['①','②','③','④','⑤'][i]}</td>
+              <td>${k}</td>
+              <td class="num">${v.toLocaleString('es-AR')} u.</td>
+            </tr>`).join('')}
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-h">Top Productos <span class="lbl">por ganancia $</span></div>
+        <table class="data-table">
+          ${top5Margen.map(([k,v], i) => `
+            <tr>
+              <td class="rank ${medals[i]}">${['①','②','③','④','⑤'][i]}</td>
+              <td>${k}</td>
+              <td class="num" style="color:var(--g)">${fmt(v, true)}</td>
+            </tr>`).join('')}
+        </table>
+      </div>
+    </div>
+
+    <!-- ROW 4: Charts pagos y origenes -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-h">Pagos <span class="lbl">distribución</span></div>
+        <div style="height:${Math.max(Object.keys(pagos).length * 44 + 40, 180)}px;position:relative;">
+          <canvas id="chartPagos" role="img" aria-label="Ventas por forma de pago"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h">Canales <span class="lbl">distribución</span></div>
+        <div style="height:${Math.max(Object.keys(origenes).length * 44 + 40, 180)}px;position:relative;">
+          <canvas id="chartOrigenes" role="img" aria-label="Ventas por canal de origen"></canvas>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Destruir charts viejos
+  Object.values(myCharts).forEach(c => c?.destroy());
+  myCharts = {};
+
+  // Chart de Margen (donut)
+  const costos = tVenta - tMargen;
+  myCharts.margen = new Chart(document.getElementById('chartMargen'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Ganancia', 'Costos'],
+      datasets: [{
+        data: [Math.max(tMargen, 0), Math.max(costos, 0)],
+        backgroundColor: ['#1a7a43', '#e8e8e8'],
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.parsed)}` } }
+      }
+    },
+    plugins: [{
+      id: 'centerText',
+      beforeDraw(chart) {
+        const { ctx, chartArea: { width, height, top } } = chart;
+        ctx.save();
+        ctx.font = '700 22px Syne, sans-serif';
+        ctx.fillStyle = '#1a7a43';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${margenPct.toFixed(1)}%`, width / 2, top + height / 2 - 8);
+        ctx.font = '400 11px DM Sans, sans-serif';
+        ctx.fillStyle = '#6b7c6e';
+        ctx.fillText('margen', width / 2, top + height / 2 + 14);
+        ctx.restore();
+      }
+    }]
+  });
+
+  // Charts barras horizontales
+  const barOpts = (color) => ({
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.parsed.x)}` } } },
+    scales: {
+      x: { display: false, grid: { display: false } },
+      y: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 12 }, color: '#6b7c6e' } }
+    }
+  });
+
+  const pagosSorted = Object.entries(pagos).sort((a,b) => b[1]-a[1]);
+  myCharts.pagos = new Chart(document.getElementById('chartPagos'), {
+    type: 'bar',
+    data: {
+      labels: pagosSorted.map(x => x[0]),
+      datasets: [{ data: pagosSorted.map(x => x[1]), backgroundColor: '#1a7a43', borderRadius: 6, borderSkipped: false }]
+    },
+    options: barOpts('#1a7a43')
+  });
+
+  const origSorted = Object.entries(origenes).sort((a,b) => b[1]-a[1]);
+  myCharts.orig = new Chart(document.getElementById('chartOrigenes'), {
+    type: 'bar',
+    data: {
+      labels: origSorted.map(x => x[0]),
+      datasets: [{ data: origSorted.map(x => x[1]), backgroundColor: '#d90429', borderRadius: 6, borderSkipped: false }]
+    },
+    options: barOpts('#d90429')
+  });
+
+  document.getElementById('main-content').classList.add('active');
+}
+
+function setTab(name, el) {
+  activeSheet = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('historico-filters').style.display = name === 'Historico' ? 'flex' : 'none';
+  if (gapi.client?.sheets) loadData();
+}
 </script>
 </body>
 </html>
