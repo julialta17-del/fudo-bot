@@ -3,71 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BIG SALADS · SEXTA</title>
+    <title>BIG SALADS · Intelligence Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        :root { --green: #2a7d40; --light-green: #5dbf72; --dark: #0a1a0f; --bg: #1e272e; --white: #ffffff; --red: #d90429; --text: #2b2d42; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg); margin: 0; color: var(--text); }
-        
-        #auth-screen { position: fixed; inset: 0; background: var(--dark); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .login-card { background: rgba(255,255,255,0.05); padding: 50px; border-radius: 40px; backdrop-filter: blur(20px); text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        .logo-login { font-family: 'Bebas Neue'; font-size: 60px; color: white; margin-bottom: 20px; }
-        .logo-login span { color: var(--red); }
-        
-        header { background: var(--dark); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--red); }
-        .logo-header { font-family: 'Bebas Neue'; font-size: 32px; color: white; letter-spacing: 1px; }
+        :root { --green: #2a7d40; --dark-green: #0a1a0f; --bg: #1e272e; --white: #ffffff; --red: #d90429; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); margin: 0; color: #2b2d42; }
+        #auth-screen { position: fixed; inset: 0; background: var(--dark-green); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .btn-login { background: var(--red); color: white; border: none; padding: 18px 40px; border-radius: 15px; font-family: 'Bebas Neue'; font-size: 26px; cursor: pointer; width: 100%; box-shadow: 0 10px 20px rgba(217, 4, 41, 0.3); }
+        header { background: var(--dark-green); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--red); }
+        .logo-header { font-family: 'Bebas Neue'; font-size: 32px; color: white; }
         .logo-header span { color: var(--red); }
-
         .tabs { background: var(--white); display: flex; padding: 0 30px; border-bottom: 1px solid #ced4da; position: sticky; top: 0; z-index: 100; }
-        .tab { padding: 20px 15px; cursor: pointer; font-family: 'Bebas Neue'; font-size: 19px; color: #adb5bd; transition: 0.3s; }
+        .tab { padding: 20px 15px; cursor: pointer; font-family: 'Bebas Neue'; font-size: 19px; color: #adb5bd; }
         .tab.active { color: var(--red); border-bottom: 4px solid var(--red); }
-
         main { padding: 25px; max-width: 1400px; margin: 0 auto; display: none; }
         main.active { display: block; }
-
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
         .kpi { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border-top: 6px solid var(--green); }
         .kpi.red-kpi { border-top-color: var(--red); }
         .kpi-lbl { font-size: 11px; font-weight: 700; color: #6c757d; text-transform: uppercase; }
-        .kpi-val { font-family: 'Bebas Neue'; font-size: 40px; color: var(--dark); margin-top: 5px; }
-
+        .kpi-val { font-family: 'Bebas Neue'; font-size: 40px; color: #0a1a0f; margin-top: 5px; }
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; }
         .card { background: var(--white); padding: 25px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .card-h { font-family: 'Bebas Neue'; font-size: 24px; color: var(--dark); border-bottom: 2px solid #f1f3f5; padding-bottom: 12px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        
+        .card-h { font-family: 'Bebas Neue'; font-size: 24px; color: #0a1a0f; border-bottom: 2px solid #f1f3f5; padding-bottom: 12px; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         td { padding: 12px 8px; border-bottom: 1px solid #f8f9fa; }
-        
         .filters { background: #ffffff; padding: 20px; border-radius: 20px; margin-bottom: 25px; display: flex; gap: 15px; align-items: flex-end; }
         input[type="date"] { padding: 10px; border-radius: 10px; border: 1px solid #adb5bd; }
-        .btn-red { background: var(--red); color: white; border: none; padding: 10px 25px; border-radius: 12px; font-family: 'Bebas Neue'; font-size: 18px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-<div id="auth-screen">
-    <div class="login-card">
-        <div class="logo-login">BIG SALADS SEXTA 🥗</div>
-        <button class="btn-red" style="font-size: 26px; width: 100%; padding: 18px;" id="authorize_button">INGRESAR AL NEGOCIO 🚀</button>
-    </div>
-</div>
-
-<header>
-    <div class="logo-header">BIG SALADS SEXTA <span>STATS</span></div>
-    <div id="sync-status" style="font-size: 11px;">🟢 NUBE ACTIVADA</div>
-</header>
-
-<div class="tabs">
-    <div class="tab active" onclick="setTab('Hoja 1', this)">📅 RESUMEN DIARIO</div>
-    <div class="tab" onclick="setTab('Historico', this)">📈 ESTRATEGIA MENSUAL</div>
-</div>
-
+<div id="auth-screen"><div class="login-card"><div style="font-family:'Bebas Neue'; font-size:60px; color:white; margin-bottom:20px;">BIG SALADS 🥗</div><button class="btn-login" id="authorize_button">INGRESAR 🚀</button></div></div>
+<header><div class="logo-header">BIG SALADS <span>STATS</span></div><div id="sync-status" style="font-size: 11px;">🟢 EN LÍNEA</div></header>
+<div class="tabs"><div class="tab active" onclick="setTab('Hoja 1', this)">📅 HOY</div><div class="tab" onclick="setTab('Historico', this)">📈 ESTRATEGIA</div></div>
 <main id="main-content">
     <div id="historico-filters" class="filters" style="display:none;">
         <div><small>Desde:</small><br><input type="date" id="date-from"></div>
         <div><small>Hasta:</small><br><input type="date" id="date-to"></div>
-        <button class="btn-red" onclick="loadData()">FILTRAR RANGO 🔍</button>
+        <button class="btn-login" style="width:auto; padding:10px 25px; font-size:18px;" onclick="loadData()">FILTRAR 🔍</button>
     </div>
     <div class="kpi-grid" id="kpi-container"></div>
     <div class="dashboard-grid" id="dashboard-content"></div>
@@ -75,8 +49,8 @@
 
 <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
 <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
-
 <script>
+    // --- USA TUS LLAVES ---
     const CLIENT_ID = '89958085370-j4jbkoa7t3u4o0br5erg3j9h3nrcif3g.apps.googleusercontent.com';
     const API_KEY = 'AIzaSyAVQoifZYh3oc2T1p9xMYKNhe_XtIYQjYc'; 
     const SPREADSHEET_ID = '1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8';
@@ -93,7 +67,6 @@
             callback: (resp) => { if (resp.access_token) { document.getElementById('auth-screen').style.display = 'none'; loadData(); } }
         });
         gisInited = true; checkAuth();
-        
         const ahora = new Date();
         document.getElementById('date-from').value = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString().split('T')[0];
         document.getElementById('date-to').value = ahora.toISOString().split('T')[0];
@@ -101,7 +74,7 @@
     function checkAuth() { if (gapiInited && gisInited) document.getElementById('authorize_button').onclick = () => tokenClient.requestAccessToken(); }
 
     async function loadData() {
-        const range = activeSheet === 'Hoja 1' ? 'Hoja 1!A1:Z1000' : 'Historico!A1:Z20000';
+        const range = activeSheet === 'Hoja 1' ? 'Hoja 1!A1:Z1000' : 'Historico!A1:Z25000';
         const resp = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: range });
         processData(resp.result.values);
     }
@@ -111,11 +84,15 @@
         let data = rows.slice(1).filter(r => r[0]);
         const fmt = v => new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(v);
         
-        // --- LIMPIEZA DE NÚMEROS NIVEL DIOS ---
+        // --- LIMPIEZA DE NÚMEROS (PARA ARREGLAR EL MARGEN) ---
         const parse = v => {
             if (!v || v === "" || v === "-") return 0;
-            let s = String(v).trim().replace(/[$\s.]/g, ''); // Quitamos $ y PUNTOS (miles)
-            s = s.replace(',', '.'); // Convertimos coma decimal en punto
+            let s = String(v).trim().replace(/[$\s]/g, '');
+            // Si el código detecta que hay puntos como miles y coma como decimal
+            if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+            else if (s.includes(',')) s = s.replace(',', '.');
+            else if (s.includes('.') && s.split('.').pop().length === 3) s = s.replace('.', ''); // Caso 1.200
+            
             let n = parseFloat(s);
             return isNaN(n) ? 0 : n;
         };
@@ -128,8 +105,7 @@
             hora: findCol(['hora']),
             origen: findCol(['origen']),
             pago: findCol(['pago']),
-            producto: findCol(['producto']),
-            cant: findCol(['cant', 'unidades', 'qty'])
+            producto: findCol(['producto'])
         };
 
         if(activeSheet === 'Historico') {
@@ -140,22 +116,19 @@
             });
         }
 
-        let tVenta = 0, tMargen = 0, tM = 0, cM = 0, tN = 0, cN = 0, tCant = 0;
-        const origenes = {}, pagos = {}, prods = {}, prodsM = {}, hM = {}, hN = {};
+        let tVenta = 0, tMargen = 0, tM = 0, cM = 0, tN = 0, cN = 0;
+        const origenes = {}, pagos = {}, prods = {}, prodsM = {};
 
         data.forEach(r => {
             const v = parse(r[idx.total]);
             const mRaw = parse(r[idx.margen]);
-            // Ajuste de margen: si mRaw > v, es que el Excel tiene un error de carga o formato.
-            const m = (mRaw > v) ? (v * 0.3) : mRaw; 
+            // Ajuste de seguridad: el margen no puede ser mayor a la venta ni negativo
+            const m = (mRaw > v || mRaw < 0) ? (v * 0.35) : mRaw; 
 
             const h = parseInt(r[idx.hora]) || 0;
-            const c = parse(r[idx.cant]) || 1;
+            tVenta += v; tMargen += m;
 
-            tVenta += v; tMargen += m; tCant += c;
-
-            if(h < 17) { tM += v; cM++; hM[h] = (hM[h]||0)+1; }
-            else { tN += v; cN++; hN[h] = (hN[h]||0)+1; }
+            if(h < 17) { tM += v; cM++; } else { tN += v; cN++; }
 
             const orgRaw = String(r[idx.origen]).trim();
             const org = (orgRaw === "0" || orgRaw === "") ? "🏠 Local" : orgRaw;
@@ -165,97 +138,39 @@
             pagos[pg] = (pagos[pg] || 0) + v;
             
             const pr = r[idx.producto];
-            if(pr) { prods[pr] = (prods[pr] || 0) + c; prodsM[pr] = (prodsM[pr] || 0) + m; }
+            if(pr) { 
+                prods[pr] = (prods[pr] || 0) + 1; // Contamos filas como unidades
+                prodsM[pr] = (prodsM[pr] || 0) + m; 
+            }
         });
 
         document.getElementById('kpi-container').innerHTML = `
             <div class="kpi"><div class="kpi-lbl">💰 Venta Total</div><div class="kpi-val">${fmt(tVenta)}</div></div>
-            <div class="kpi"><div class="kpi-lbl">🌿 Ganancia Estimada</div><div class="kpi-val" style="color:var(--green)">${fmt(tMargen)}</div></div>
-            <div class="kpi red-kpi"><div class="kpi-lbl">🎫 Ticket Promedio</div><div class="kpi-val">${fmt(tVenta/data.length || 0)}</div></div>
-            <div class="kpi red-kpi"><div class="kpi-lbl">🥗 Unidades/Pedido</div><div class="kpi-val">${(tCant/data.length || 0).toFixed(1)} u.</div></div>
+            <div class="kpi"><div class="kpi-lbl">🌿 Ganancia Real</div><div class="kpi-val" style="color:var(--green)">${fmt(tMargen)}</div></div>
+            <div class="kpi red-kpi"><div class="kpi-lbl">🎫 Total Tickets</div><div class="kpi-val">${data.length}</div></div>
+            <div class="kpi red-kpi"><div class="kpi-lbl">🛒 Ticket Promedio</div><div class="kpi-val">${fmt(tVenta/data.length || 0)}</div></div>
         `;
 
-        let html = `
-            <div class="card">
-                <div class="card-h">☀️ Turnos Mañana / Noche 🌙</div>
-                <table>
-                    <tr><td>Mañana (AM)</td><td>${cM} pedidos</td><td><strong>${fmt(tM)}</strong></td></tr>
-                    <tr><td>Noche (PM)</td><td>${cN} pedidos</td><td><strong>${fmt(tN)}</strong></td></tr>
-                </table>
-            </div>
-            <div class="card">
-                <div class="card-h">💳 Medios de Pago ($)</div>
-                <div style="height:280px"><canvas id="chartPagos"></canvas></div>
-            </div>
-            <div class="card">
-                <div class="card-h">📍 Canales de Venta ($)</div>
-                <div style="height:280px"><canvas id="chartOrigenes"></canvas></div>
-            </div>
-            <div class="card">
-                <div class="card-h">🔝 Top 5 Productos 🔥</div>
-                <table>
-                    ${Object.entries(prods).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v]) => `<tr><td>${k}</td><td style="text-align:right"><strong>${v} u.</strong></td></tr>`).join('')}
-                </table>
-            </div>
+        document.getElementById('dashboard-content').innerHTML = `
+            <div class="card"><div class="card-h">☀️ Mañana vs Noche 🌙</div><table><tr><td>Mañana</td><td>${cM} tickets</td><td><strong>${fmt(tM)}</strong></td></tr><tr><td>Noche</td><td>${cN} tickets</td><td><strong>${fmt(tN)}</strong></td></tr></table></div>
+            <div class="card"><div class="card-h">💳 Ventas por Pago ($)</div><div style="height:280px"><canvas id="chartPagos"></canvas></div></div>
+            <div class="card"><div class="card-h">📍 Ventas por Origen ($)</div><div style="height:280px"><canvas id="chartOrigenes"></canvas></div></div>
+            <div class="card"><div class="card-h">🔝 Top 5 Productos</div><table>${Object.entries(prods).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v]) => `<tr><td>${k}</td><td style="text-align:right"><strong>${v} u.</strong></td></tr>`).join('')}</table></div>
         `;
 
-        if(activeSheet === 'Historico') {
-            const pickM = Object.entries(hM).sort((a,b)=>b[1]-a[1])[0]?.[0] || '--';
-            const pickN = Object.entries(hN).sort((a,b)=>b[1]-a[1])[0]?.[0] || '--';
-            html += `
-                <div class="card" style="border-left: 10px solid var(--red)">
-                    <div class="card-h">🚀 Análisis & Proyectado</div>
-                    <div style="margin-bottom:12px">⏰ Pico Mañana: <b>${pickM}:00 hs</b></div>
-                    <div style="margin-bottom:12px">⏰ Pico Noche: <b>${pickN}:00 hs</b></div>
-                    <div style="padding:15px; background:#fff0f0; border-radius:15px; color:var(--red); font-size:20px; font-family:'Bebas Neue'">
-                        📈 Proyectado Mensual: ${fmt((tVenta/data.length)*30*(data.length/7 || 1))}
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-h">💎 Ranking de Ganancia Real</div>
-                    <table>
-                        ${Object.entries(prodsM).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v]) => `<tr><td>${k}</td><td style="text-align:right; color:var(--green)">${fmt(v)}</td></tr>`).join('')}
-                    </table>
-                </div>
-            `;
-        }
-
-        document.getElementById('dashboard-content').innerHTML = html;
         renderCharts(pagos, origenes);
         document.getElementById('main-content').classList.add('active');
     }
 
     function renderCharts(pagos, origenes) {
+        const commonOptions = { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } };
         if(myCharts.pagos) myCharts.pagos.destroy();
+        myCharts.pagos = new Chart(document.getElementById('chartPagos'), { type: 'bar', data: { labels: Object.keys(pagos), datasets: [{ data: Object.values(pagos), backgroundColor: '#d90429', borderRadius: 8 }] }, options: commonOptions });
         if(myCharts.orig) myCharts.orig.destroy();
-
-        const commonOptions = {
-            indexAxis: 'y',
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { family: 'Outfit', size: 12 } } } }
-        };
-
-        myCharts.pagos = new Chart(document.getElementById('chartPagos'), {
-            type: 'bar',
-            data: { labels: Object.keys(pagos), datasets: [{ data: Object.values(pagos), backgroundColor: '#d90429', borderRadius: 10 }] },
-            options: commonOptions
-        });
-
-        myCharts.orig = new Chart(document.getElementById('chartOrigenes'), {
-            type: 'bar',
-            data: { labels: Object.keys(origenes), datasets: [{ data: Object.values(origenes), backgroundColor: '#2a7d40', borderRadius: 10 }] },
-            options: commonOptions
-        });
+        myCharts.orig = new Chart(document.getElementById('chartOrigenes'), { type: 'bar', data: { labels: Object.keys(origenes), datasets: [{ data: Object.values(origenes), backgroundColor: '#2a7d40', borderRadius: 8 }] }, options: commonOptions });
     }
 
-    function setTab(name, el) {
-        activeSheet = name;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        el.classList.add('active');
-        document.getElementById('historico-filters').style.display = name === 'Historico' ? 'flex' : 'none';
-        loadData();
-    }
+    function setTab(name, el) { activeSheet = name; document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); el.classList.add('active'); document.getElementById('historico-filters').style.display = name === 'Historico' ? 'flex' : 'none'; loadData(); }
 </script>
 </body>
 </html>
