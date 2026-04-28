@@ -175,6 +175,57 @@ input[type="date"]:focus, input[type="number"]:focus, select:focus { border-colo
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* EVOLUCIÓN & SALUD */
+.periodo-selector {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px 20px; margin-bottom: 24px;
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.periodo-btn {
+  padding: 7px 18px; border-radius: 100px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--muted); font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+}
+.periodo-btn.active, .periodo-btn:hover { background: var(--g); color: #fff; border-color: var(--g); }
+
+.alerta-card {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px 18px; margin-bottom: 12px;
+}
+.alerta-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.alerta-titulo { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.alerta-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.alerta-card.warn { border-left: 4px solid var(--amber); }
+.alerta-card.good { border-left: 4px solid var(--g); }
+.alerta-card.bad  { border-left: 4px solid var(--r); }
+
+.salud-score-wrap { display: flex; align-items: center; gap: 24px; padding: 8px 0 16px; }
+.salud-score-circle {
+  width: 100px; height: 100px; border-radius: 50%; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+}
+.salud-score-num { font-size: 30px; font-weight: 700; letter-spacing: -1px; }
+.salud-score-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+.salud-score-desc { font-size: 14px; line-height: 1.6; color: var(--muted); }
+
+.semaforo-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.semaforo-row:last-child { border-bottom: none; }
+.semaforo-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.semaforo-dot.verde  { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.4); }
+.semaforo-dot.amarillo { background: var(--amber); box-shadow: 0 0 6px rgba(232,132,12,0.4); }
+.semaforo-dot.rojo   { background: var(--r); box-shadow: 0 0 6px rgba(217,4,41,0.4); }
+.semaforo-lbl { font-size: 14px; flex: 1; }
+.semaforo-val { font-size: 13px; font-weight: 500; color: var(--muted); }
+
+.mes-chip {
+  display: inline-block; padding: 2px 10px; border-radius: 100px;
+  font-size: 11px; font-weight: 600; background: var(--g-light); color: var(--g);
+}
+.mes-chip.bajando { background: var(--r-light); color: var(--r); }
+.mes-chip.neutro  { background: #f0f0f0; color: var(--muted); }
+
 /* ESTRATEGIA */
 .estrategia-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px; }
 .tactica-card {
@@ -245,6 +296,8 @@ input[type="date"]:focus, input[type="number"]:focus, select:focus { border-colo
   <div class="tab active" onclick="setTab('Hoja 1', this)">Hoy</div>
   <div class="tab" onclick="setTab('Historico', this)">Histórico</div>
   <div class="tab" onclick="setTab('Estrategia', this)">🎯 Estrategia</div>
+  <div class="tab" onclick="setTab('Evolucion', this)">📊 Evolución</div>
+  <div class="tab" onclick="setTab('Salud', this)">🔍 Salud del negocio</div>
 </div>
 
 <main id="main-content">
@@ -266,6 +319,7 @@ const SPREADSHEET_ID = '1uEFRm_0zEhsRGUX9PIomjUhiijxWVnCXnSMQuUJK5a8';
 
 let gapiInited = false, gisInited = false, tokenClient, activeSheet = 'Hoja 1', myCharts = {};
 let globalStats = { ticketProm: 0, totalTickets: 0, tVenta: 0, tMargen: 0, margenPct: 0 };
+let globalHistoricoRows = null; // cache raw historico rows for new tabs
 
 function gapiLoaded() {
   gapi.load('client', async () => {
@@ -295,6 +349,8 @@ function checkAuth() {
 
 async function loadData() {
   if (activeSheet === 'Estrategia') { renderEstrategia(); return; }
+  if (activeSheet === 'Evolucion') { await loadHistoricoForAnalysis(); renderEvolucion(); return; }
+  if (activeSheet === 'Salud') { await loadHistoricoForAnalysis(); renderSalud(); return; }
   const overlay = document.createElement('div');
   overlay.className = 'loading-overlay'; overlay.id = 'loading';
   overlay.innerHTML = '<div class="spinner"></div>';
@@ -302,12 +358,26 @@ async function loadData() {
   try {
     const range = activeSheet === 'Hoja 1' ? 'Hoja 1!A1:Z1000' : 'Historico!A1:Z25000';
     const resp = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range });
+    if (activeSheet === 'Historico') globalHistoricoRows = resp.result.values;
     processData(resp.result.values);
   } catch(e) {
     console.error(e);
   } finally {
     document.getElementById('loading')?.remove();
   }
+}
+
+async function loadHistoricoForAnalysis() {
+  if (globalHistoricoRows) return; // already cached
+  const overlay = document.createElement('div');
+  overlay.className = 'loading-overlay'; overlay.id = 'loading';
+  overlay.innerHTML = '<div class="spinner"></div>';
+  document.body.appendChild(overlay);
+  try {
+    const resp = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Historico!A1:Z25000' });
+    globalHistoricoRows = resp.result.values;
+  } catch(e) { console.error(e); }
+  finally { document.getElementById('loading')?.remove(); }
 }
 
 // ============================================================
@@ -349,6 +419,9 @@ function processData(rows) {
 
   const headers = rows[0];
   let data = rows.slice(1).filter(r => r && (r[0] || r[1]));
+
+  // Cache historico for analysis tabs
+  if (activeSheet === 'Historico') globalHistoricoRows = rows;
 
   const findCol = (keys) => headers.findIndex(h => keys.some(k => (h||'').toLowerCase().includes(k.toLowerCase())));
 
@@ -970,17 +1043,762 @@ function recalcProyeccion() {
   }
 }
 
+// ============================================================
+// HELPERS COMPARTIDOS PARA ANÁLISIS MENSUAL
+// ============================================================
+function buildMonthlyData(rows, nMeses) {
+  if (!rows || rows.length < 2) return null;
+  const headers = rows[0];
+  const findCol = (keys) => headers.findIndex(h => keys.some(k => (h||'').toLowerCase().includes(k.toLowerCase())));
+  const idx = {
+    total:    findCol(['total', 'monto', 'venta']),
+    margen:   findCol(['margen', 'ganancia', 'neto']),
+    costo:    findCol(['costo']),
+    fecha:    findCol(['fecha']),
+    hora:     findCol(['hora']),
+    origen:   findCol(['origen', 'canal']),
+    pago:     findCol(['pago', 'forma']),
+    producto: findCol(['producto', 'item', 'descripcion']),
+    ticket:   findCol(['ticket', 'pedido', 'orden', 'numero', 'nro']),
+  };
+
+  let data = rows.slice(1).filter(r => r && (r[0] || r[1]));
+  if (idx.total >= 0) data = data.filter(r => parse(r[idx.total]) > 0);
+
+  // Parsear fecha de cada fila
+  function parseFecha(raw) {
+    if (!raw) return null;
+    if (String(raw).includes('/')) {
+      const p = String(raw).split('/');
+      return new Date(`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`);
+    }
+    const d = new Date(raw);
+    return isNaN(d) ? null : d;
+  }
+
+  // Obtener clave mes YYYY-MM
+  function mesKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+
+  // Determinar rango de meses a incluir
+  const now = new Date();
+  const corte = new Date(now.getFullYear(), now.getMonth() - nMeses + 1, 1);
+
+  const meses = {}; // mesKey → acumuladores
+  const tieneMargen = idx.margen >= 0;
+  const tieneCosto = idx.costo >= 0;
+
+  data.forEach(r => {
+    const fraw = idx.fecha >= 0 ? r[idx.fecha] : null;
+    const d = parseFecha(fraw);
+    if (!d || d < corte) return;
+    const mk = mesKey(d);
+    if (!meses[mk]) {
+      meses[mk] = {
+        venta: 0, margen: 0, tickets: new Set(), filas: 0,
+        dias: new Set(), origenes: {}, pagos: {}, prods: {}, horas: {},
+        diasConVenta: new Set()
+      };
+    }
+    const m = meses[mk];
+    const venta = idx.total >= 0 ? parse(r[idx.total]) : 0;
+    let margen = 0;
+    if (tieneMargen) {
+      margen = parse(r[idx.margen]);
+      if (margen < 0 || margen > venta * 2) margen = venta * 0.35;
+    } else if (tieneCosto) {
+      margen = venta - parse(r[idx.costo]);
+    }
+    m.venta += venta;
+    m.margen += margen;
+    m.filas++;
+    m.diasConVenta.add(d.toISOString().split('T')[0]);
+
+    if (idx.ticket >= 0 && r[idx.ticket]) m.tickets.add(String(r[idx.ticket]).trim());
+    else m.tickets.add(`fila_${m.filas}_${mk}`);
+
+    if (idx.hora >= 0 && r[idx.hora]) {
+      const h = parseInt(String(r[idx.hora]).split(':')[0]);
+      if (!isNaN(h)) m.horas[h] = (m.horas[h] || 0) + 1;
+    }
+    if (idx.origen >= 0) {
+      let org = String(r[idx.origen] || '').trim() || 'Local';
+      m.origenes[org] = (m.origenes[org] || 0) + venta;
+    }
+    if (idx.pago >= 0) {
+      const pg = String(r[idx.pago] || 'Otro').trim() || 'Otro';
+      m.pagos[pg] = (m.pagos[pg] || 0) + venta;
+    }
+    if (idx.producto >= 0 && r[idx.producto]) {
+      const pr = String(r[idx.producto]).trim();
+      m.prods[pr] = (m.prods[pr] || 0) + 1;
+    }
+  });
+
+  // Convertir a array ordenado
+  const sorted = Object.keys(meses).sort();
+  return sorted.map(mk => {
+    const m = meses[mk];
+    const tkt = m.tickets.size;
+    const dias = m.diasConVenta.size || 1;
+    const [y, mo] = mk.split('-').map(Number);
+    const diasMes = new Date(y, mo, 0).getDate();
+    return {
+      key: mk,
+      label: new Date(y, mo - 1, 1).toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }),
+      venta: m.venta,
+      margen: m.margen,
+      margenPct: m.venta > 0 ? m.margen / m.venta * 100 : 0,
+      tickets: tkt,
+      ticketProm: tkt > 0 ? m.venta / tkt : 0,
+      ticketsPorDia: parseFloat((tkt / dias).toFixed(1)),
+      diasConVenta: dias,
+      diasMes,
+      origenes: m.origenes,
+      pagos: m.pagos,
+      prods: m.prods,
+      horas: m.horas,
+    };
+  });
+}
+
+// ============================================================
+// SOLAPA EVOLUCIÓN
+// ============================================================
+let evoPeriodo = 6;
+
+function renderEvolucion() {
+  document.getElementById('kpi-container').innerHTML = '';
+  const dc = document.getElementById('dashboard-content');
+
+  if (!globalHistoricoRows) {
+    dc.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted);">Primero cargá la solapa Histórico para tener datos.</div>`;
+    document.getElementById('main-content').classList.add('active');
+    return;
+  }
+
+  const meses = buildMonthlyData(globalHistoricoRows, evoPeriodo);
+  if (!meses || meses.length === 0) {
+    dc.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted);">No hay suficientes datos en el Histórico para mostrar la evolución.</div>`;
+    document.getElementById('main-content').classList.add('active');
+    return;
+  }
+
+  const labels = meses.map(m => m.label);
+  const tktData = meses.map(m => m.tickets);
+  const tktDiaData = meses.map(m => m.ticketsPorDia);
+  const tktPromData = meses.map(m => Math.round(m.ticketProm));
+  const margenPctData = meses.map(m => parseFloat(m.margenPct.toFixed(1)));
+
+  // Calcular variaciones mes a mes
+  function varPct(arr, i) {
+    if (i === 0 || arr[i-1] === 0) return null;
+    return ((arr[i] - arr[i-1]) / arr[i-1] * 100);
+  }
+
+  // Detectar alertas de cambios bruscos (>20%)
+  const alertas = [];
+  for (let i = 1; i < meses.length; i++) {
+    const m = meses[i];
+    const prev = meses[i-1];
+    const dTkt = varPct(tktData, i);
+    const dTP  = varPct(tktPromData, i);
+
+    if (dTkt !== null && Math.abs(dTkt) >= 20) {
+      alertas.push({ tipo: dTkt > 0 ? 'good' : 'bad', icono: dTkt > 0 ? '📈' : '📉',
+        titulo: `Tickets ${dTkt > 0 ? 'subieron' : 'bajaron'} ${Math.abs(dTkt).toFixed(0)}% en ${m.label}`,
+        desc: `Pasaron de ${prev.tickets} a ${m.tickets} tickets. ${dTkt > 0 ? 'Buen momento para mantener acciones.' : 'Revisá qué cambió en canales o productos.'}` });
+    }
+    if (dTP !== null && Math.abs(dTP) >= 15) {
+      alertas.push({ tipo: dTP > 0 ? 'good' : 'warn', icono: dTP > 0 ? '⬆️' : '⬇️',
+        titulo: `Ticket promedio ${dTP > 0 ? 'creció' : 'cayó'} ${Math.abs(dTP).toFixed(0)}% en ${m.label}`,
+        desc: `De ${fmt(prev.ticketProm, true)} a ${fmt(m.ticketProm, true)}. ${dTP < 0 ? 'Posible cambio en mix de productos o descuentos no controlados.' : 'Revisá qué producto o combo impulsó la suba.'}` });
+    }
+
+    // Cambio en canal dominante
+    const org1 = Object.entries(prev.origenes).sort((a,b)=>b[1]-a[1])[0];
+    const org2 = Object.entries(m.origenes).sort((a,b)=>b[1]-a[1])[0];
+    if (org1 && org2 && org1[0] !== org2[0]) {
+      alertas.push({ tipo: 'warn', icono: '🔀',
+        titulo: `Canal dominante cambió en ${m.label}`,
+        desc: `Antes lideraba "${org1[0]}", ahora lidera "${org2[0]}". Revisá si es una tendencia o una anomalía.` });
+    }
+  }
+
+  // Mix de canales y pagos por mes (comparar primero vs último)
+  const primero = meses[0];
+  const ultimo  = meses[meses.length - 1];
+  function topK(obj, k=3) { return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,k); }
+
+  // Tabla resumen mes a mes
+  const resumenRows = meses.map((m, i) => {
+    const dTkt = varPct(tktData, i);
+    const chip = dTkt === null ? '' :
+      dTkt > 5 ? `<span class="mes-chip">▲ ${dTkt.toFixed(0)}%</span>` :
+      dTkt < -5 ? `<span class="mes-chip bajando">▼ ${Math.abs(dTkt).toFixed(0)}%</span>` :
+      `<span class="mes-chip neutro">→ ${dTkt.toFixed(0)}%</span>`;
+    const topProd = topK(m.prods, 1)[0];
+    const topOrigen = topK(m.origenes, 1)[0];
+    const topPago   = topK(m.pagos, 1)[0];
+    return `<tr>
+      <td><strong>${m.label}</strong></td>
+      <td class="num">${m.tickets.toLocaleString('es-AR')} ${chip}</td>
+      <td class="num">${m.ticketsPorDia}</td>
+      <td class="num">${fmt(m.ticketProm, true)}</td>
+      <td class="num">${m.diasConVenta}</td>
+      <td style="font-size:12px;color:var(--muted);">${topProd ? topProd[0] : '—'}</td>
+      <td style="font-size:12px;color:var(--muted);">${topOrigen ? topOrigen[0] : '—'}</td>
+      <td style="font-size:12px;color:var(--muted);">${topPago ? topPago[0] : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  // Mix canal primer vs último mes (para comparativa)
+  const allCanales = [...new Set([...Object.keys(primero.origenes), ...Object.keys(ultimo.origenes)])];
+  const totalP = Object.values(primero.origenes).reduce((a,b)=>a+b,0)||1;
+  const totalU = Object.values(ultimo.origenes).reduce((a,b)=>a+b,0)||1;
+  const canalRows = allCanales.map(c => {
+    const pP = ((primero.origenes[c]||0)/totalP*100).toFixed(0);
+    const pU = ((ultimo.origenes[c]||0)/totalU*100).toFixed(0);
+    const diff = parseInt(pU) - parseInt(pP);
+    return `<tr>
+      <td>${c}</td>
+      <td class="num">${pP}%</td>
+      <td class="num">${pU}%</td>
+      <td class="num ${diff>0?'vs-pos':diff<0?'vs-neg':''}">${diff>0?'+':''}${diff}pp</td>
+    </tr>`;
+  }).join('');
+
+  const allPagos = [...new Set([...Object.keys(primero.pagos), ...Object.keys(ultimo.pagos)])];
+  const totalPP = Object.values(primero.pagos).reduce((a,b)=>a+b,0)||1;
+  const totalPU = Object.values(ultimo.pagos).reduce((a,b)=>a+b,0)||1;
+  const pagoRows = allPagos.map(p => {
+    const pP = ((primero.pagos[p]||0)/totalPP*100).toFixed(0);
+    const pU = ((ultimo.pagos[p]||0)/totalPU*100).toFixed(0);
+    const diff = parseInt(pU) - parseInt(pP);
+    return `<tr>
+      <td>${p}</td>
+      <td class="num">${pP}%</td>
+      <td class="num">${pU}%</td>
+      <td class="num ${diff>0?'vs-pos':diff<0?'vs-neg':''}">${diff>0?'+':''}${diff}pp</td>
+    </tr>`;
+  }).join('');
+
+  dc.innerHTML = `
+    <div class="periodo-selector">
+      <span style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-right:6px;">Ver últimos:</span>
+      ${[3,6,12].map(n => `<button class="periodo-btn ${evoPeriodo===n?'active':''}" onclick="evoPeriodo=${n};renderEvolucion()">${n} meses</button>`).join('')}
+    </div>
+
+    <!-- KPIs de tendencia -->
+    <div class="kpi-grid" style="margin-bottom:24px;">
+      <div class="kpi">
+        <div class="kpi-icon">🎫</div>
+        <div class="kpi-lbl">Total tickets período</div>
+        <div class="kpi-val">${tktData.reduce((a,b)=>a+b,0).toLocaleString('es-AR')}</div>
+        <div class="kpi-sub">${meses.length} meses analizados</div>
+      </div>
+      <div class="kpi accent-amber">
+        <div class="kpi-icon">📅</div>
+        <div class="kpi-lbl">Promedio tickets/día (últ. mes)</div>
+        <div class="kpi-val">${ultimo.ticketsPorDia}</div>
+        <div class="kpi-sub">Días con venta: ${ultimo.diasConVenta}</div>
+      </div>
+      <div class="kpi accent-blue">
+        <div class="kpi-icon">🛒</div>
+        <div class="kpi-lbl">Ticket prom. últ. mes</div>
+        <div class="kpi-val">${fmt(ultimo.ticketProm, true)}</div>
+        <div class="kpi-sub">vs ${fmt(primero.ticketProm, true)} al inicio</div>
+      </div>
+      <div class="kpi accent-red">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-lbl">Var. tickets (inicio→fin)</div>
+        <div class="kpi-val" style="color:${ultimo.tickets>=primero.tickets?'var(--g)':'var(--r)'}">
+          ${primero.tickets>0?((ultimo.tickets-primero.tickets)/primero.tickets*100).toFixed(0)+'%':'—'}
+        </div>
+        <div class="kpi-sub">${primero.label} → ${ultimo.label}</div>
+      </div>
+    </div>
+
+    <!-- ALERTAS -->
+    ${alertas.length > 0 ? `
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-h">⚡ Alertas detectadas <span class="lbl">cambios &gt;15%</span></div>
+      ${alertas.slice(0,5).map(a => `
+        <div class="alerta-card ${a.tipo}">
+          <div class="alerta-icon">${a.icono}</div>
+          <div><div class="alerta-titulo">${a.titulo}</div><div class="alerta-desc">${a.desc}</div></div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- CHART: Tickets por mes -->
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-h">Cantidad de tickets por mes</div>
+        <div style="height:240px;position:relative;">
+          <canvas id="chartTktMes" role="img" aria-label="Tickets por mes"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h">Tickets promedio por día <span class="lbl">días con venta</span></div>
+        <div style="height:240px;position:relative;">
+          <canvas id="chartTktDia" role="img" aria-label="Tickets por día hábil"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHART: Ticket promedio + Margen% -->
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-h">Ticket promedio mensual <span class="lbl">unidades</span></div>
+        <div style="height:240px;position:relative;">
+          <canvas id="chartTP" role="img" aria-label="Ticket promedio por mes"></canvas>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted);">📌 En contexto inflacionario el ticket promedio en pesos puede subir sin que realmente mejore el negocio — cruzarlo con la cantidad de tickets te da la foto real.</div>
+      </div>
+      <div class="card">
+        <div class="card-h">Margen % por mes <span class="lbl">sin inflación</span></div>
+        <div style="height:240px;position:relative;">
+          <canvas id="chartMargenMes" role="img" aria-label="Margen porcentual por mes"></canvas>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted);">📌 El margen % es independiente de la inflación — si baja, tus costos crecen más rápido que tus precios.</div>
+      </div>
+    </div>
+
+    <!-- TABLA RESUMEN MES A MES -->
+    <div class="card" style="margin-bottom:20px;overflow-x:auto;">
+      <div class="card-h">Resumen mes a mes — operativo</div>
+      <table class="contraste-table" style="min-width:700px;">
+        <thead>
+          <tr>
+            <th>Mes</th>
+            <th style="text-align:right;">Tickets</th>
+            <th style="text-align:right;">Tkt/día</th>
+            <th style="text-align:right;">T. Prom</th>
+            <th style="text-align:right;">Días c/venta</th>
+            <th>Prod. estrella</th>
+            <th>Canal líder</th>
+            <th>Pago líder</th>
+          </tr>
+        </thead>
+        <tbody>${resumenRows}</tbody>
+      </table>
+    </div>
+
+    <!-- MIX DE CANALES Y PAGOS: primer vs último mes -->
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-h">Mix canal de venta <span class="lbl">${primero.label} vs ${ultimo.label}</span></div>
+        <table class="contraste-table">
+          <thead><tr><th>Canal</th><th style="text-align:right;">${primero.label}</th><th style="text-align:right;">${ultimo.label}</th><th style="text-align:right;">Cambio</th></tr></thead>
+          <tbody>${canalRows || '<tr><td colspan="4" style="color:var(--muted);padding:16px;">Sin datos de canal</td></tr>'}</tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-h">Mix medio de pago <span class="lbl">${primero.label} vs ${ultimo.label}</span></div>
+        <table class="contraste-table">
+          <thead><tr><th>Pago</th><th style="text-align:right;">${primero.label}</th><th style="text-align:right;">${ultimo.label}</th><th style="text-align:right;">Cambio</th></tr></thead>
+          <tbody>${pagoRows || '<tr><td colspan="4" style="color:var(--muted);padding:16px;">Sin datos de pago</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Destruir charts viejos de esta vista
+  ['chartTktMes','chartTktDia','chartTP','chartMargenMes'].forEach(id => {
+    if (myCharts[id]) { myCharts[id].destroy(); delete myCharts[id]; }
+  });
+
+  const commonLineOpts = (yLabel, color, fmt2) => ({
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt2 ? ` ${fmt2(ctx.parsed.y)}` : ` ${ctx.parsed.y}` } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family:'DM Sans', size:11 }, color:'#6b7c6e' } },
+      y: { grid: { color:'rgba(0,0,0,0.05)' }, ticks: { font: { family:'DM Sans', size:11 }, color:'#6b7c6e', callback: v => fmt2 ? fmt2(v) : v } }
+    }
+  });
+
+  const barColor = (data) => data.map((v, i) => {
+    if (i === 0) return '#b8dfc8';
+    return v >= data[i-1] ? '#1a7a43' : '#d90429';
+  });
+
+  myCharts.chartTktMes = new Chart(document.getElementById('chartTktMes'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: tktData, backgroundColor: barColor(tktData), borderRadius: 6, borderSkipped: false }] },
+    options: { ...commonLineOpts('Tickets', '#1a7a43', null), plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} tickets` } } } }
+  });
+
+  myCharts.chartTktDia = new Chart(document.getElementById('chartTktDia'), {
+    type: 'line',
+    data: { labels, datasets: [{ data: tktDiaData, borderColor: '#e8840c', backgroundColor: 'rgba(232,132,12,0.1)', borderWidth: 2.5, tension: 0.35, fill: true, pointRadius: 5, pointBackgroundColor: '#e8840c' }] },
+    options: commonLineOpts('Tkt/día', '#e8840c', null)
+  });
+
+  myCharts.chartTP = new Chart(document.getElementById('chartTP'), {
+    type: 'line',
+    data: { labels, datasets: [{ data: tktPromData, borderColor: '#1a63b5', backgroundColor: 'rgba(26,99,181,0.08)', borderWidth: 2.5, tension: 0.35, fill: true, pointRadius: 5, pointBackgroundColor: '#1a63b5' }] },
+    options: commonLineOpts('T. Prom', '#1a63b5', v => '$'+Math.round(v/1000)+'K')
+  });
+
+  myCharts.chartMargenMes = new Chart(document.getElementById('chartMargenMes'), {
+    type: 'line',
+    data: { labels, datasets: [{ data: margenPctData, borderColor: '#2fa05a', backgroundColor: 'rgba(47,160,90,0.1)', borderWidth: 2.5, tension: 0.35, fill: true, pointRadius: 5, pointBackgroundColor: '#2fa05a' }] },
+    options: { ...commonLineOpts('Margen%', '#2fa05a', v => v.toFixed(1)+'%'), scales: { x: { grid:{display:false}, ticks:{font:{family:'DM Sans',size:11},color:'#6b7c6e'} }, y: { grid:{color:'rgba(0,0,0,0.05)'}, ticks:{font:{family:'DM Sans',size:11},color:'#6b7c6e',callback: v=>v.toFixed(0)+'%'} } } }
+  });
+
+  document.getElementById('main-content').classList.add('active');
+}
+
+// ============================================================
+// SOLAPA SALUD DEL NEGOCIO
+// ============================================================
+let saludPeriodo = 6;
+
+function renderSalud() {
+  document.getElementById('kpi-container').innerHTML = '';
+  const dc = document.getElementById('dashboard-content');
+
+  if (!globalHistoricoRows) {
+    dc.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted);">Primero cargá la solapa Histórico para tener datos.</div>`;
+    document.getElementById('main-content').classList.add('active');
+    return;
+  }
+
+  const meses = buildMonthlyData(globalHistoricoRows, saludPeriodo);
+  if (!meses || meses.length < 2) {
+    dc.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted);">Necesitás al menos 2 meses de datos en el Histórico.</div>`;
+    document.getElementById('main-content').classList.add('active');
+    return;
+  }
+
+  const ultimo = meses[meses.length - 1];
+  const penultimo = meses[meses.length - 2];
+
+  // ── INDICADORES DE SALUD ──
+  // 1. Tendencia de tickets (3 meses si hay)
+  const ultimos3 = meses.slice(-3);
+  const tktTrend = ultimos3.length >= 2
+    ? (ultimos3[ultimos3.length-1].tickets - ultimos3[0].tickets) / Math.max(ultimos3[0].tickets,1) * 100
+    : 0;
+
+  // 2. Consistencia operativa (días con venta / días del mes)
+  const consistencia = ultimo.diasConVenta / ultimo.diasMes * 100;
+
+  // 3. Concentración de canal (Herfindahl simplificado)
+  const totalOrigen = Object.values(ultimo.origenes).reduce((a,b)=>a+b,0)||1;
+  const herfO = Object.values(ultimo.origenes).map(v=>(v/totalOrigen)**2).reduce((a,b)=>a+b,0);
+  // herfO cerca de 1 = muy concentrado (riesgo), cerca de 0 = diversificado
+
+  // 4. Concentración de pago
+  const totalPago = Object.values(ultimo.pagos).reduce((a,b)=>a+b,0)||1;
+  const herfP = Object.values(ultimo.pagos).map(v=>(v/totalPago)**2).reduce((a,b)=>a+b,0);
+
+  // 5. Estabilidad ticket promedio (desviación relativa)
+  const tpArr = meses.map(m=>m.ticketProm);
+  const tpMean = tpArr.reduce((a,b)=>a+b,0)/tpArr.length;
+  const tpStd  = Math.sqrt(tpArr.map(v=>(v-tpMean)**2).reduce((a,b)=>a+b,0)/tpArr.length);
+  const tpCV   = tpMean > 0 ? tpStd/tpMean*100 : 0; // coeficiente variación %
+
+  // 6. Var. tickets mes actual vs mes anterior
+  const varTktMM = penultimo.tickets > 0 ? (ultimo.tickets - penultimo.tickets)/penultimo.tickets*100 : 0;
+
+  // 7. Margen estable
+  const margenArr = meses.map(m=>m.margenPct);
+  const margenMean = margenArr.reduce((a,b)=>a+b,0)/margenArr.length;
+  const margenMin  = Math.min(...margenArr);
+
+  // ── SCORE GLOBAL ──
+  let score = 0;
+  let scoreItems = [];
+
+  // Tendencia tickets
+  if (tktTrend > 5)       { score += 25; scoreItems.push({ s:'verde',  lbl:'Volumen creciendo', val:`+${tktTrend.toFixed(0)}% en ${ultimos3.length} meses` }); }
+  else if (tktTrend >= -5) { score += 15; scoreItems.push({ s:'amarillo', lbl:'Volumen estable', val:`${tktTrend.toFixed(0)}% en ${ultimos3.length} meses` }); }
+  else                    { score += 0;  scoreItems.push({ s:'rojo',  lbl:'Volumen cayendo', val:`${tktTrend.toFixed(0)}% en ${ultimos3.length} meses` }); }
+
+  // Consistencia
+  if (consistencia >= 80)       { score += 20; scoreItems.push({ s:'verde',  lbl:'Alta consistencia operativa', val:`${consistencia.toFixed(0)}% días con venta` }); }
+  else if (consistencia >= 60)  { score += 12; scoreItems.push({ s:'amarillo', lbl:'Consistencia media', val:`${consistencia.toFixed(0)}% días con venta` }); }
+  else                          { score += 4;  scoreItems.push({ s:'rojo',  lbl:'Baja consistencia operativa', val:`${consistencia.toFixed(0)}% días con venta` }); }
+
+  // Concentración canal
+  if (herfO < 0.4)       { score += 15; scoreItems.push({ s:'verde',  lbl:'Canales de venta diversificados', val:`Índice ${herfO.toFixed(2)}` }); }
+  else if (herfO < 0.7)  { score += 8;  scoreItems.push({ s:'amarillo', lbl:'Canales moderadamente concentrados', val:`Índice ${herfO.toFixed(2)}` }); }
+  else                   { score += 0;  scoreItems.push({ s:'rojo',  lbl:'Alta dependencia de un canal', val:`Índice ${herfO.toFixed(2)} — riesgo si ese canal falla` }); }
+
+  // Concentración pago
+  if (herfP < 0.4)       { score += 10; scoreItems.push({ s:'verde',  lbl:'Medios de pago diversificados', val:`Índice ${herfP.toFixed(2)}` }); }
+  else if (herfP < 0.7)  { score += 5;  scoreItems.push({ s:'amarillo', lbl:'Medios de pago concentrados', val:`Índice ${herfP.toFixed(2)}` }); }
+  else                   { score += 0;  scoreItems.push({ s:'rojo',  lbl:'Dependencia de un medio de pago', val:`Índice ${herfP.toFixed(2)}` }); }
+
+  // Estabilidad ticket promedio
+  if (tpCV < 15)         { score += 15; scoreItems.push({ s:'verde',  lbl:'Ticket promedio estable', val:`CV ${tpCV.toFixed(0)}%` }); }
+  else if (tpCV < 30)    { score += 8;  scoreItems.push({ s:'amarillo', lbl:'Ticket promedio moderadamente variable', val:`CV ${tpCV.toFixed(0)}%` }); }
+  else                   { score += 0;  scoreItems.push({ s:'rojo',  lbl:'Ticket promedio muy volátil', val:`CV ${tpCV.toFixed(0)}%` }); }
+
+  // Margen
+  if (margenMean >= 30)  { score += 15; scoreItems.push({ s:'verde',  lbl:'Margen saludable', val:`Promedio ${margenMean.toFixed(1)}%` }); }
+  else if (margenMean >= 15) { score += 8; scoreItems.push({ s:'amarillo', lbl:'Margen moderado', val:`Promedio ${margenMean.toFixed(1)}%` }); }
+  else if (margenMean > 0)   { score += 0; scoreItems.push({ s:'rojo',  lbl:'Margen bajo', val:`Promedio ${margenMean.toFixed(1)}%` }); }
+
+  const scoreColor = score >= 70 ? '#1a7a43' : score >= 45 ? '#e8840c' : '#d90429';
+  const scoreBg = score >= 70 ? '#e8f5ee' : score >= 45 ? '#fff4e6' : '#fdeaed';
+  const scoreLabel = score >= 70 ? 'Saludable' : score >= 45 ? 'En observación' : 'En alerta';
+
+  // ── TOP PRODUCTOS CONSISTENTES ──
+  // Productos que aparecen en TODOS los meses
+  const allProds = {};
+  meses.forEach(m => { Object.entries(m.prods).forEach(([p,v]) => { if (!allProds[p]) allProds[p] = {meses:0, total:0}; allProds[p].meses++; allProds[p].total+=v; }); });
+  const consistentes = Object.entries(allProds).filter(([,v])=>v.meses===meses.length).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
+  const no_consistentes = Object.entries(allProds).filter(([,v])=>v.meses===1).sort((a,b)=>b[1].total-a[1].total).slice(0,3);
+
+  // ── HEATMAP HORA x MES ──
+  const horaKeys = Array.from({length:15},(_,i)=>i+8);
+  const maxHoraTotal = Math.max(...meses.flatMap(m => horaKeys.map(h=>m.horas[h]||0)), 1);
+
+  const heatmapMensualHtml = `
+    <div style="overflow-x:auto;">
+      <table style="border-collapse:separate;border-spacing:3px;font-size:11px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;color:var(--muted);font-weight:500;padding:2px 8px;">Mes</th>
+            ${horaKeys.map(h=>`<th style="color:var(--muted);font-weight:500;min-width:32px;text-align:center;">${h}h</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${meses.map(m=>`
+            <tr>
+              <td style="font-size:12px;font-weight:600;padding:2px 8px;white-space:nowrap;">${m.label}</td>
+              ${horaKeys.map(h=>{
+                const v=m.horas[h]||0;
+                const pct=v/maxHoraTotal;
+                const bg=`rgba(26,122,67,${0.08+pct*0.92})`;
+                const total=Object.values(m.horas).reduce((a,b)=>a+b,0)||1;
+                const pctMes=(v/total*100).toFixed(0);
+                return `<td title="${m.label} ${h}h — ${v} tickets (${pctMes}% del mes)" style="background:${bg};border-radius:5px;width:32px;height:26px;text-align:center;color:rgba(255,255,255,0.85);font-weight:600;">${v>0?v:''}</td>`;
+              }).join('')}
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // ── DÍA DE LA SEMANA ──
+  // Agrupar tickets por día de semana (de todo el período)
+  const diasSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  // No tenemos día de semana directo, lo inferimos de las fechas — necesitamos repasar filas
+  const diaVentas = [0,0,0,0,0,0,0];
+  if (globalHistoricoRows) {
+    const h2 = globalHistoricoRows[0];
+    const fIdx = h2.findIndex(c => ['fecha'].some(k=>(c||'').toLowerCase().includes(k)));
+    const tIdx = h2.findIndex(c => ['total','monto','venta'].some(k=>(c||'').toLowerCase().includes(k)));
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - saludPeriodo);
+    globalHistoricoRows.slice(1).forEach(r => {
+      if (!r || !r[fIdx]) return;
+      const raw = r[fIdx];
+      let d;
+      if (String(raw).includes('/')) { const p=String(raw).split('/'); d=new Date(`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`); }
+      else d = new Date(raw);
+      if (isNaN(d) || d < cutoff) return;
+      const venta = tIdx>=0 ? parse(r[tIdx]) : 0;
+      if (venta <= 0) return;
+      diaVentas[d.getDay()]++;
+    });
+  }
+  const maxDia = Math.max(...diaVentas, 1);
+
+  dc.innerHTML = `
+    <div class="periodo-selector">
+      <span style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-right:6px;">Analizar últimos:</span>
+      ${[3,6,12].map(n => `<button class="periodo-btn ${saludPeriodo===n?'active':''}" onclick="saludPeriodo=${n};renderSalud()">${n} meses</button>`).join('')}
+    </div>
+
+    <!-- SCORE GLOBAL -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-h">🏥 Score de salud del negocio</div>
+      <div class="salud-score-wrap">
+        <div class="salud-score-circle" style="background:${scoreBg};">
+          <div class="salud-score-num" style="color:${scoreColor};">${score}</div>
+          <div class="salud-score-lbl" style="color:${scoreColor};">/100</div>
+        </div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:${scoreColor};margin-bottom:4px;">${scoreLabel}</div>
+          <div class="salud-score-desc">Basado en ${meses.length} meses de datos. El score evalúa volumen, consistencia, diversificación y estabilidad del negocio — sin depender del monto en pesos.</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        ${scoreItems.map(s => `
+          <div class="semaforo-row">
+            <div class="semaforo-dot ${s.s}"></div>
+            <div class="semaforo-lbl">${s.lbl}</div>
+            <div class="semaforo-val">${s.val}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- VOLUMEN Y TICKETS/DÍA -->
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-h">Tickets por día (hábil) — evolución</div>
+        <div style="height:220px;position:relative;">
+          <canvas id="chartSaludTktDia" role="img" aria-label="Tickets por dia hábil por mes"></canvas>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted);">Este indicador es inflación-neutral: mide cuántas veces te eligieron por día, sin importar el precio.</div>
+      </div>
+      <div class="card">
+        <div class="card-h">Consistencia operativa <span class="lbl">días abiertos/mes</span></div>
+        <div style="height:220px;position:relative;">
+          <canvas id="chartConsistencia" role="img" aria-label="Porcentaje de dias del mes con ventas"></canvas>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted);">Un local saludable opera en el 80%+ de los días del mes. Caídas pueden indicar cierres no planificados o días muertos.</div>
+      </div>
+    </div>
+
+    <!-- HEATMAP HORA x MES -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-h">Heatmap de actividad horaria por mes <span class="lbl">tickets</span></div>
+      ${heatmapMensualHtml}
+      <div style="margin-top:10px;font-size:12px;color:var(--muted);">Colores más intensos = más tickets. Observá si los picos de hora se mantienen o se desplazan mes a mes.</div>
+    </div>
+
+    <!-- DÍA DE LA SEMANA -->
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-h">Tickets por día de la semana <span class="lbl">acumulado período</span></div>
+        <div style="height:220px;position:relative;">
+          <canvas id="chartDiaSemana" role="img" aria-label="Tickets por dia de la semana"></canvas>
+        </div>
+      </div>
+
+      <!-- CONCENTRACIÓN DE RIESGO -->
+      <div class="card">
+        <div class="card-h">Riesgo de concentración <span class="lbl">último mes</span></div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Canal de venta</div>
+          ${Object.entries(ultimo.origenes).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+            const pct=(v/totalOrigen*100);
+            return `<div class="pill-bar-row">
+              <div class="pill-bar-label" title="${k}">${k}</div>
+              <div class="pill-bar-track"><div class="pill-bar-fill" style="width:${pct.toFixed(1)}%;background:${pct>70?'var(--r)':pct>50?'var(--amber)':'var(--g)'}"></div></div>
+              <div class="pill-bar-val">${pct.toFixed(0)}%</div>
+            </div>`;
+          }).join('') || '<div style="color:var(--muted);font-size:13px;">Sin datos</div>'}
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Medio de pago</div>
+          ${Object.entries(ultimo.pagos).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+            const pct=(v/totalPago*100);
+            return `<div class="pill-bar-row">
+              <div class="pill-bar-label" title="${k}">${k}</div>
+              <div class="pill-bar-track"><div class="pill-bar-fill" style="width:${pct.toFixed(1)}%;background:${pct>70?'var(--r)':pct>50?'var(--amber)':'var(--blue)'}"></div></div>
+              <div class="pill-bar-val">${pct.toFixed(0)}%</div>
+            </div>`;
+          }).join('') || '<div style="color:var(--muted);font-size:13px;">Sin datos</div>'}
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--muted);">🔴 &gt;70% en un solo canal/pago es riesgo alto. 🟡 50–70% moderado. 🟢 &lt;50% saludable.</div>
+      </div>
+    </div>
+
+    <!-- PRODUCTOS -->
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-h">Productos estrella consistentes <span class="lbl">en todos los meses</span></div>
+        ${consistentes.length > 0 ? `
+          <table class="data-table">
+            ${consistentes.map(([p,v],i)=>`
+              <tr>
+                <td class="rank ${['medal-1','medal-2','medal-3','',''][i]}">${['①','②','③','④','⑤'][i]}</td>
+                <td>${p}</td>
+                <td class="num" style="color:var(--g)">${v.total} u. totales</td>
+                <td style="font-size:11px;color:var(--muted);">${v.meses} meses</td>
+              </tr>`).join('')}
+          </table>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted);">Estos productos son el motor del negocio — asegurate de mantener calidad y disponibilidad constante.</div>
+        ` : '<div style="color:var(--muted);font-size:13px;padding:12px 0;">No hay productos que aparezcan en todos los meses del período.</div>'}
+      </div>
+      <div class="card">
+        <div class="card-h">Productos de una sola aparición <span class="lbl">riesgo de rotación</span></div>
+        ${no_consistentes.length > 0 ? `
+          <table class="data-table">
+            ${no_consistentes.map(([p,v])=>`
+              <tr>
+                <td>⚠️</td>
+                <td>${p}</td>
+                <td class="num" style="color:var(--amber)">${v.total} u.</td>
+                <td style="font-size:11px;color:var(--muted);">1 mes</td>
+              </tr>`).join('')}
+          </table>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted);">Productos que solo aparecieron un mes. Pueden ser pruebas, especiales, o items que se dejaron de ofrecer.</div>
+        ` : '<div style="color:var(--muted);font-size:13px;padding:12px 0;">Todos los productos del período tienen presencia repetida.</div>'}
+      </div>
+    </div>
+
+    <!-- RECOMENDACIONES FINALES -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-h">💡 Recomendaciones según tu score</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        ${score < 45 ? `
+          <div class="alerta-card bad"><div class="alerta-icon">🚨</div><div><div class="alerta-titulo">Prioridad: estabilizar el volumen de tickets</div><div class="alerta-desc">El negocio muestra señales de debilidad. Focalizá en recuperar clientes perdidos y revisar canales de venta con baja performance.</div></div></div>
+          <div class="alerta-card bad"><div class="alerta-icon">🔍</div><div><div class="alerta-titulo">Revisá la concentración de canales y pagos</div><div class="alerta-desc">Alta dependencia de un solo canal es riesgo operativo. Diversificá antes de que ese canal falle.</div></div></div>
+        ` : score < 70 ? `
+          <div class="alerta-card warn"><div class="alerta-icon">📊</div><div><div class="alerta-titulo">Negocio en zona de mejora</div><div class="alerta-desc">Hay indicadores positivos pero también señales de alerta. Identificá los 2 puntos más débiles del score y trabajá en ellos este mes.</div></div></div>
+          <div class="alerta-card warn"><div class="alerta-icon">🎯</div><div><div class="alerta-titulo">Potenciá los productos estrella</div><div class="alerta-desc">Tus productos consistentes son tu base segura. Asegurate de destacarlos, tenerlos siempre disponibles y usarlos como base de combos.</div></div></div>
+        ` : `
+          <div class="alerta-card good"><div class="alerta-icon">✅</div><div><div class="alerta-titulo">El negocio viene bien — mantené el ritmo</div><div class="alerta-desc">Los indicadores muestran un negocio saludable. El foco ahora debería estar en crecer: más tickets, mejor ticket promedio, nuevos canales.</div></div></div>
+          <div class="alerta-card good"><div class="alerta-icon">🚀</div><div><div class="alerta-titulo">Momento ideal para escalar</div><div class="alerta-desc">Con base sólida, podés probar nuevas estrategias de captación, ampliar horarios o sumar canales digitales con menor riesgo.</div></div></div>
+        `}
+      </div>
+    </div>
+  `;
+
+  // Charts de salud
+  ['chartSaludTktDia','chartConsistencia','chartDiaSemana'].forEach(id => {
+    if (myCharts[id]) { myCharts[id].destroy(); delete myCharts[id]; }
+  });
+
+  const labels = meses.map(m=>m.label);
+  const tktDiaData = meses.map(m=>m.ticketsPorDia);
+  const consData = meses.map(m=>parseFloat((m.diasConVenta/m.diasMes*100).toFixed(0)));
+
+  const lineOpts = (yFmt) => ({
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${yFmt ? yFmt(ctx.parsed.y) : ctx.parsed.y}` } } },
+    scales: {
+      x: { grid:{display:false}, ticks:{font:{family:'DM Sans',size:11},color:'#6b7c6e'} },
+      y: { grid:{color:'rgba(0,0,0,0.05)'}, ticks:{font:{family:'DM Sans',size:11},color:'#6b7c6e',callback: yFmt||null} }
+    }
+  });
+
+  myCharts.chartSaludTktDia = new Chart(document.getElementById('chartSaludTktDia'), {
+    type:'line',
+    data:{ labels, datasets:[{ data:tktDiaData, borderColor:'#e8840c', backgroundColor:'rgba(232,132,12,0.1)', borderWidth:2.5, tension:0.35, fill:true, pointRadius:5, pointBackgroundColor:'#e8840c' }] },
+    options: lineOpts(v=>v+' tkt/día')
+  });
+
+  myCharts.chartConsistencia = new Chart(document.getElementById('chartConsistencia'), {
+    type:'bar',
+    data:{ labels, datasets:[{ data:consData, backgroundColor: consData.map(v=>v>=80?'#1a7a43':v>=60?'#e8840c':'#d90429'), borderRadius:6, borderSkipped:false }] },
+    options:{ ...lineOpts(v=>v+'%'), plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y}% días del mes`}} } }
+  });
+
+  myCharts.chartDiaSemana = new Chart(document.getElementById('chartDiaSemana'), {
+    type:'bar',
+    data:{ labels:diasSemana, datasets:[{ data:diaVentas, backgroundColor: diaVentas.map(v=>v===Math.max(...diaVentas)?'#1a7a43':'#b8dfc8'), borderRadius:6, borderSkipped:false }] },
+    options:{ ...lineOpts(null), plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y} tickets`}}} }
+  });
+
+  document.getElementById('main-content').classList.add('active');
+}
+
 function setTab(name, el) {
   activeSheet = name;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('historico-filters').style.display = name === 'Historico' ? 'flex' : 'none';
 
-  if (name === 'Estrategia') {
-    document.getElementById('main-content').classList.add('active');
-    renderEstrategia();
-    return;
-  }
+  if (name === 'Estrategia') { document.getElementById('main-content').classList.add('active'); renderEstrategia(); return; }
+  if (name === 'Evolucion')  { document.getElementById('main-content').classList.add('active'); loadData(); return; }
+  if (name === 'Salud')      { document.getElementById('main-content').classList.add('active'); loadData(); return; }
   if (gapi.client?.sheets) loadData();
 }
 </script>
