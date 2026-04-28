@@ -3,23 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BIG SALADS · Sexta</title>
+    <title>BIG SALADS · SEXTA</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        :root { --green: #2a7d40; --light-green: #5dbf72; --dark: #0a1a0f; --bg: #e9ecef; --white: #ffffff; --red: #d90429; --text: #2b2d42; }
+        :root { --green: #2a7d40; --light-green: #5dbf72; --dark: #0a1a0f; --bg: #2d3436; --white: #ffffff; --red: #d90429; --text: #2b2d42; }
         
-        /* FONDO GRIS OSCURO/NEUTRO PARA QUE RESALTE EL BLANCO */
-        body { font-family: 'Outfit', sans-serif; background: #dfe3e6; margin: 0; color: var(--text); }
+        /* FONDO OSCURO PARA QUE LAS TARJETAS RESALTEN AL MÁXIMO */
+        body { font-family: 'Outfit', sans-serif; background: #1e272e; margin: 0; color: var(--text); }
         
         #auth-screen { position: fixed; inset: 0; background: var(--dark); z-index: 2000; display: flex; align-items: center; justify-content: center; }
         .login-card { background: rgba(255,255,255,0.05); padding: 50px; border-radius: 40px; backdrop-filter: blur(20px); text-align: center; border: 1px solid rgba(255,255,255,0.1); }
         .logo-login { font-family: 'Bebas Neue'; font-size: 60px; color: white; margin-bottom: 20px; }
         .logo-login span { color: var(--red); }
         
-        /* HEADER EN BLANCO Y ROJO */
         header { background: var(--dark); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--red); }
-        .logo-header { font-family: 'Bebas Neue'; font-size: 32px; color: white; }
+        .logo-header { font-family: 'Bebas Neue'; font-size: 32px; color: white; letter-spacing: 1px; }
         .logo-header span { color: var(--red); }
 
         .tabs { background: var(--white); display: flex; padding: 0 30px; border-bottom: 1px solid #ced4da; position: sticky; top: 0; z-index: 100; }
@@ -29,24 +28,20 @@
         main { padding: 25px; max-width: 1400px; margin: 0 auto; display: none; }
         main.active { display: block; }
 
-        /* KPI CARDS CON SOMBRAS FUERTES */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
-        .kpi { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); border-left: 6px solid var(--green); }
+        .kpi { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); border-left: 6px solid var(--green); }
         .kpi.red-kpi { border-left-color: var(--red); }
         .kpi-lbl { font-size: 11px; font-weight: 700; color: #6c757d; text-transform: uppercase; }
         .kpi-val { font-family: 'Bebas Neue'; font-size: 38px; color: var(--dark); margin-top: 5px; }
 
-        /* DASHBOARD CARDS */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; }
-        .card { background: var(--white); padding: 25px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 1px solid #dee2e6; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; }
+        .card { background: var(--white); padding: 25px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
         .card-h { font-family: 'Bebas Neue'; font-size: 24px; color: var(--dark); border-bottom: 2px solid #f1f3f5; padding-bottom: 12px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
         
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         td { padding: 12px 8px; border-bottom: 1px solid #f8f9fa; }
-        tr:last-child td { border: none; }
-        .badge-red { background: #ffe3e3; color: var(--red); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px; }
-
-        .filters { background: #ffffff; padding: 20px; border-radius: 20px; margin-bottom: 25px; display: flex; gap: 15px; align-items: flex-end; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #ced4da; }
+        
+        .filters { background: #ffffff; padding: 20px; border-radius: 20px; margin-bottom: 25px; display: flex; gap: 15px; align-items: flex-end; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         input[type="date"] { padding: 10px; border-radius: 10px; border: 1px solid #adb5bd; }
         .btn-red { background: var(--red); color: white; border: none; padding: 10px 25px; border-radius: 12px; font-family: 'Bebas Neue'; font-size: 18px; cursor: pointer; }
     </style>
@@ -55,18 +50,18 @@
 
 <div id="auth-screen">
     <div class="login-card">
-        <div class="logo-login">BIG SALADS SEXTA🥗</div>
-        <button class="btn-red" style="font-size: 26px; width: 100%; padding: 18px;" id="authorize_button">ABRIR SISTEMA 🚀</button>
+        <div class="logo-login">BIG SALADS SEXTA 🥗</div>
+        <button class="btn-red" style="font-size: 26px; width: 100%; padding: 18px;" id="authorize_button">INGRESAR 🚀</button>
     </div>
 </div>
 
 <header>
     <div class="logo-header">BIG SALADS <span>STATS</span></div>
-    <div id="sync-status" style="font-size: 11px; opacity: 0.8;">🟢 CONEXIÓN SEGURA</div>
+    <div id="sync-status" style="font-size: 11px;">🟢 CONECTADO A GOOGLE CLOUD</div>
 </header>
 
 <div class="tabs">
-    <div class="tab active" onclick="setTab('Hoja 1', this)">📅 HOY</div>
+    <div class="tab active" onclick="setTab('Hoja 1', this)">📅 RESUMEN DIARIO</div>
     <div class="tab" onclick="setTab('Historico', this)">📈 ESTRATEGIA MENSUAL</div>
 </div>
 
@@ -74,7 +69,7 @@
     <div id="historico-filters" class="filters" style="display:none;">
         <div><small>Desde:</small><br><input type="date" id="date-from"></div>
         <div><small>Hasta:</small><br><input type="date" id="date-to"></div>
-        <button class="btn-red" onclick="loadData()">FILTRAR 🔍</button>
+        <button class="btn-red" onclick="loadData()">ACTUALIZAR RANGO 🔍</button>
     </div>
     <div class="kpi-grid" id="kpi-container"></div>
     <div class="dashboard-grid" id="dashboard-content"></div>
@@ -101,12 +96,9 @@
         });
         gisInited = true; checkAuth();
         
-        // AUTO-FILTRO MES ACTUAL
         const ahora = new Date();
-        const primero = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString().split('T')[0];
-        const hoy = ahora.toISOString().split('T')[0];
-        document.getElementById('date-from').value = primero;
-        document.getElementById('date-to').value = hoy;
+        document.getElementById('date-from').value = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString().split('T')[0];
+        document.getElementById('date-to').value = ahora.toISOString().split('T')[0];
     }
     function checkAuth() { if (gapiInited && gisInited) document.getElementById('authorize_button').onclick = () => tokenClient.requestAccessToken(); }
 
@@ -121,13 +113,18 @@
         let data = rows.slice(1).filter(r => r[0]);
         const fmt = v => new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(v);
         
-        // LIMPIEZA DE NÚMEROS (Soluciona el error del Margen > Venta)
+        // --- FUNCIÓN DE LIMPIEZA DE NÚMEROS REFORZADA ---
         const parse = v => {
-            if (!v) return 0;
-            let s = String(v).replace(/[^\d.,-]/g, '');
-            // Si tiene puntos y comas, asumimos formato local (punto mil, coma decimal)
+            if (!v || v === "" || v === "-") return 0;
+            let s = String(v).trim().replace(/[$\s]/g, ''); // Quita $ y espacios
+            
+            // Detecta formato: si tiene punto y coma, el punto es mil y la coma es decimal
             if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+            // Si solo tiene coma, es el decimal
             else if (s.includes(',')) s = s.replace(',', '.');
+            // Si tiene punto pero parece de miles (ej: 1.200), lo quitamos
+            else if (s.includes('.') && s.split('.')[1].length === 3) s = s.replace('.', '');
+            
             return parseFloat(s) || 0;
         };
 
@@ -140,7 +137,7 @@
             origen: findCol(['origen']),
             pago: findCol(['pago']),
             producto: findCol(['producto']),
-            cant: findCol(['cant'])
+            cant: findCol(['cant', 'unidades', 'qty'])
         };
 
         if(activeSheet === 'Historico') {
@@ -155,46 +152,53 @@
         const origenes = {}, pagos = {}, prods = {}, prodsM = {}, hM = {}, hN = {};
 
         data.forEach(r => {
-            const v = parse(r[idx.total]), m = parse(r[idx.margen]);
+            const rawV = parse(r[idx.total]);
+            const rawM = parse(r[idx.margen]);
+            
+            // SEGURIDAD: El margen NUNCA puede ser mayor a la venta
+            const v = rawV;
+            const m = rawM > v ? v : rawM; 
+            
             const h = parseInt(r[idx.hora]) || 0;
-            tVenta += v; tMargen += m; tCant += (parse(r[idx.cant]) || 1);
+            const c = parse(r[idx.cant]) || 1; // Si no hay cantidad, asumimos 1
+
+            tVenta += v; tMargen += m; tCant += c;
 
             if(h < 17) { tM += v; cM++; hM[h] = (hM[h]||0)+1; }
             else { tN += v; cN++; hN[h] = (hN[h]||0)+1; }
 
-            const org = r[idx.origen] == "0" ? "🏠 Local" : (r[idx.origen] || "🛵 Otros");
+            const org = (r[idx.origen] == "0" || r[idx.origen] == "") ? "🏠 Local" : r[idx.origen];
             origenes[org] = (origenes[org] || 0) + v;
 
-            pagos[r[idx.pago] || 'Otros'] = (pagos[r[idx.pago] || 'Otros'] || 0) + v;
+            const pg = r[idx.pago] || 'Otros';
+            pagos[pg] = (pagos[pg] || 0) + v;
             
             const pr = r[idx.producto];
-            if(pr) { prods[pr] = (prods[pr] || 0) + 1; prodsM[pr] = (prodsM[pr] || 0) + m; }
+            if(pr) { prods[pr] = (prods[pr] || 0) + c; prodsM[pr] = (prodsM[pr] || 0) + m; }
         });
 
-        // KPIs
         document.getElementById('kpi-container').innerHTML = `
-            <div class="kpi"><div class="kpi-lbl">💰 Venta Rango</div><div class="kpi-val">${fmt(tVenta)}</div></div>
-            <div class="kpi"><div class="kpi-lbl">🌿 Margen Real</div><div class="kpi-val" style="color:var(--green)">${fmt(tMargen)}</div></div>
+            <div class="kpi"><div class="kpi-lbl">💰 Venta Total</div><div class="kpi-val">${fmt(tVenta)}</div></div>
+            <div class="kpi"><div class="kpi-lbl">🌿 Ganancia Neta</div><div class="kpi-val" style="color:var(--green)">${fmt(tMargen)}</div></div>
             <div class="kpi red-kpi"><div class="kpi-lbl">🎫 Ticket Prom.</div><div class="kpi-val">${fmt(tVenta/data.length || 0)}</div></div>
             <div class="kpi red-kpi"><div class="kpi-lbl">🛒 Unidades/Pedido</div><div class="kpi-val">${(tCant/data.length || 0).toFixed(1)} u.</div></div>
         `;
 
-        // DASHBOARD
         let html = `
             <div class="card">
-                <div class="card-h">☀️ Turnos Mañana / Noche 🌙</div>
+                <div class="card-h">☀️ Resumen por Turnos 🌙</div>
                 <table>
-                    <tr><td>Mañana (AM)</td><td>${cM} ped.</td><td><strong>${fmt(tM)}</strong></td></tr>
-                    <tr><td>Noche (PM)</td><td>${cN} ped.</td><td><strong>${fmt(tN)}</strong></td></tr>
+                    <tr><td>Mañana (AM)</td><td>${cM} tickets</td><td><strong>${fmt(tM)}</strong></td></tr>
+                    <tr><td>Noche (PM)</td><td>${cN} tickets</td><td><strong>${fmt(tN)}</strong></td></tr>
                 </table>
             </div>
             <div class="card">
-                <div class="card-h">📍 Canales de Venta</div>
-                <table>
-                    ${Object.entries(origenes).map(([k,v]) => `
-                        <tr><td>${k}</td><td><span class="badge-red">${((v/tVenta)*100).toFixed(1)}%</span></td><td>${fmt(v)}</td></tr>
-                    `).join('')}
-                </table>
+                <div class="card-h">💳 Ventas por Medio de Pago ($)</div>
+                <div style="height:250px"><canvas id="chartPagos"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-h">📍 Ventas por Origen ($)</div>
+                <div style="height:250px"><canvas id="chartOrigenes"></canvas></div>
             </div>
             <div class="card">
                 <div class="card-h">🔝 Top 5 Productos 🔥</div>
@@ -202,23 +206,22 @@
                     ${Object.entries(prods).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v]) => `<tr><td>${k}</td><td style="text-align:right"><strong>${v} u.</strong></td></tr>`).join('')}
                 </table>
             </div>
-            <div class="card"><div class="card-h">💳 Medios de Pago</div><canvas id="chartPagos" height="200"></canvas></div>
         `;
 
         if(activeSheet === 'Historico') {
             const pickM = Object.entries(hM).sort((a,b)=>b[1]-a[1])[0]?.[0] || '--';
             const pickN = Object.entries(hN).sort((a,b)=>b[1]-a[1])[0]?.[0] || '--';
             html += `
-                <div class="card" style="border-left: 8px solid var(--red)">
+                <div class="card" style="border-left: 10px solid var(--red)">
                     <div class="card-h">🚀 Picos & Proyectado</div>
-                    <div style="margin-bottom:10px">⏰ Pico AM: <b>${pickM}:00 hs</b></div>
-                    <div style="margin-bottom:10px">⏰ Pico PM: <b>${pickN}:00 hs</b></div>
-                    <div style="padding:15px; background:#fff0f0; border-radius:15px; color:var(--red)">
+                    <div style="margin-bottom:10px">⏰ Pico Mañana: <b>${pickM}:00 hs</b></div>
+                    <div style="margin-bottom:10px">⏰ Pico Noche: <b>${pickN}:00 hs</b></div>
+                    <div style="padding:15px; background:#fff0f0; border-radius:15px; color:var(--red); font-size:18px">
                         <b>📈 Proyectado Mensual:</b> ${fmt((tVenta/data.length)*30*(data.length/7 || 1))}
                     </div>
                 </div>
                 <div class="card">
-                    <div class="card-h">💎 Ranking de Ganancia</div>
+                    <div class="card-h">💎 Ranking de Rentabilidad</div>
                     <table>
                         ${Object.entries(prodsM).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v]) => `<tr><td>${k}</td><td style="text-align:right; color:var(--green)">${fmt(v)}</td></tr>`).join('')}
                     </table>
@@ -227,18 +230,26 @@
         }
 
         document.getElementById('dashboard-content').innerHTML = html;
-        renderChart(pagos);
+        renderCharts(pagos, origenes);
         document.getElementById('main-content').classList.add('active');
     }
 
-    function renderChart(pagos) {
-        const ctx = document.getElementById('chartPagos');
-        if(!ctx) return;
-        if(myCharts.pago) myCharts.pago.destroy();
-        myCharts.pago = new Chart(ctx, {
-            type: 'doughnut',
-            data: { labels: Object.keys(pagos), datasets: [{ data: Object.values(pagos), backgroundColor: ['#0a1a0f', '#d90429', '#2a7d40', '#f1c40f', '#34495e'] }] },
-            options: { plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
+    function renderCharts(pagos, origenes) {
+        if(myCharts.pagos) myCharts.pagos.destroy();
+        if(myCharts.orig) myCharts.orig.destroy();
+
+        // Gráfico de Pagos (Barras Laterales)
+        myCharts.pagos = new Chart(document.getElementById('chartPagos'), {
+            type: 'bar',
+            data: { labels: Object.keys(pagos), datasets: [{ label: 'Venta $', data: Object.values(pagos), backgroundColor: '#d90429', borderRadius: 8 }] },
+            options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } }
+        });
+
+        // Gráfico de Orígenes (Barras Laterales)
+        myCharts.orig = new Chart(document.getElementById('chartOrigenes'), {
+            type: 'bar',
+            data: { labels: Object.keys(origenes), datasets: [{ label: 'Venta $', data: Object.values(origenes), backgroundColor: '#2a7d40', borderRadius: 8 }] },
+            options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } }
         });
     }
 
