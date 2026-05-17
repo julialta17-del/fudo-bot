@@ -36,20 +36,21 @@ def ejecutar_analisis_fidelizacion():
     col_fecha = 'Fecha' if 'Fecha' in df_h.columns else 'Fecha_Texto'
     df_h['Fecha_DT'] = pd.to_datetime(df_h[col_fecha], dayfirst=True, errors='coerce')
 
+    # Aseguramos que Id sea numérico para poder buscar el mínimo correctamente
+    df_h['Id'] = pd.to_numeric(df_h['Id'], errors='coerce')
+
     # FIX: limpiar formato numérico argentino antes de convertir
-    # Elimina '$', puntos de miles y convierte coma decimal a punto
     df_h['Total_Num'] = (
         df_h['Total']
         .astype(str)
         .str.strip()
-        .str.replace(r'[$\s]', '', regex=True)   # quita $ y espacios
-        .str.replace('.', '', regex=False)         # quita separador de miles (punto)
-        .str.replace(',', '.', regex=False)        # convierte coma decimal a punto
+        .str.replace(r'[$\s]', '', regex=True)
+        .str.replace('.', '', regex=False)
+        .str.replace(',', '.', regex=False)
         .pipe(pd.to_numeric, errors='coerce')
         .fillna(0)
     )
 
-    # DEBUG: imprime una muestra para verificar que los valores son correctos
     print("Muestra de Total_Num después de limpiar:")
     print(df_h[['Total', 'Total_Num']].head(10).to_string())
 
@@ -68,7 +69,7 @@ def ejecutar_analisis_fidelizacion():
     }).reset_index()
     habitos.columns = ['Cliente', 'Turno_Habitual', 'Canal_Habitual', 'Pago_Habitual']
 
-    # B) MÉTRICAS
+    # B) MÉTRICAS (última visita, ticket promedio, etc.)
     metricas = df_h.groupby('Cliente').agg({
         'Id': 'count',
         'Total_Num': 'mean',
@@ -77,44 +78,54 @@ def ejecutar_analisis_fidelizacion():
     }).reset_index()
     metricas.columns = ['Cliente', 'Cant_Pedidos', 'Ticket_Promedio', 'Ultima_Visita', 'Ultimo_Pedido']
 
+    # ✅ NUEVO: Fecha del primer pedido (fila con el Id más chico por cliente)
+    primer_pedido = (
+        df_h.sort_values('Id')               # ordena por Id ascendente
+            .groupby('Cliente')
+            .first()                          # toma la primera fila (Id más chico)
+            .reset_index()[['Cliente', 'Fecha_DT']]
+    )
+    primer_pedido.columns = ['Cliente', 'Fecha_Primer_Pedido']
+
+    # Unimos todo
     resultado = pd.merge(metricas, habitos, on='Cliente', how='left')
+    resultado = pd.merge(resultado, primer_pedido, on='Cliente', how='left')  # ✅
 
     # --- SEGMENTACIÓN ---
     hoy = pd.Timestamp.now()
     resultado['Dias_Inactivo'] = (hoy - resultado['Ultima_Visita']).dt.days
     resultado['Ticket_Promedio'] = resultado['Ticket_Promedio'].round(2)
 
-def segmentar(fila):
-    # 1. Analizamos a los clientes de alto volumen (VIP)
-    if fila['Cant_Pedidos'] >= 6:
-        if fila['Dias_Inactivo'] <= 60:
-            return "⭐ VIP"
-        elif 60 < fila['Dias_Inactivo'] <= 120:
-            return "⚠️ VIP en Riesgo"
+    # ✅ FIX: segmentar definida DENTRO de la función principal y bien indentada
+    def segmentar(fila):
+        if fila['Cant_Pedidos'] >= 6:
+            if fila['Dias_Inactivo'] <= 60:
+                return "⭐ VIP"
+            elif 60 < fila['Dias_Inactivo'] <= 120:
+                return "⚠️ VIP en Riesgo"
+            else:
+                return "💤 Dormido"
+        elif fila['Cant_Pedidos'] >= 3:
+            if fila['Dias_Inactivo'] <= 60:
+                return "✅ Frecuente"
+            else:
+                return "💤 Dormido"
         else:
-            return "💤 Dormido"  # Un VIP que lleva más de 120 días sin comprar
-            
-    # 2. Analizamos a los clientes de volumen medio (Frecuentes)
-    elif fila['Cant_Pedidos'] >= 3:
-        if fila['Dias_Inactivo'] <= 60:
-            return "✅ Frecuente"
-        else:
-            return "💤 Dormido"
-            
-    # 3. Clientes con pocos pedidos o mucha inactividad
-    else:
-        if fila['Dias_Inactivo'] > 90:
-            return "💤 Dormido"
-        else:
-            return "🆕 Nuevo"
+            if fila['Dias_Inactivo'] > 90:
+                return "💤 Dormido"
+            else:
+                return "🆕 Nuevo"
 
+    # ✅ FIX: estas líneas ahora están en el nivel correcto (dentro de ejecutar_analisis_fidelizacion)
     resultado['Segmento'] = resultado.apply(segmentar, axis=1)
     resultado['Ultima_Visita'] = resultado['Ultima_Visita'].dt.strftime('%d/%m/%Y')
+    resultado['Fecha_Primer_Pedido'] = resultado['Fecha_Primer_Pedido'].dt.strftime('%d/%m/%Y')  # ✅
 
     columnas_finales = [
         'Cliente', 'Segmento', 'Cant_Pedidos', 'Ticket_Promedio',
         'Turno_Habitual', 'Canal_Habitual', 'Pago_Habitual',
-        'Ultimo_Pedido', 'Ultima_Visita', 'Dias_Inactivo'
+        'Ultimo_Pedido', 'Ultima_Visita', 'Dias_Inactivo',
+        'Fecha_Primer_Pedido'  # ✅
     ]
 
     df_final = resultado[columnas_finales].sort_values(by='Cant_Pedidos', ascending=False)
