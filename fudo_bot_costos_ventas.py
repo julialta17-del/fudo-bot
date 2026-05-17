@@ -82,7 +82,7 @@ def calcular_margen_detallado_big_salads():
     # -------------------------------------------------------
     print("4. Calculando costo de mano de obra por pedido...")
 
-    COSTO_TURNO = 3600 * 2  # $7.200 por turno completo (2 empleados)
+    COSTO_TURNO = 3600 * 2 * 4  # $7.200 por turno completo (2 empleados)
 
     df_ventas['_fecha_turno'] = (
         df_ventas['Fecha_Texto'].astype(str).str.strip() + " | " +
