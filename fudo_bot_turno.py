@@ -84,13 +84,27 @@ def ejecutar_analisis_fidelizacion():
     resultado['Dias_Inactivo'] = (hoy - resultado['Ultima_Visita']).dt.days
     resultado['Ticket_Promedio'] = resultado['Ticket_Promedio'].round(2)
 
-    def segmentar(fila):
-        if fila['Cant_Pedidos'] >= 6 and fila['Dias_Inactivo'] <= 60:
-            return "⭐ VIP" if fila['Dias_Inactivo'] <= 90 else "⚠️ VIP en Riesgo"
-        elif fila['Dias_Inactivo'] > 90:
-            return "💤 Dormido"
-        elif fila['Cant_Pedidos'] >= 3 and fila['Dias_Inactivo'] <= 60:
+def segmentar(fila):
+    # 1. Analizamos a los clientes de alto volumen (VIP)
+    if fila['Cant_Pedidos'] >= 6:
+        if fila['Dias_Inactivo'] <= 60:
+            return "⭐ VIP"
+        elif 60 < fila['Dias_Inactivo'] <= 120:
+            return "⚠️ VIP en Riesgo"
+        else:
+            return "💤 Dormido"  # Un VIP que lleva más de 120 días sin comprar
+            
+    # 2. Analizamos a los clientes de volumen medio (Frecuentes)
+    elif fila['Cant_Pedidos'] >= 3:
+        if fila['Dias_Inactivo'] <= 60:
             return "✅ Frecuente"
+        else:
+            return "💤 Dormido"
+            
+    # 3. Clientes con pocos pedidos o mucha inactividad
+    else:
+        if fila['Dias_Inactivo'] > 90:
+            return "💤 Dormido"
         else:
             return "🆕 Nuevo"
 
