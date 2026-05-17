@@ -43,7 +43,7 @@ def calcular_margen_detallado_big_salads():
         return
 
     # -------------------------------------------------------
-    # 4. CÁLCULOS
+    # 4. COSTO DE INSUMOS POR PEDIDO
     # -------------------------------------------------------
     def calcular_costo_acumulado(celda_productos):
         if not celda_productos or str(celda_productos).lower() == 'nan':
@@ -53,11 +53,46 @@ def calcular_margen_detallado_big_salads():
 
     df_ventas['Costo_Total_Venta'] = df_ventas['Detalle_Productos'].apply(calcular_costo_acumulado)
 
+    # -------------------------------------------------------
+    # 5. ✅ COSTO DE MANO DE OBRA POR PEDIDO
+    #    Lógica: 2 empleados x $3.600 = $7.200 por turno
+    #    Se divide entre todos los pedidos de ese turno en ese día
+    # -------------------------------------------------------
+    print("4. Calculando costo de mano de obra por pedido...")
+
+    COSTO_TURNO = 3600 * 2  # $7.200 por turno completo (2 empleados)
+
+    # Necesitamos la fecha como texto plano para agrupar por día
+    # Ajusta 'Fecha' al nombre exacto de tu columna de fecha
+    df_ventas['_fecha_turno'] = (
+        df_ventas['Fecha'].astype(str).str.strip() + " | " +
+        df_ventas['Turno'].astype(str).str.strip()
+    )
+
+    # Contamos cuántos pedidos hubo en cada combinación fecha+turno
+    pedidos_por_turno = (
+        df_ventas.groupby('_fecha_turno')['_fecha_turno']
+        .transform('count')
+    )
+
+    # El costo de mano de obra que le corresponde a cada pedido
+    df_ventas['Costo_MO_$'] = (COSTO_TURNO / pedidos_por_turno).round(0).astype(int)
+
+    # Columna auxiliar para auditoría: cuántos pedidos compartieron ese turno
+    df_ventas['Pedidos_en_Turno'] = pedidos_por_turno.astype(int)
+
+    # Limpiamos la columna auxiliar de agrupación
+    df_ventas.drop(columns=['_fecha_turno'], inplace=True)
+
+    # -------------------------------------------------------
+    # 6. COMISIONES Y MARGEN NETO
+    # -------------------------------------------------------
     def procesar_finanzas(fila):
         venta         = pd.to_numeric(fila.get('Total', 0), errors='coerce') or 0
         envio         = pd.to_numeric(fila.get('Costo_Envio', 0), errors='coerce') or 0
         descuento     = pd.to_numeric(fila.get('Descuento_Total', 0), errors='coerce') or 0
         costo_insumos = fila.get('Costo_Total_Venta', 0)
+        costo_mo      = fila.get('Costo_MO_$', 0)  # ✅ mano de obra
 
         origen_raw       = str(fila.get('Origen', '')).lower().strip()
         origen_sin_tilde = origen_raw.replace('é', 'e').replace('ú', 'u')
@@ -70,11 +105,12 @@ def calcular_margen_detallado_big_salads():
         elif "menu online" in origen_sin_tilde:
             comision_online = round((venta + envio + descuento) * 0.023)
 
-        margen = round(venta - costo_insumos - comision_peya - comision_online)
+        # ✅ Margen neto = total - comisiones - insumos - mano de obra
+        margen = round(venta - costo_insumos - comision_peya - comision_online - costo_mo)
 
         return pd.Series([comision_peya, comision_online, margen])
 
-    print("4. Calculando márgenes y comisiones...")
+    print("5. Calculando márgenes y comisiones...")
     df_ventas[['Comision_PeYa_$', 'Comision_Tienda_Online_$', 'Margen_Neto_$']] = \
         df_ventas.apply(procesar_finanzas, axis=1)
 
@@ -89,26 +125,29 @@ def calcular_margen_detallado_big_salads():
     )
 
     # -------------------------------------------------------
-    # 5. REORDENAMIENTO FINAL
+    # 7. REORDENAMIENTO FINAL
     # -------------------------------------------------------
     columnas_al_final = [
         'Costo_Total_Venta',
+        'Costo_MO_$',           # ✅ mano de obra por pedido
+        'Pedidos_en_Turno',     # ✅ auditoría: cuántos pedidos compartieron el turno
+        'Comision_PeYa_$',
+        'Comision_Tienda_Online_$',
         'Margen_Neto_$',
         'Margen_Neto_%',
-        'Comision_PeYa_$',
-        'Comision_Tienda_Online_$'
     ]
     columnas_principales = [c for c in df_ventas.columns if c not in columnas_al_final]
     df_final = df_ventas[columnas_principales + columnas_al_final].copy()
 
     # -------------------------------------------------------
-    # 6. LIMPIEZA DE DECIMALES
+    # 8. LIMPIEZA DE DECIMALES
     # -------------------------------------------------------
     df_final = df_final.replace([np.nan, np.inf, -np.inf], 0)
 
-    # Estas columnas van como entero puro, sin .0
     cols_enteras = [
         'Costo_Total_Venta',
+        'Costo_MO_$',
+        'Pedidos_en_Turno',
         'Comision_PeYa_$',
         'Comision_Tienda_Online_$',
         'Margen_Neto_$'
@@ -123,7 +162,6 @@ def calcular_margen_detallado_big_salads():
                 .astype(str)
             )
 
-    # Margen_Neto_%: si termina en .0 lo muestra entero, si tiene decimal real lo conserva
     if 'Margen_Neto_%' in df_final.columns:
         def formatear_pct(x):
             val = pd.to_numeric(x, errors='coerce')
@@ -134,15 +172,16 @@ def calcular_margen_detallado_big_salads():
         df_final['Margen_Neto_%'] = df_final['Margen_Neto_%'].apply(formatear_pct)
 
     # -------------------------------------------------------
-    # 7. SUBIR A GOOGLE SHEETS
+    # 9. SUBIR A GOOGLE SHEETS
     # -------------------------------------------------------
-    print("5. Actualizando Hoja 1 con las nuevas comisiones...")
+    print("6. Actualizando Hoja 1 con mano de obra y márgenes...")
     datos_subir = [df_final.columns.tolist()] + df_final.astype(str).values.tolist()
 
     sheet_ventas.clear()
     sheet_ventas.update(values=datos_subir, range_name='A1')
 
-    print(f"✅ ¡Proceso completado! Columnas finales: {', '.join(columnas_al_final)}")
+    print(f"✅ ¡Proceso completado!")
+    print(f"   Columnas finales agregadas: {', '.join(columnas_al_final)}")
 
 
 if __name__ == "__main__":
