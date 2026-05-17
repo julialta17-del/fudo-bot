@@ -65,7 +65,7 @@ def calcular_margen_detallado_big_salads():
     # Necesitamos la fecha como texto plano para agrupar por día
     # Ajusta 'Fecha' al nombre exacto de tu columna de fecha
     df_ventas['_fecha_turno'] = (
-        df_ventas['Fecha'].astype(str).str.strip() + " | " +
+        df_ventas['Fecha_Texto'].astype(str).str.strip() + " | " +
         df_ventas['Turno'].astype(str).str.strip()
     )
 
