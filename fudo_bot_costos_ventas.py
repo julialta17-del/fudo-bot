@@ -26,10 +26,20 @@ def calcular_margen_detallado_big_salads():
     sheet_costos = spreadsheet.worksheet("Maestro_Costos")
 
     # -------------------------------------------------------
-    # 2. PROCESAR COSTOS
+    # 2. PROCESAR COSTOS — conversión robusta de decimales
     # -------------------------------------------------------
     print("2. Leyendo costos...")
     df_costos = pd.DataFrame(sheet_costos.get_all_records())
+
+    # ✅ FIX: Fudo exporta números con formato argentino (ej: "4.462,50")
+    # Eliminamos el separador de miles y convertimos la coma decimal a punto
+    df_costos['Costo'] = pd.to_numeric(
+        df_costos['Costo'].astype(str)
+            .str.replace('.', '', regex=False)
+            .str.replace(',', '.', regex=False),
+        errors='coerce'
+    ).fillna(0)
+
     dict_costos = pd.Series(df_costos['Costo'].values, index=df_costos['Nombre']).to_dict()
 
     # -------------------------------------------------------
@@ -44,44 +54,49 @@ def calcular_margen_detallado_big_salads():
 
     # -------------------------------------------------------
     # 4. COSTO DE INSUMOS POR PEDIDO
+    #    ✅ FIX: Si el costo es 0 (producto no encontrado),
+    #    usa el 35% del total de la venta como estimado
     # -------------------------------------------------------
-    def calcular_costo_acumulado(celda_productos):
+    def calcular_costo_acumulado(fila):
+        celda_productos = fila.get('Detalle_Productos', '')
+        venta = pd.to_numeric(fila.get('Total', 0), errors='coerce') or 0
+
         if not celda_productos or str(celda_productos).lower() == 'nan':
-            return 0
-        lista_items = [item.strip() for item in str(celda_productos).split(',')]
-        return sum(dict_costos.get(producto, 0) for producto in lista_items)
+            return round(venta * 0.35)
 
-    df_ventas['Costo_Total_Venta'] = df_ventas['Detalle_Productos'].apply(calcular_costo_acumulado)
+        lista_items = [item.strip() for item in str(celda_productos).split(',')]
+        costo = sum(dict_costos.get(producto, 0) for producto in lista_items)
+
+        # Si no encontró costos en el maestro, estima 35% de la venta
+        if costo == 0:
+            return round(venta * 0.35)
+
+        return costo
+
+    df_ventas['Costo_Total_Venta'] = df_ventas.apply(calcular_costo_acumulado, axis=1)
 
     # -------------------------------------------------------
-    # 5. ✅ COSTO DE MANO DE OBRA POR PEDIDO
-    #    Lógica: 2 empleados x $3.600 = $7.200 por turno
+    # 5. COSTO DE MANO DE OBRA POR PEDIDO
+    #    2 empleados x $3.600 = $7.200 por turno
     #    Se divide entre todos los pedidos de ese turno en ese día
     # -------------------------------------------------------
     print("4. Calculando costo de mano de obra por pedido...")
 
     COSTO_TURNO = 3600 * 2  # $7.200 por turno completo (2 empleados)
 
-    # Necesitamos la fecha como texto plano para agrupar por día
-    # Ajusta 'Fecha' al nombre exacto de tu columna de fecha
     df_ventas['_fecha_turno'] = (
         df_ventas['Fecha_Texto'].astype(str).str.strip() + " | " +
         df_ventas['Turno'].astype(str).str.strip()
     )
 
-    # Contamos cuántos pedidos hubo en cada combinación fecha+turno
     pedidos_por_turno = (
         df_ventas.groupby('_fecha_turno')['_fecha_turno']
         .transform('count')
     )
 
-    # El costo de mano de obra que le corresponde a cada pedido
-    df_ventas['Costo_MO_$'] = (COSTO_TURNO / pedidos_por_turno).round(0).astype(int)
-
-    # Columna auxiliar para auditoría: cuántos pedidos compartieron ese turno
+    df_ventas['Costo_MO_$']      = (COSTO_TURNO / pedidos_por_turno).round(0).astype(int)
     df_ventas['Pedidos_en_Turno'] = pedidos_por_turno.astype(int)
 
-    # Limpiamos la columna auxiliar de agrupación
     df_ventas.drop(columns=['_fecha_turno'], inplace=True)
 
     # -------------------------------------------------------
@@ -92,7 +107,7 @@ def calcular_margen_detallado_big_salads():
         envio         = pd.to_numeric(fila.get('Costo_Envio', 0), errors='coerce') or 0
         descuento     = pd.to_numeric(fila.get('Descuento_Total', 0), errors='coerce') or 0
         costo_insumos = fila.get('Costo_Total_Venta', 0)
-        costo_mo      = fila.get('Costo_MO_$', 0)  # ✅ mano de obra
+        costo_mo      = fila.get('Costo_MO_$', 0)
 
         origen_raw       = str(fila.get('Origen', '')).lower().strip()
         origen_sin_tilde = origen_raw.replace('é', 'e').replace('ú', 'u')
@@ -105,7 +120,6 @@ def calcular_margen_detallado_big_salads():
         elif "menu online" in origen_sin_tilde:
             comision_online = round((venta + envio + descuento) * 0.023)
 
-        # ✅ Margen neto = total - comisiones - insumos - mano de obra
         margen = round(venta - costo_insumos - comision_peya - comision_online - costo_mo)
 
         return pd.Series([comision_peya, comision_online, margen])
@@ -126,15 +140,16 @@ def calcular_margen_detallado_big_salads():
 
     # -------------------------------------------------------
     # 7. REORDENAMIENTO FINAL
+    #    ✅ FIX: Costo_MO_$ y Pedidos_en_Turno van DESPUÉS de Margen_Neto_%
     # -------------------------------------------------------
     columnas_al_final = [
         'Costo_Total_Venta',
-        'Costo_MO_$',           # ✅ mano de obra por pedido
-        'Pedidos_en_Turno',     # ✅ auditoría: cuántos pedidos compartieron el turno
         'Comision_PeYa_$',
         'Comision_Tienda_Online_$',
         'Margen_Neto_$',
         'Margen_Neto_%',
+        'Costo_MO_$',          # ← después de Margen_Neto_%
+        'Pedidos_en_Turno',    # ← después de Margen_Neto_%
     ]
     columnas_principales = [c for c in df_ventas.columns if c not in columnas_al_final]
     df_final = df_ventas[columnas_principales + columnas_al_final].copy()
@@ -181,7 +196,7 @@ def calcular_margen_detallado_big_salads():
     sheet_ventas.update(values=datos_subir, range_name='A1')
 
     print(f"✅ ¡Proceso completado!")
-    print(f"   Columnas finales agregadas: {', '.join(columnas_al_final)}")
+    print(f"   Columnas finales: {', '.join(columnas_al_final)}")
 
 
 if __name__ == "__main__":
