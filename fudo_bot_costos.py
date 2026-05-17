@@ -36,19 +36,9 @@ chrome_options.add_experimental_option("prefs", {
 })
 
 
-# ✅ FIX: Convierte números con formato argentino (ej: "4.462,50" → 4462.50)
-def limpiar_numero(serie):
-    return pd.to_numeric(
-        serie.astype(str)
-            .str.replace('.', '', regex=False)   # elimina separador de miles
-            .str.replace(',', '.', regex=False), # convierte coma decimal a punto
-        errors='coerce'
-    ).fillna(0)
-
-
-# Convierte una fila a tipos nativos de Python para que gspread
-# envíe números reales en lugar de strings
 def preparar_fila(row):
+    """Convierte una fila a tipos nativos de Python para que gspread
+    envíe números reales en lugar de strings."""
     resultado = []
     for val in row:
         if pd.isna(val):
@@ -77,7 +67,9 @@ def ejecutar_sincronizacion_costos():
         pass_input.submit()
 
         print("Descargando archivo ZIP...")
-        exportar_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[ert-download-file='downloadProducts()']")))
+        exportar_btn = wait.until(EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, "a[ert-download-file='downloadProducts()']")
+        ))
         exportar_btn.click()
 
         time.sleep(15)
@@ -101,30 +93,39 @@ def ejecutar_sincronizacion_costos():
         print("Procesando lógicas de costos y descuentos...")
         df = pd.read_excel(ruta_excel)
 
+        # Debug: verificar nombres exactos de columnas del XLS
+        print(f"   Columnas en el XLS de Fudo: {df.columns.tolist()}")
+
         df = df[['Nombre', 'Precio', 'Costo']].copy()
 
-        # ✅ FIX: Limpieza robusta de decimales con formato argentino
-        df['Precio'] = limpiar_numero(df['Precio'])
-        df['Costo']  = limpiar_numero(df['Costo'])
+        # ✅ CORRECCIÓN CLAVE: pd.to_numeric directo, SIN str.replace
+        # pandas ya lee el XLS como número nativo (ej: 3755.25).
+        # Si se hace .astype(str) y se saca el punto, "3755.25" → "375525" (x100 error).
+        df['Precio'] = pd.to_numeric(df['Precio'], errors='coerce').fillna(0).round(2)
+        df['Costo']  = pd.to_numeric(df['Costo'],  errors='coerce').fillna(0).round(2)
+
+        # Debug: primeros valores para verificar que sean correctos
+        print("   Muestra de valores leídos:")
+        print(df[['Nombre', 'Precio', 'Costo']].head(8).to_string(index=False))
 
         # Si el costo es 0, se estima como 35% del precio de venta
         sin_costo = df['Costo'] == 0
         df.loc[sin_costo, 'Costo'] = (df.loc[sin_costo, 'Precio'] * 0.35).round(2)
-        df['Costo_Estimado'] = sin_costo  # True = fue estimado, False = dato real de Fudo
+        df['Costo_Estimado'] = sin_costo  # True = estimado, False = dato real de Fudo
 
-        # Cálculos de Margen Estándar
+        # Margen estándar
         df['Margen_$'] = (df['Precio'] - df['Costo']).round(2)
         df['Margen_%'] = (
             (df['Margen_$'] / df['Precio'])
             .replace([float('inf'), -float('inf')], 0)
             .fillna(0)
-            .round(4)  # 0.3500 = 35%, Sheets lo muestra bien con formato %
+            .round(4)
         )
 
-        # Lógica de Descuento 30%
-        df['Precio_con_30%_Desc']  = (df['Precio'] * 0.70).round(2)
-        df['Margen_$_con_Desc']    = (df['Precio_con_30%_Desc'] - df['Costo']).round(2)
-        df['Margen_%_con_Desc']    = (
+        # Con descuento 30%
+        df['Precio_con_30%_Desc'] = (df['Precio'] * 0.70).round(2)
+        df['Margen_$_con_Desc']   = (df['Precio_con_30%_Desc'] - df['Costo']).round(2)
+        df['Margen_%_con_Desc']   = (
             (df['Margen_$_con_Desc'] / df['Precio_con_30%_Desc'])
             .replace([float('inf'), -float('inf')], 0)
             .fillna(0)
@@ -150,7 +151,6 @@ def ejecutar_sincronizacion_costos():
         sheet = spreadsheet.worksheet("Maestro_Costos")
         sheet.clear()
 
-        # ✅ Enviamos números como números reales, NO como strings
         headers = df.columns.values.tolist()
         filas = [preparar_fila(row) for _, row in df.iterrows()]
         datos_subir = [headers] + filas
@@ -158,8 +158,8 @@ def ejecutar_sincronizacion_costos():
         sheet.update(range_name='A1', values=datos_subir, value_input_option='RAW')
 
         print("✅ Proceso completado: Maestro_Costos actualizado.")
-        print(f"   → Productos con costo real de Fudo:    {(~sin_costo).sum()}")
-        print(f"   → Productos con costo estimado (35%):  {sin_costo.sum()}")
+        print(f"   → Productos con costo real de Fudo:   {(~sin_costo).sum()}")
+        print(f"   → Productos con costo estimado (35%): {sin_costo.sum()}")
 
     except Exception as e:
         print(f"❌ Error durante la ejecución: {e}")
