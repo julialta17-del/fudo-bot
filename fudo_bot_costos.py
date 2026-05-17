@@ -35,19 +35,30 @@ chrome_options.add_experimental_option("prefs", {
     "safebrowsing.enabled": True
 })
 
-# ✅ NUEVA FUNCIÓN: Convierte una fila a tipos nativos de Python
-# para que gspread envíe números reales en lugar de strings
+
+# ✅ FIX: Convierte números con formato argentino (ej: "4.462,50" → 4462.50)
+def limpiar_numero(serie):
+    return pd.to_numeric(
+        serie.astype(str)
+            .str.replace('.', '', regex=False)   # elimina separador de miles
+            .str.replace(',', '.', regex=False), # convierte coma decimal a punto
+        errors='coerce'
+    ).fillna(0)
+
+
+# Convierte una fila a tipos nativos de Python para que gspread
+# envíe números reales en lugar de strings
 def preparar_fila(row):
     resultado = []
     for val in row:
         if pd.isna(val):
             resultado.append("")
         elif isinstance(val, (float, int)):
-            # Redondea a 2 decimales y lo manda como número
             resultado.append(round(float(val), 2))
         else:
             resultado.append(str(val))
     return resultado
+
 
 def ejecutar_sincronizacion_costos():
     service = Service(ChromeDriverManager().install())
@@ -60,15 +71,15 @@ def ejecutar_sincronizacion_costos():
         driver.get("https://app-v2.fu.do/app/#!/products")
         user_input = wait.until(EC.presence_of_element_located((By.ID, "user")))
         pass_input = driver.find_element(By.ID, "password")
-        
+
         user_input.send_keys("admin@bigsaladssexta")
         pass_input.send_keys("bigsexta")
         pass_input.submit()
-        
+
         print("Descargando archivo ZIP...")
         exportar_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[ert-download-file='downloadProducts()']")))
         exportar_btn.click()
-        
+
         time.sleep(15)
 
         # 2. PROCESAR EL ARCHIVO ZIP
@@ -80,24 +91,26 @@ def ejecutar_sincronizacion_costos():
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             archivo_interno = zip_ref.namelist()[0]
             zip_ref.extract(archivo_interno, base_path)
-            
+
             ruta_excel = os.path.join(temp_excel_path, nombre_final)
-            if os.path.exists(ruta_excel): os.remove(ruta_excel)
+            if os.path.exists(ruta_excel):
+                os.remove(ruta_excel)
             shutil.move(os.path.join(base_path, archivo_interno), ruta_excel)
 
-        # 3. LOGICA DE NEGOCIO CON PANDAS
+        # 3. LÓGICA DE NEGOCIO CON PANDAS
         print("Procesando lógicas de costos y descuentos...")
         df = pd.read_excel(ruta_excel)
-        
-        df = df[['Nombre', 'Precio', 'Costo']].copy()
-        
-        df['Precio'] = pd.to_numeric(df['Precio'], errors='coerce').fillna(0)
-        df['Costo'] = pd.to_numeric(df['Costo'], errors='coerce').fillna(0)
 
-        # ✅ NUEVA LÓGICA: Si el costo es 0, se estima como 35% del precio de venta
+        df = df[['Nombre', 'Precio', 'Costo']].copy()
+
+        # ✅ FIX: Limpieza robusta de decimales con formato argentino
+        df['Precio'] = limpiar_numero(df['Precio'])
+        df['Costo']  = limpiar_numero(df['Costo'])
+
+        # Si el costo es 0, se estima como 35% del precio de venta
         sin_costo = df['Costo'] == 0
         df.loc[sin_costo, 'Costo'] = (df.loc[sin_costo, 'Precio'] * 0.35).round(2)
-        df['Costo_Estimado'] = sin_costo  # columna auxiliar para saber cuáles fueron estimados
+        df['Costo_Estimado'] = sin_costo  # True = fue estimado, False = dato real de Fudo
 
         # Cálculos de Margen Estándar
         df['Margen_$'] = (df['Precio'] - df['Costo']).round(2)
@@ -105,13 +118,13 @@ def ejecutar_sincronizacion_costos():
             (df['Margen_$'] / df['Precio'])
             .replace([float('inf'), -float('inf')], 0)
             .fillna(0)
-            .round(4)  # 0.3500 = 35%, Sheets lo muestra bien si la celda es formato %
+            .round(4)  # 0.3500 = 35%, Sheets lo muestra bien con formato %
         )
 
         # Lógica de Descuento 30%
-        df['Precio_con_30%_Desc'] = (df['Precio'] * 0.70).round(2)
-        df['Margen_$_con_Desc'] = (df['Precio_con_30%_Desc'] - df['Costo']).round(2)
-        df['Margen_%_con_Desc'] = (
+        df['Precio_con_30%_Desc']  = (df['Precio'] * 0.70).round(2)
+        df['Margen_$_con_Desc']    = (df['Precio_con_30%_Desc'] - df['Costo']).round(2)
+        df['Margen_%_con_Desc']    = (
             (df['Margen_$_con_Desc'] / df['Precio_con_30%_Desc'])
             .replace([float('inf'), -float('inf')], 0)
             .fillna(0)
@@ -120,33 +133,42 @@ def ejecutar_sincronizacion_costos():
 
         # 4. SUBIR A GOOGLE SHEETS
         print("Conectando con Google Sheets...")
-        scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+        scope = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
         creds_json = os.getenv("GOOGLE_CREDENTIALS")
-        
+
         if creds_json:
             creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
         else:
             creds = Credentials.from_service_account_file('credentials.json', scopes=scope)
-            
+
         client = gspread.authorize(creds)
-        
+
         spreadsheet = client.open("Analisis Fudo")
         sheet = spreadsheet.worksheet("Maestro_Costos")
         sheet.clear()
 
-        # ✅ FIX DECIMALES: enviamos números como números reales, NO como strings
+        # ✅ Enviamos números como números reales, NO como strings
         headers = df.columns.values.tolist()
         filas = [preparar_fila(row) for _, row in df.iterrows()]
         datos_subir = [headers] + filas
 
         sheet.update(range_name='A1', values=datos_subir, value_input_option='RAW')
-        
+
         print("✅ Proceso completado: Maestro_Costos actualizado.")
-        print(f"   → Productos con costo estimado (35%): {sin_costo.sum()}")
+        print(f"   → Productos con costo real de Fudo:    {(~sin_costo).sum()}")
+        print(f"   → Productos con costo estimado (35%):  {sin_costo.sum()}")
 
     except Exception as e:
         print(f"❌ Error durante la ejecución: {e}")
+        raise
     finally:
         driver.quit()
         if os.path.exists(base_path):
             shutil.rmtree(base_path)
+
+
+if __name__ == "__main__":
+    ejecutar_sincronizacion_costos()
