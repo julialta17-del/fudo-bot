@@ -85,11 +85,11 @@ def ejecutar_analisis_fidelizacion():
     resultado['Ticket_Promedio'] = resultado['Ticket_Promedio'].round(2)
 
     def segmentar(fila):
-        if fila['Cant_Pedidos'] >= 5:
-            return "⭐ VIP" if fila['Dias_Inactivo'] <= 60 else "⚠️ VIP en Riesgo"
-        elif fila['Dias_Inactivo'] > 45:
+        if fila['Cant_Pedidos'] >= 6 and fila['Dias_Inactivo'] <= 60:
+            return "⭐ VIP" if fila['Dias_Inactivo'] <= 90 else "⚠️ VIP en Riesgo"
+        elif fila['Dias_Inactivo'] > 90:
             return "💤 Dormido"
-        elif fila['Cant_Pedidos'] >= 2:
+        elif fila['Cant_Pedidos'] >= 3 and fila['Dias_Inactivo'] <= 60:
             return "✅ Frecuente"
         else:
             return "🆕 Nuevo"
