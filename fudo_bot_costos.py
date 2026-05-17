@@ -35,6 +35,20 @@ chrome_options.add_experimental_option("prefs", {
     "safebrowsing.enabled": True
 })
 
+# ✅ NUEVA FUNCIÓN: Convierte una fila a tipos nativos de Python
+# para que gspread envíe números reales en lugar de strings
+def preparar_fila(row):
+    resultado = []
+    for val in row:
+        if pd.isna(val):
+            resultado.append("")
+        elif isinstance(val, (float, int)):
+            # Redondea a 2 decimales y lo manda como número
+            resultado.append(round(float(val), 2))
+        else:
+            resultado.append(str(val))
+    return resultado
+
 def ejecutar_sincronizacion_costos():
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -75,22 +89,34 @@ def ejecutar_sincronizacion_costos():
         print("Procesando lógicas de costos y descuentos...")
         df = pd.read_excel(ruta_excel)
         
-        # Seleccionamos y renombramos las columnas base de Fudo
-        # Ajusta 'Nombre', 'Precio' y 'Costo' según como vengan exactamente en tu Excel de Fudo
         df = df[['Nombre', 'Precio', 'Costo']].copy()
         
-        # Convertimos a numérico por seguridad
         df['Precio'] = pd.to_numeric(df['Precio'], errors='coerce').fillna(0)
         df['Costo'] = pd.to_numeric(df['Costo'], errors='coerce').fillna(0)
 
+        # ✅ NUEVA LÓGICA: Si el costo es 0, se estima como 35% del precio de venta
+        sin_costo = df['Costo'] == 0
+        df.loc[sin_costo, 'Costo'] = (df.loc[sin_costo, 'Precio'] * 0.35).round(2)
+        df['Costo_Estimado'] = sin_costo  # columna auxiliar para saber cuáles fueron estimados
+
         # Cálculos de Margen Estándar
-        df['Margen_$'] = df['Precio'] - df['Costo']
-        df['Margen_%'] = (df['Margen_$'] / df['Precio']).replace([float('inf'), -float('inf')], 0).fillna(0)
+        df['Margen_$'] = (df['Precio'] - df['Costo']).round(2)
+        df['Margen_%'] = (
+            (df['Margen_$'] / df['Precio'])
+            .replace([float('inf'), -float('inf')], 0)
+            .fillna(0)
+            .round(4)  # 0.3500 = 35%, Sheets lo muestra bien si la celda es formato %
+        )
 
         # Lógica de Descuento 30%
-        df['Precio_con_30%_Desc'] = df['Precio'] * 0.70
-        df['Margen_$_con_Desc'] = df['Precio_con_30%_Desc'] - df['Costo']
-        df['Margen_%_con_Desc'] = (df['Margen_$_con_Desc'] / df['Precio_con_30%_Desc']).replace([float('inf'), -float('inf')], 0).fillna(0)
+        df['Precio_con_30%_Desc'] = (df['Precio'] * 0.70).round(2)
+        df['Margen_$_con_Desc'] = (df['Precio_con_30%_Desc'] - df['Costo']).round(2)
+        df['Margen_%_con_Desc'] = (
+            (df['Margen_$_con_Desc'] / df['Precio_con_30%_Desc'])
+            .replace([float('inf'), -float('inf')], 0)
+            .fillna(0)
+            .round(4)
+        )
 
         # 4. SUBIR A GOOGLE SHEETS
         print("Conectando con Google Sheets...")
@@ -104,24 +130,19 @@ def ejecutar_sincronizacion_costos():
             
         client = gspread.authorize(creds)
         
-        # REVISIÓN: Asegúrate que el nombre del archivo sea "Quinta Analisis Fudo" 
-        # y la hoja sea "Maestros_costos" (en plural)
         spreadsheet = client.open("Analisis Fudo")
         sheet = spreadsheet.worksheet("Maestro_Costos")
-
         sheet.clear()
-        
-        # Preparamos los datos para subir
-        # Formateamos los porcentajes para que se vean bien (ej: 0.35 -> 35%)
-        df_subir = df.copy()
-        # Puedes comentar estas dos líneas si prefieres los números brutos (0.35)
-        # df_subir['Margen_%'] = (df_subir['Margen_%'] * 100).round(2).astype(str) + "%"
-        # df_subir['Margen_%_con_Desc'] = (df_subir['Margen_%_con_Desc'] * 100).round(2).astype(str) + "%"
 
-        datos_subir = [df_subir.columns.values.tolist()] + df_subir.fillna("").astype(str).values.tolist()
-        sheet.update(range_name='A1', values=datos_subir)
+        # ✅ FIX DECIMALES: enviamos números como números reales, NO como strings
+        headers = df.columns.values.tolist()
+        filas = [preparar_fila(row) for _, row in df.iterrows()]
+        datos_subir = [headers] + filas
+
+        sheet.update(range_name='A1', values=datos_subir, value_input_option='RAW')
         
-        print("✅ Proceso completado: Maestro_costos actualizado con lógicas de descuento.")
+        print("✅ Proceso completado: Maestro_Costos actualizado.")
+        print(f"   → Productos con costo estimado (35%): {sin_costo.sum()}")
 
     except Exception as e:
         print(f"❌ Error durante la ejecución: {e}")
@@ -129,4 +150,3 @@ def ejecutar_sincronizacion_costos():
         driver.quit()
         if os.path.exists(base_path):
             shutil.rmtree(base_path)
-
