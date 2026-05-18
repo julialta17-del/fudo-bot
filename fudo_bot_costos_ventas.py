@@ -31,17 +31,20 @@ def calcular_margen_detallado_big_salads():
     print("2. Leyendo costos...")
     df_costos = pd.DataFrame(sheet_costos.get_all_records())
 
-    # ✅ CORRECCIÓN: pd.to_numeric directo, SIN str.replace
-    # gspread con RAW devuelve los números como float/int nativos de Python.
-    # Hacer .astype(str) y sacar el punto destruye los decimales.
     df_costos['Costo'] = pd.to_numeric(df_costos['Costo'], errors='coerce').fillna(0)
 
-    dict_costos = pd.Series(df_costos['Costo'].values, index=df_costos['Nombre']).to_dict()
+    # ✅ Diccionario con clave normalizada: minúsculas + sin espacios extra
+    # Así el matching no falla por diferencias de mayúsculas o espacios
+    dict_costos_raw = pd.Series(df_costos['Costo'].values, index=df_costos['Nombre']).to_dict()
+    dict_costos = {
+        k.strip().lower(): v
+        for k, v in dict_costos_raw.items()
+    }
 
-    # Debug: verificar que los costos tienen valores razonables
-    print("   Muestra del diccionario de costos:")
-    for nombre, costo in list(dict_costos.items())[:5]:
-        print(f"   '{nombre}' → {costo}")
+    print(f"   Productos en Maestro_Costos: {len(dict_costos)}")
+    print("   Muestra de claves del diccionario:")
+    for k, v in list(dict_costos.items())[:5]:
+        print(f"     '{k}' → {v}")
 
     # -------------------------------------------------------
     # 3. LEER VENTAS
@@ -54,21 +57,41 @@ def calcular_margen_detallado_big_salads():
         return
 
     # -------------------------------------------------------
-    # 4. COSTO DE INSUMOS POR PEDIDO
-    #    Si el producto no está en el maestro o su costo es 0,
-    #    se usa el 35% del total de la venta como estimado.
+    # 4. DEBUG: Ver exactamente qué hay en Detalle_Productos
+    # -------------------------------------------------------
+    print("\n--- DEBUG Detalle_Productos (primeras 5 filas) ---")
+    no_encontrados = set()
+
+    for i, fila in df_ventas.head(5).iterrows():
+        celda = str(fila.get('Detalle_Productos', ''))
+        print(f"  Fila {i}: repr={repr(celda)}")
+        items = [it.strip() for it in celda.split(',')]
+        for item in items:
+            key = item.strip().lower()
+            encontrado = key in dict_costos
+            print(f"    → '{item}' (key='{key}') {'✅ encontrado' if encontrado else '❌ NO encontrado'}")
+
+    print("--- FIN DEBUG ---\n")
+
+    # -------------------------------------------------------
+    # 5. COSTO DE INSUMOS POR PEDIDO
     # -------------------------------------------------------
     def calcular_costo_acumulado(fila):
         celda_productos = fila.get('Detalle_Productos', '')
         venta = pd.to_numeric(fila.get('Total', 0), errors='coerce') or 0
 
-        if not celda_productos or str(celda_productos).lower() == 'nan':
+        if not celda_productos or str(celda_productos).strip().lower() in ('', 'nan'):
             return round(venta * 0.35)
 
         lista_items = [item.strip() for item in str(celda_productos).split(',')]
-        costo = sum(dict_costos.get(producto, 0) for producto in lista_items)
+        costo = 0
+        for producto in lista_items:
+            key = producto.strip().lower()
+            costo += dict_costos.get(key, 0)
+            if dict_costos.get(key, 0) == 0:
+                no_encontrados.add(producto.strip())
 
-        # Fallback: si no encontró ningún costo en el maestro, estima 35%
+        # Fallback: si no encontró ningún costo, estima 35% de la venta
         if costo == 0:
             return round(venta * 0.35)
 
@@ -76,14 +99,23 @@ def calcular_margen_detallado_big_salads():
 
     df_ventas['Costo_Total_Venta'] = df_ventas.apply(calcular_costo_acumulado, axis=1)
 
+    # Reporte de productos no encontrados en el maestro
+    if no_encontrados:
+        print(f"⚠️  Productos en ventas SIN costo en Maestro_Costos ({len(no_encontrados)}):")
+        for p in sorted(no_encontrados):
+            print(f"     '{p}'")
+        print("   → Para esos pedidos se usó el 35% de la venta como estimado.")
+    else:
+        print("✅ Todos los productos encontrados en Maestro_Costos.")
+
     # -------------------------------------------------------
-    # 5. COSTO DE MANO DE OBRA POR PEDIDO
+    # 6. COSTO DE MANO DE OBRA POR PEDIDO
     #    2 empleados x $3.600 = $7.200 por turno
     #    Se divide entre todos los pedidos de ese turno en ese día
     # -------------------------------------------------------
     print("4. Calculando costo de mano de obra por pedido...")
 
-    COSTO_TURNO = 3600 * 2  # $7.200 por turno completo (2 empleados)
+    COSTO_TURNO = 3600 * 2 *4 # $7.200 por turno completo (2 empleados)
 
     df_ventas['_fecha_turno'] = (
         df_ventas['Fecha_Texto'].astype(str).str.strip() + " | " +
@@ -101,7 +133,7 @@ def calcular_margen_detallado_big_salads():
     df_ventas.drop(columns=['_fecha_turno'], inplace=True)
 
     # -------------------------------------------------------
-    # 6. COMISIONES Y MARGEN NETO
+    # 7. COMISIONES Y MARGEN NETO
     # -------------------------------------------------------
     def procesar_finanzas(fila):
         venta         = pd.to_numeric(fila.get('Total', 0), errors='coerce') or 0
@@ -140,8 +172,7 @@ def calcular_margen_detallado_big_salads():
     )
 
     # -------------------------------------------------------
-    # 7. REORDENAMIENTO FINAL
-    #    Costo_MO_$ y Pedidos_en_Turno van DESPUÉS de Margen_Neto_%
+    # 8. REORDENAMIENTO FINAL
     # -------------------------------------------------------
     columnas_al_final = [
         'Costo_Total_Venta',
@@ -156,7 +187,7 @@ def calcular_margen_detallado_big_salads():
     df_final = df_ventas[columnas_principales + columnas_al_final].copy()
 
     # -------------------------------------------------------
-    # 8. LIMPIEZA DE DECIMALES
+    # 9. LIMPIEZA DE DECIMALES
     # -------------------------------------------------------
     df_final = df_final.replace([np.nan, np.inf, -np.inf], 0)
 
@@ -188,7 +219,7 @@ def calcular_margen_detallado_big_salads():
         df_final['Margen_Neto_%'] = df_final['Margen_Neto_%'].apply(formatear_pct)
 
     # -------------------------------------------------------
-    # 9. SUBIR A GOOGLE SHEETS
+    # 10. SUBIR A GOOGLE SHEETS
     # -------------------------------------------------------
     print("6. Actualizando Hoja 1 con costos y márgenes...")
     datos_subir = [df_final.columns.tolist()] + df_final.astype(str).values.tolist()
