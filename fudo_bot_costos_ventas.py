@@ -6,6 +6,41 @@ import json
 import numpy as np
 
 
+# -------------------------------------------------------
+# UTILIDAD: parsear números en formato argentino
+# Ejemplos: "4.712,67" → 4712.67 | "471267" → 471267
+# -------------------------------------------------------
+def parsear_numero_ar(valor):
+    """
+    Convierte un string con formato numérico argentino (punto=miles, coma=decimal)
+    a float. Funciona también si el valor ya es int/float.
+    """
+    if isinstance(valor, (int, float)):
+        return float(valor)
+    s = str(valor).strip()
+    if not s or s.lower() in ('nan', ''):
+        return 0.0
+    # Caso: tiene tanto punto como coma → "4.712,67"
+    if '.' in s and ',' in s:
+        # El punto es separador de miles, la coma es decimal
+        s = s.replace('.', '').replace(',', '.')
+    # Caso: solo coma → "4712,67"
+    elif ',' in s and '.' not in s:
+        s = s.replace(',', '.')
+    # Caso: solo punto → puede ser decimal inglés o miles argentino
+    # Si hay exactamente 3 dígitos después del punto → es miles ("4.712")
+    elif '.' in s and ',' not in s:
+        partes = s.split('.')
+        if len(partes) == 2 and len(partes[1]) == 3:
+            # Tomar como separador de miles (no decimal)
+            s = s.replace('.', '')
+        # Si no, lo dejamos como decimal inglés normal
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
+
+
 def calcular_margen_detallado_big_salads():
     print("1. Conectando a Google Sheets...")
     scope = [
@@ -31,10 +66,10 @@ def calcular_margen_detallado_big_salads():
     print("2. Leyendo costos...")
     df_costos = pd.DataFrame(sheet_costos.get_all_records())
 
-    df_costos['Costo'] = pd.to_numeric(df_costos['Costo'], errors='coerce').fillna(0)
+    # ✅ CORRECCIÓN PRINCIPAL: usar parsear_numero_ar en lugar de pd.to_numeric directo
+    # Esto evita que "4.712,67" se interprete como 471267
+    df_costos['Costo'] = df_costos['Costo'].apply(parsear_numero_ar)
 
-    # ✅ Diccionario con clave normalizada: minúsculas + sin espacios extra
-    # Así el matching no falla por diferencias de mayúsculas o espacios
     dict_costos_raw = pd.Series(df_costos['Costo'].values, index=df_costos['Nombre']).to_dict()
     dict_costos = {
         k.strip().lower(): v
@@ -78,7 +113,8 @@ def calcular_margen_detallado_big_salads():
     # -------------------------------------------------------
     def calcular_costo_acumulado(fila):
         celda_productos = fila.get('Detalle_Productos', '')
-        venta = pd.to_numeric(fila.get('Total', 0), errors='coerce') or 0
+        # ✅ También parsear Total con formato argentino
+        venta = parsear_numero_ar(fila.get('Total', 0))
 
         if not celda_productos or str(celda_productos).strip().lower() in ('', 'nan'):
             return round(venta * 0.35)
@@ -91,7 +127,6 @@ def calcular_margen_detallado_big_salads():
             if dict_costos.get(key, 0) == 0:
                 no_encontrados.add(producto.strip())
 
-        # Fallback: si no encontró ningún costo, estima 35% de la venta
         if costo == 0:
             return round(venta * 0.35)
 
@@ -99,7 +134,6 @@ def calcular_margen_detallado_big_salads():
 
     df_ventas['Costo_Total_Venta'] = df_ventas.apply(calcular_costo_acumulado, axis=1)
 
-    # Reporte de productos no encontrados en el maestro
     if no_encontrados:
         print(f"⚠️  Productos en ventas SIN costo en Maestro_Costos ({len(no_encontrados)}):")
         for p in sorted(no_encontrados):
@@ -110,12 +144,10 @@ def calcular_margen_detallado_big_salads():
 
     # -------------------------------------------------------
     # 6. COSTO DE MANO DE OBRA POR PEDIDO
-    #    2 empleados x $3.600 = $7.200 por turno
-    #    Se divide entre todos los pedidos de ese turno en ese día
     # -------------------------------------------------------
     print("4. Calculando costo de mano de obra por pedido...")
 
-    COSTO_TURNO = 3600 * 2 *4 # $7.200 por turno completo (2 empleados)
+    COSTO_TURNO = 3600 * 2 * 4  # $28.800 por turno completo
 
     df_ventas['_fecha_turno'] = (
         df_ventas['Fecha_Texto'].astype(str).str.strip() + " | " +
@@ -136,11 +168,12 @@ def calcular_margen_detallado_big_salads():
     # 7. COMISIONES Y MARGEN NETO
     # -------------------------------------------------------
     def procesar_finanzas(fila):
-        venta         = pd.to_numeric(fila.get('Total', 0), errors='coerce') or 0
-        envio         = pd.to_numeric(fila.get('Costo_Envio', 0), errors='coerce') or 0
-        descuento     = pd.to_numeric(fila.get('Descuento_Total', 0), errors='coerce') or 0
-        costo_insumos = fila.get('Costo_Total_Venta', 0)
-        costo_mo      = fila.get('Costo_MO_$', 0)
+        # ✅ Parsear todos los campos monetarios con formato argentino
+        venta         = parsear_numero_ar(fila.get('Total', 0))
+        envio         = parsear_numero_ar(fila.get('Costo_Envio', 0))
+        descuento     = parsear_numero_ar(fila.get('Descuento_Total', 0))
+        costo_insumos = parsear_numero_ar(fila.get('Costo_Total_Venta', 0))
+        costo_mo      = parsear_numero_ar(fila.get('Costo_MO_$', 0))
 
         origen_raw       = str(fila.get('Origen', '')).lower().strip()
         origen_sin_tilde = origen_raw.replace('é', 'e').replace('ú', 'u')
@@ -161,13 +194,12 @@ def calcular_margen_detallado_big_salads():
     df_ventas[['Comision_PeYa_$', 'Comision_Tienda_Online_$', 'Margen_Neto_$']] = \
         df_ventas.apply(procesar_finanzas, axis=1)
 
+    # ✅ Parsear Total con formato argentino para el cálculo del porcentaje
+    total_numerico = df_ventas['Total'].apply(parsear_numero_ar)
+
     df_ventas['Margen_Neto_%'] = np.where(
-        df_ventas['Total'].astype(str).str.replace(',', '.').pipe(pd.to_numeric, errors='coerce').fillna(0) > 0,
-        (
-            df_ventas['Margen_Neto_$'] /
-            df_ventas['Total'].astype(str).str.replace(',', '.').pipe(pd.to_numeric, errors='coerce').fillna(1)
-            * 100
-        ).round(1),
+        total_numerico > 0,
+        (df_ventas['Margen_Neto_$'] / total_numerico * 100).round(1),
         0
     )
 
@@ -202,8 +234,7 @@ def calcular_margen_detallado_big_salads():
     for col in cols_enteras:
         if col in df_final.columns:
             df_final[col] = (
-                pd.to_numeric(df_final[col], errors='coerce')
-                .fillna(0)
+                df_final[col].apply(parsear_numero_ar)  # ✅ usar parsear, no to_numeric directo
                 .round(0)
                 .astype(int)
                 .astype(str)
