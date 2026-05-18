@@ -3,6 +3,44 @@ import gspread
 from google.oauth2.service_account import Credentials
 import os
 import json
+
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+creds_json = os.environ.get("GOOGLE_CREDENTIALS")
+if creds_json:
+    creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
+else:
+    creds = Credentials.from_service_account_file('credentials.json', scopes=scope)
+
+client = gspread.authorize(creds)
+spreadsheet = client.open("Analisis Fudo")
+sheet_costos = spreadsheet.worksheet("Maestro_Costos")
+
+# Ver los primeros 10 registros crudos
+registros = sheet_costos.get_all_records()
+print("=== PRIMEROS 5 REGISTROS CRUDOS ===")
+for r in registros[:5]:
+    print(r)
+
+# Ver el valor RAW de la celda Costo (sin get_all_records)
+raw = sheet_costos.get_all_values()
+print("\n=== FILAS RAW (primeras 6) ===")
+for row in raw[:6]:
+    print(row)
+
+# Ver tipo y repr exacto del campo Costo
+print("\n=== REPR DEL CAMPO COSTO ===")
+for r in registros[:5]:
+    val = r.get('Costo', 'NO EXISTE')
+    print(f"  type={type(val).__name__}  repr={repr(val)}")
+import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
+import os
+import json
 import numpy as np
 
 
