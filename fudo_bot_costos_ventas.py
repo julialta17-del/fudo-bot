@@ -3,80 +3,34 @@ import gspread
 from google.oauth2.service_account import Credentials
 import os
 import json
-
-scope = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive"
-]
-
-creds_json = os.environ.get("GOOGLE_CREDENTIALS")
-if creds_json:
-    creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
-else:
-    creds = Credentials.from_service_account_file('credentials.json', scopes=scope)
-
-client = gspread.authorize(creds)
-spreadsheet = client.open("Analisis Fudo")
-sheet_costos = spreadsheet.worksheet("Maestro_Costos")
-
-# Ver los primeros 10 registros crudos
-registros = sheet_costos.get_all_records()
-print("=== PRIMEROS 5 REGISTROS CRUDOS ===")
-for r in registros[:5]:
-    print(r)
-
-# Ver el valor RAW de la celda Costo (sin get_all_records)
-raw = sheet_costos.get_all_values()
-print("\n=== FILAS RAW (primeras 6) ===")
-for row in raw[:6]:
-    print(row)
-
-# Ver tipo y repr exacto del campo Costo
-print("\n=== REPR DEL CAMPO COSTO ===")
-for r in registros[:5]:
-    val = r.get('Costo', 'NO EXISTE')
-    print(f"  type={type(val).__name__}  repr={repr(val)}")
-import pandas as pd
-import gspread
-from google.oauth2.service_account import Credentials
-import os
-import json
 import numpy as np
 
 
-# -------------------------------------------------------
-# UTILIDAD: parsear números en formato argentino
-# Ejemplos: "4.712,67" → 4712.67 | "471267" → 471267
-# -------------------------------------------------------
-def parsear_numero_ar(valor):
+def parsear_numero_ar(s):
     """
-    Convierte un string con formato numérico argentino (punto=miles, coma=decimal)
-    a float. Funciona también si el valor ya es int/float.
+    Convierte un string con formato argentino a entero redondeado.
+    '4.712,67' → 4713  |  '4712,67' → 4713  |  '4712' → 4712
     """
-    if isinstance(valor, (int, float)):
-        return float(valor)
-    s = str(valor).strip()
+    if isinstance(s, (int, float)):
+        return round(float(s))
+    s = str(s).strip()
     if not s or s.lower() in ('nan', ''):
-        return 0.0
-    # Caso: tiene tanto punto como coma → "4.712,67"
+        return 0
+    # Tiene punto Y coma → punto=miles, coma=decimal
     if '.' in s and ',' in s:
-        # El punto es separador de miles, la coma es decimal
         s = s.replace('.', '').replace(',', '.')
-    # Caso: solo coma → "4712,67"
-    elif ',' in s and '.' not in s:
+    # Solo coma → es decimal
+    elif ',' in s:
         s = s.replace(',', '.')
-    # Caso: solo punto → puede ser decimal inglés o miles argentino
-    # Si hay exactamente 3 dígitos después del punto → es miles ("4.712")
-    elif '.' in s and ',' not in s:
+    # Solo punto con exactamente 3 dígitos después → separador de miles ("4.712")
+    elif '.' in s:
         partes = s.split('.')
         if len(partes) == 2 and len(partes[1]) == 3:
-            # Tomar como separador de miles (no decimal)
             s = s.replace('.', '')
-        # Si no, lo dejamos como decimal inglés normal
     try:
-        return float(s)
+        return round(float(s))
     except ValueError:
-        return 0.0
+        return 0
 
 
 def calcular_margen_detallado_big_salads():
@@ -102,17 +56,22 @@ def calcular_margen_detallado_big_salads():
     # 2. PROCESAR COSTOS
     # -------------------------------------------------------
     print("2. Leyendo costos...")
-    df_costos = pd.DataFrame(sheet_costos.get_all_records())
 
-    # ✅ CORRECCIÓN PRINCIPAL: usar parsear_numero_ar en lugar de pd.to_numeric directo
-    # Esto evita que "4.712,67" se interprete como 471267
-    df_costos['Costo'] = df_costos['Costo'].apply(parsear_numero_ar)
+    # ✅ CLAVE: get_all_values() trae los strings TAL COMO los muestra Sheets
+    # get_all_records() convierte "4.712,67" → 471267 (entero), perdiendo decimales
+    raw = sheet_costos.get_all_values()
+    encabezados = raw[0]
+    idx_nombre = encabezados.index('Nombre')
+    idx_costo  = encabezados.index('Costo')
 
-    dict_costos_raw = pd.Series(df_costos['Costo'].values, index=df_costos['Nombre']).to_dict()
-    dict_costos = {
-        k.strip().lower(): v
-        for k, v in dict_costos_raw.items()
-    }
+    dict_costos = {}
+    for fila in raw[1:]:
+        if len(fila) <= max(idx_nombre, idx_costo):
+            continue
+        nombre = fila[idx_nombre].strip()
+        costo  = parsear_numero_ar(fila[idx_costo])
+        if nombre:
+            dict_costos[nombre.lower()] = costo
 
     print(f"   Productos en Maestro_Costos: {len(dict_costos)}")
     print("   Muestra de claves del diccionario:")
@@ -130,7 +89,7 @@ def calcular_margen_detallado_big_salads():
         return
 
     # -------------------------------------------------------
-    # 4. DEBUG: Ver exactamente qué hay en Detalle_Productos
+    # 4. DEBUG
     # -------------------------------------------------------
     print("\n--- DEBUG Detalle_Productos (primeras 5 filas) ---")
     no_encontrados = set()
@@ -138,11 +97,10 @@ def calcular_margen_detallado_big_salads():
     for i, fila in df_ventas.head(5).iterrows():
         celda = str(fila.get('Detalle_Productos', ''))
         print(f"  Fila {i}: repr={repr(celda)}")
-        items = [it.strip() for it in celda.split(',')]
-        for item in items:
+        for item in celda.split(','):
             key = item.strip().lower()
-            encontrado = key in dict_costos
-            print(f"    → '{item}' (key='{key}') {'✅ encontrado' if encontrado else '❌ NO encontrado'}")
+            costo_debug = dict_costos.get(key, 'NO ENCONTRADO')
+            print(f"    → '{item.strip()}' → costo={costo_debug}")
 
     print("--- FIN DEBUG ---\n")
 
@@ -151,21 +109,26 @@ def calcular_margen_detallado_big_salads():
     # -------------------------------------------------------
     def calcular_costo_acumulado(fila):
         celda_productos = fila.get('Detalle_Productos', '')
-        # ✅ También parsear Total con formato argentino
         venta = parsear_numero_ar(fila.get('Total', 0))
 
         if not celda_productos or str(celda_productos).strip().lower() in ('', 'nan'):
             return round(venta * 0.35)
 
         lista_items = [item.strip() for item in str(celda_productos).split(',')]
+
         costo = 0
+        alguno_no_encontrado = False
+
         for producto in lista_items:
             key = producto.strip().lower()
-            costo += dict_costos.get(key, 0)
-            if dict_costos.get(key, 0) == 0:
+            if key not in dict_costos:
                 no_encontrados.add(producto.strip())
+                alguno_no_encontrado = True
+            else:
+                costo += dict_costos[key]
 
-        if costo == 0:
+        # Fallback SOLO si ningún producto fue encontrado en el maestro
+        if alguno_no_encontrado and costo == 0:
             return round(venta * 0.35)
 
         return round(costo)
@@ -185,7 +148,7 @@ def calcular_margen_detallado_big_salads():
     # -------------------------------------------------------
     print("4. Calculando costo de mano de obra por pedido...")
 
-    COSTO_TURNO = 3600 * 2 * 4  # $28.800 por turno completo
+    COSTO_TURNO = 3600 * 2 * 4  # $28.800 por turno completo (2 empleados)
 
     df_ventas['_fecha_turno'] = (
         df_ventas['Fecha_Texto'].astype(str).str.strip() + " | " +
@@ -206,7 +169,6 @@ def calcular_margen_detallado_big_salads():
     # 7. COMISIONES Y MARGEN NETO
     # -------------------------------------------------------
     def procesar_finanzas(fila):
-        # ✅ Parsear todos los campos monetarios con formato argentino
         venta         = parsear_numero_ar(fila.get('Total', 0))
         envio         = parsear_numero_ar(fila.get('Costo_Envio', 0))
         descuento     = parsear_numero_ar(fila.get('Descuento_Total', 0))
@@ -232,7 +194,6 @@ def calcular_margen_detallado_big_salads():
     df_ventas[['Comision_PeYa_$', 'Comision_Tienda_Online_$', 'Margen_Neto_$']] = \
         df_ventas.apply(procesar_finanzas, axis=1)
 
-    # ✅ Parsear Total con formato argentino para el cálculo del porcentaje
     total_numerico = df_ventas['Total'].apply(parsear_numero_ar)
 
     df_ventas['Margen_Neto_%'] = np.where(
@@ -257,7 +218,7 @@ def calcular_margen_detallado_big_salads():
     df_final = df_ventas[columnas_principales + columnas_al_final].copy()
 
     # -------------------------------------------------------
-    # 9. LIMPIEZA DE DECIMALES
+    # 9. LIMPIEZA Y FORMATEO FINAL
     # -------------------------------------------------------
     df_final = df_final.replace([np.nan, np.inf, -np.inf], 0)
 
@@ -272,7 +233,8 @@ def calcular_margen_detallado_big_salads():
     for col in cols_enteras:
         if col in df_final.columns:
             df_final[col] = (
-                df_final[col].apply(parsear_numero_ar)  # ✅ usar parsear, no to_numeric directo
+                pd.to_numeric(df_final[col], errors='coerce')
+                .fillna(0)
                 .round(0)
                 .astype(int)
                 .astype(str)
