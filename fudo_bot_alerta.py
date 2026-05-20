@@ -10,7 +10,7 @@ from email.mime.multipart import MIMEMultipart
 def enviar_alerta(titulo, html):
     msg = MIMEMultipart()
     msg["From"] = "julialta17@gmail.com"
-    msg["To"] = "julialta17@gmail.com"
+    msg["To"] = ["julialta17@gmail.com", "matiasgabrielrebolledo@gmail.com"]
     msg["Subject"] = f"🚨 ALERTA: {titulo}"
     msg.attach(MIMEText(html, "html"))
     try:
