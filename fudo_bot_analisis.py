@@ -7,26 +7,31 @@ import numpy as np
 from datetime import datetime
 
 # --- CONFIGURACIÓN DE RUTAS ---
-# IMPORTANTE: Esta ruta debe coincidir exactamente con donde el Script 1 guarda el archivo
 base_path = os.path.join(os.getcwd(), "descargas")
 temp_excel_path = os.path.join(base_path, "temp_excel")
 ruta_excel = os.path.join(temp_excel_path, "ventas.xls")
+
+# Función para limpiar y convertir valores monetarios de Fudo
+def limpiar_numero(x):
+    if pd.isna(x):
+        return 0.0
+    if isinstance(x, str):
+        x = x.replace('$', '').replace('.', '').replace(',', '.').strip()
+    try:
+        return float(x)
+    except ValueError:
+        return 0.0
 
 def procesar_y_analizar():
     print(f"Buscando archivo en: {ruta_excel}")
     
     if not os.path.exists(ruta_excel):
         print(f"❌ Error: No se encontró el archivo en {ruta_excel}")
-        # Listamos qué hay en la carpeta para debugguear en GitHub
-        if os.path.exists(temp_excel_path):
-            print(f"Contenido de la carpeta: {os.listdir(temp_excel_path)}")
         return
 
     # 1. CARGAR DATOS
     print("Cargando datos desde Excel...")
     try:
-        # Cargamos las pestañas necesarias
-        # Nota: Fudo a veces requiere 'engine="xlrd"' o 'engine="openpyxl"'
         df_v = pd.read_excel(ruta_excel, sheet_name='Ventas', skiprows=3)
         df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
         df_d = pd.read_excel(ruta_excel, sheet_name='Descuentos')
@@ -50,16 +55,18 @@ def procesar_y_analizar():
     # Asignación de Turnos
     df_v['Turno'] = df_v['Hora_Int'].apply(lambda h: "Mañana" if h < 16 else "Noche")
 
+    # Limpiamos las columnas monetarias
+    df_v['Total'] = df_v['Total'].apply(limpiar_numero)
+    df_d['Valor'] = df_d['Valor'].apply(limpiar_numero)
+    df_e['Valor'] = df_e['Valor'].apply(limpiar_numero)
+
     # 2. AGRUPAR ADICIONALES
-    # Agrupar Productos por Venta
     prod_resumen = df_a.groupby('Id. Venta')['Producto'].apply(lambda x: ', '.join(x.astype(str))).reset_index()
     prod_resumen.columns = ['Id', 'Detalle_Productos']
 
-    # Sumar Descuentos por Venta
     desc_resumen = df_d.groupby('Id. Venta')['Valor'].sum().reset_index()
     desc_resumen.columns = ['Id', 'Descuento_Total']
 
-    # Sumar Envíos por Venta
     envio_resumen = df_e.groupby('Id. Venta')['Valor'].sum().reset_index()
     envio_resumen.columns = ['Id', 'Costo_Envio']
 
@@ -72,8 +79,37 @@ def procesar_y_analizar():
     consolidado = consolidado.merge(envio_resumen, on='Id', how='left')
 
     # Rellenar valores vacíos
-    consolidado[['Descuento_Total', 'Costo_Envio']] = consolidado[['Descuento_Total', 'Costo_Envio']].fillna(0)
+    consolidado['Descuento_Total'] = consolidado['Descuento_Total'].fillna(0.0)
+    consolidado['Costo_Envio'] = consolidado['Costo_Envio'].fillna(0.0)
+    consolidado['Total'] = consolidado['Total'].fillna(0.0)
     consolidado['Detalle_Productos'] = consolidado['Detalle_Productos'].fillna("Sin detalle")
+
+    # === NUEVAS COLUMNAS Y REORDENAMIENTO ===
+    
+    # 1. Total_Productos_Bruto: Asumimos que Total = Bruto - Descuento + Envío
+    consolidado['Total_Productos_Bruto'] = consolidado['Total'] + consolidado['Descuento_Total'] - consolidado['Costo_Envio']
+    
+    # 2. Inicializar métricas vacías en 0.0 para que sean tratadas como números en Sheets
+    columnas_extra = [
+        'Costo_Total_Venta', 'Comision_PeYa_$', 'Comision_Tienda_Online_$', 
+        'Margen_Neto_$', 'Margen_Neto_%', 'Costo_MO_$'
+    ]
+    for col in columnas_extra:
+        consolidado[col] = 0.0
+        
+    # 3. Pedidos_en_Turno: Cuenta automática de pedidos agrupados por fecha y turno
+    consolidado['Pedidos_en_Turno'] = consolidado.groupby(['Fecha_Texto', 'Turno'])['Id'].transform('count')
+
+    # 4. Definir el orden final exacto de las columnas
+    columnas_finales = [
+        'Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago',
+        'Detalle_Productos', 'Total_Productos_Bruto', 'Descuento_Total', 'Costo_Envio',
+        'Costo_Total_Venta', 'Comision_PeYa_$', 'Comision_Tienda_Online_$',
+        'Margen_Neto_$', 'Margen_Neto_%', 'Costo_MO_$', 'Pedidos_en_Turno'
+    ]
+    
+    # Filtramos y ordenamos el DataFrame
+    consolidado = consolidado[columnas_finales]
 
     print(f"✅ Consolidado generado: {len(consolidado)} filas procesadas.")
 
@@ -83,7 +119,6 @@ def procesar_y_analizar():
 def subir_a_google(consolidado):
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     
-    # Intentar obtener credenciales de GitHub Secrets o archivo local
     creds_json = os.getenv("GOOGLE_CREDENTIALS")
     if creds_json:
         info = json.loads(creds_json)
@@ -94,16 +129,15 @@ def subir_a_google(consolidado):
     client = gspread.authorize(creds)
     
     try:
-        # Abrimos el spreadsheet y la hoja
         spreadsheet = client.open("Analisis Fudo")
         sheet_data = spreadsheet.worksheet("Hoja 1")
         
-        # Limpiar y actualizar
         sheet_data.clear()
         
-        # Preparar datos (Headers + Valores)
-        datos_finales = [consolidado.columns.values.tolist()] + \
-                         consolidado.fillna("").astype(str).values.tolist()
+        # Reemplazamos NaN para evitar errores JSON, conservando los formatos numéricos
+        consolidado = consolidado.replace({np.nan: ""})
+        
+        datos_finales = [consolidado.columns.values.tolist()] + consolidado.values.tolist()
         
         sheet_data.update(range_name='A1', values=datos_finales)
         print("🚀 Hoja 1 actualizada con éxito en Google Sheets.")
