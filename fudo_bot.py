@@ -111,7 +111,7 @@ for fila in filas:
     try:
         celdas = fila.find_elements(By.TAG_NAME, "td")
         if len(celdas) >= 5:
-
+            # Capturamos los datos de las celdas
             id_p = celdas[0].text.strip()
             hora = celdas[1].text.strip()
             cli = celdas[4].text.strip()
@@ -119,22 +119,25 @@ for fila in filas:
 
             telefono = "No encontrado"
 
-            # Buscar +54 en cualquier celda
+            # Buscar +54 en cualquier celda de la fila
             for celda in celdas:
                 texto_celda = celda.text.strip()
                 if "+54" in texto_celda:
                     telefono = texto_celda
                     break
 
+            # Si la fila está vacía o es la cabecera, saltamos
             if id_p.lower() == "id" or id_p == "":
                 continue
 
+            # ---------------------------------------------------
+            # ¡ESTO ES LO QUE TE FALTABA! -> Guardar en Google Sheets
+            # ---------------------------------------------------
             sheet.append_row([id_p, hora, telefono, cli, tot])
             print(f"ÉXITO: Guardado pedido {id_p} | Tel: {telefono}")
 
     except Exception as e:
-        print(f"Error en fila: {e}")
+        print(f"Error procesando fila en Selenium: {e}")
 
 driver.quit()
 print("PROCESO TERMINADO")
-
