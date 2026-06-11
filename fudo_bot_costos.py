@@ -89,10 +89,20 @@ def ejecutar_sincronizacion_costos():
                 os.remove(ruta_excel)
             shutil.move(os.path.join(base_path, archivo_interno), ruta_excel)
 
-        # 3. LÓGICA DE NEGOCIO CON PANDAS
+       # 3. LÓGICA DE NEGOCIO CON PANDAS
         print("Procesando lógicas de costos y descuentos...")
-        df = pd.read_excel(ruta_excel)
-
+        
+        # Leer el archivo sin asignar encabezados iniciales para buscar la fila correcta
+        df_temp = pd.read_excel(ruta_excel, header=None)
+        
+        # Buscar dinámicamente el índice de la fila que contiene la palabra 'Nombre'
+        try:
+            header_idx = df_temp[df_temp.eq('Nombre').any(axis=1)].index[0]
+        except IndexError:
+            raise Exception("No se encontró la columna 'Nombre' en el Excel de Fudo.")
+            
+        # Volver a cargar el DataFrame estableciendo la fila correcta como encabezado
+        df = pd.read_excel(ruta_excel, header=header_idx)
         # Debug: verificar nombres exactos de columnas del XLS
         print(f"   Columnas en el XLS de Fudo: {df.columns.tolist()}")
 
