@@ -123,7 +123,7 @@ def ejecutar_sincronizacion_costos():
         # Filtrar las columnas necesarias
         df = df[['Nombre', 'Precio', 'Costo']].copy()
 
-        # Procesamiento estricto como números
+        # Procesamiento estricto como números nativos de Pandas
         df['Precio'] = pd.to_numeric(df['Precio'], errors='coerce').fillna(0).round(2)
         df['Costo']  = pd.to_numeric(df['Costo'], errors='coerce').fillna(0).round(2)
 
