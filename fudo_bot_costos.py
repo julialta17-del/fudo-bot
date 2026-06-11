@@ -69,9 +69,12 @@ def ejecutar_sincronizacion_costos():
         print("Esperando redirección post-login...")
         time.sleep(8) 
 
-        print("Navegando a la sección de Productos...")
+        print("Navegando a la sección de Productos y forzando recarga...")
         driver.get("https://app-v2.fu.do/app/#!/products")
-        time.sleep(5) 
+        time.sleep(3)
+        # ✅ EL TRUCO DEFINITIVO: Obligar a la SPA a renderizar la vista correcta
+        driver.refresh()
+        time.sleep(8) 
 
         print("Descargando archivo ZIP...")
         exportar_btn = wait.until(EC.element_to_be_clickable(
@@ -99,10 +102,8 @@ def ejecutar_sincronizacion_costos():
         # 3. LÓGICA DE NEGOCIO CON PANDAS
         print("Procesando lógicas de costos y descuentos...")
         
-        # Leemos el archivo en bruto sin asignar cabeceras
         df_raw = pd.read_excel(ruta_excel, header=None)
         
-        # Búsqueda implacable de la fila de encabezados
         fila_cabecera = None
         for idx, row in df_raw.iterrows():
             valores = [str(v).strip().lower() for v in row.values]
@@ -115,10 +116,8 @@ def ejecutar_sincronizacion_costos():
             print(df_raw.head(15).to_string())
             raise Exception("Error crítico: No se encontró la fila con 'Nombre', 'Precio' y 'Costo'.")
             
-        # Recargar el DataFrame usando la fila detectada exactamente
         df = pd.read_excel(ruta_excel, header=fila_cabecera)
         
-        # Limpieza extrema de los nombres de las columnas
         df.columns = (df.columns
                       .astype(str)
                       .str.strip()
@@ -127,22 +126,18 @@ def ejecutar_sincronizacion_costos():
         
         print(f"✅ Columnas detectadas y limpias: {df.columns.tolist()}")
         
-        # Filtrar las columnas necesarias
         df = df[['Nombre', 'Precio', 'Costo']].copy()
 
-        # Procesamiento estricto como números nativos de Pandas
         df['Precio'] = pd.to_numeric(df['Precio'], errors='coerce').fillna(0).round(2)
         df['Costo']  = pd.to_numeric(df['Costo'], errors='coerce').fillna(0).round(2)
 
         print("   Muestra de valores leídos:")
         print(df[['Nombre', 'Precio', 'Costo']].head(8).to_string(index=False))
 
-        # Si el costo es 0, se estima como 35% del precio de venta
         sin_costo = df['Costo'] == 0
         df.loc[sin_costo, 'Costo'] = (df.loc[sin_costo, 'Precio'] * 0.35).round(2)
-        df['Costo_Estimado'] = sin_costo  # True = estimado, False = dato real de Fudo
+        df['Costo_Estimado'] = sin_costo
 
-        # Margen estándar
         df['Margen_$'] = (df['Precio'] - df['Costo']).round(2)
         df['Margen_%'] = (
             (df['Margen_$'] / df['Precio'])
@@ -151,7 +146,6 @@ def ejecutar_sincronizacion_costos():
             .round(4)
         )
 
-        # Con descuento 30%
         df['Precio_con_30%_Desc'] = (df['Precio'] * 0.70).round(2)
         df['Margen_$_con_Desc']   = (df['Precio_con_30%_Desc'] - df['Costo']).round(2)
         df['Margen_%_con_Desc']   = (
