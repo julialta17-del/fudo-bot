@@ -25,10 +25,6 @@ jobs:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: python fudo_bot_prueba.py
 
-      - name: Paso 2 - Descargar costos
-        env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-        run: python fudo_bot_costos.py
 
       - name: Paso 4 - Costo de Venta
         env:
