@@ -66,6 +66,13 @@ def ejecutar_sincronizacion_costos():
         pass_input.send_keys("bigsexta")
         pass_input.submit()
 
+        print("Esperando redirección post-login...")
+        time.sleep(8) 
+
+        print("Navegando a la sección de Productos...")
+        driver.get("https://app-v2.fu.do/app/#!/products")
+        time.sleep(5) 
+
         print("Descargando archivo ZIP...")
         exportar_btn = wait.until(EC.element_to_be_clickable(
             (By.CSS_SELECTOR, "a[ert-download-file='downloadProducts()']")
