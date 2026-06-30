@@ -76,31 +76,27 @@ def ejecutar_bot_clientes():
 
         for fila in filas:
             try:
+                # Buscamos el ID específicamente en la etiqueta <th>
+                try:
+                    id_p = fila.find_element(By.TAG_NAME, "th").text.strip()
+                except:
+                    id_p = ""
+
+                # Buscamos el resto de las columnas en las etiquetas <td>
                 celdas = fila.find_elements(By.TAG_NAME, "td")
                 
-                # Verificamos que tenga suficientes columnas para ser un pedido válido
+                # Verificamos que tenga suficientes columnas
                 if len(celdas) >= 5:
                     
-                    # ========================================================
-                    # MODO DEBUG (DETECTOR DE COLUMNAS)
-                    # Esto te va a imprimir en consola qué hay exactamente en cada número
-                    # ========================================================
-                    print("\n--- LEYENDO NUEVO PEDIDO ---")
-                    for i, celda in enumerate(celdas): 
-                        print(f"Índice {i}: {celda.text.strip()}")
-                    print("----------------------------")
-
-                    # Asignamos los valores (ajusta el índice de 'cli' si el Debug te muestra otro número)
-                    id_p = celdas[0].text.strip()
-                    hora = celdas[1].text.strip()
+                    hora = celdas[0].text.strip()
+                    # celdas[1] es la Dirección (que tiene el guión '-')
                     
-                    # ⚠️ OJO AQUÍ: Según tu foto, visualmente es la 4. 
-                    # Si el log de arriba te muestra que el nombre está en la 5, cambia este número a 5.
-                    cli = celdas[4].text.strip() 
+                    # ⚠️ ¡Acá está la magia según tu HTML!
+                    cli = celdas[3].text.strip() 
                     
-                    tot = celdas[-1].text.strip() # El -1 siempre agarra la última columna (Total)
+                    tot = celdas[-1].text.strip() # El total sigue siendo el último
 
-                    # Lógica para encontrar el teléfono sea donde sea que esté escondido
+                    # Lógica para encontrar el teléfono por las dudas
                     tel = "No encontrado"
                     for celda in celdas:
                         texto_celda = celda.text.strip()
@@ -119,8 +115,6 @@ def ejecutar_bot_clientes():
             except Exception as e_fila:
                 print(f"Error procesando una fila individual: {e_fila}")
 
-    except Exception as e:
-        print(f"Error general del bot: {e}")
     finally:
         driver.quit()
         print("Navegador cerrado. PROCESO TERMINADO")
