@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: "05 18 * * *"   # 17:30 Argentina
     - cron: "05 00 * * *"    # 23:45 Argentina
+  workflow_dispatch: 
   
 
 jobs:
