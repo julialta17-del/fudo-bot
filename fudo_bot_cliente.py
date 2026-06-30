@@ -28,14 +28,14 @@ def ejecutar_bot_clientes():
 
     # --- CONFIGURACIÓN CHROME (MODO NUBE) ---
     chrome_options = Options()
-    chrome_options.add_argument('--headless=new') # Versión actualizada y más estable de headless
+    chrome_options.add_argument('--headless=new')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--disable-gpu')
     
     service = Service(ChromeDriverManager().install()) 
     driver = webdriver.Chrome(service=service, options=chrome_options)
-    wait = WebDriverWait(driver, 40) # Le damos un margen más amplio por si la nube va lenta
+    wait = WebDriverWait(driver, 40)
 
     try:
         # 1. LOGIN
@@ -65,9 +65,8 @@ def ejecutar_bot_clientes():
         # 3. ESPERA INTELIGENTE A QUE APAREZCA LA TABLA CON DATOS
         print("Esperando renderizado de las filas de Fudo...")
         try:
-            # Espera que aparezca al menos una fila válida con celdas td antes de avanzar
             wait.until(EC.presence_of_element_located((By.XPATH, "//tr[td]")))
-            time.sleep(3) # Mini respiro para que terminen de pintar las demás
+            time.sleep(3)
         except:
             print("Alerta: No se detectaron filas en el tiempo de espera. Probablemente la tabla está vacía.")
 
@@ -78,13 +77,30 @@ def ejecutar_bot_clientes():
         for fila in filas:
             try:
                 celdas = fila.find_elements(By.TAG_NAME, "td")
+                
+                # Verificamos que tenga suficientes columnas para ser un pedido válido
                 if len(celdas) >= 5:
+                    
+                    # ========================================================
+                    # MODO DEBUG (DETECTOR DE COLUMNAS)
+                    # Esto te va a imprimir en consola qué hay exactamente en cada número
+                    # ========================================================
+                    print("\n--- LEYENDO NUEVO PEDIDO ---")
+                    for i, celda in enumerate(celdas): 
+                        print(f"Índice {i}: {celda.text.strip()}")
+                    print("----------------------------")
+
+                    # Asignamos los valores (ajusta el índice de 'cli' si el Debug te muestra otro número)
                     id_p = celdas[0].text.strip()
                     hora = celdas[1].text.strip()
-                    cli = celdas[4].text.strip()
-                    tot = celdas[-1].text.strip()
+                    
+                    # ⚠️ OJO AQUÍ: Según tu foto, visualmente es la 4. 
+                    # Si el log de arriba te muestra que el nombre está en la 5, cambia este número a 5.
+                    cli = celdas[4].text.strip() 
+                    
+                    tot = celdas[-1].text.strip() # El -1 siempre agarra la última columna (Total)
 
-                    # Restauramos tu lógica de búsqueda elástica de teléfono, es mucho más segura
+                    # Lógica para encontrar el teléfono sea donde sea que esté escondido
                     tel = "No encontrado"
                     for celda in celdas:
                         texto_celda = celda.text.strip()
@@ -98,7 +114,7 @@ def ejecutar_bot_clientes():
 
                     # Subida de datos a la nube
                     sheet.append_row([id_p, hora, tel, cli, tot])
-                    print(f"ÉXITO: Guardado pedido {id_p} | Tel: {tel}")
+                    print(f"ÉXITO: Guardado pedido {id_p} | Cliente: {cli} | Tel: {tel}")
             
             except Exception as e_fila:
                 print(f"Error procesando una fila individual: {e_fila}")
