@@ -17,29 +17,34 @@ URL_DASHBOARD = "https://docs.google.com/spreadsheets/d/1uEFRm_0zEhsRGUX9PIomjUh
 def limpiar_dinero_blindado(serie):
     """
     Normaliza montos detectando inteligentemente separadores de miles y decimales.
-    Evita que 1.500 se convierta en 1.5 o que los decimales se sumen como enteros.
+    Evita los 'números gigantes' al procesar correctamente las comas y puntos.
     """
     def procesar(val):
         val = str(val).replace('$', '').replace(' ', '').strip()
         if not val or val.lower() in ['nan', 'none', '0', '0.0', '']:
             return 0.0
         
-        # Caso 1: Formato estándar Arg con miles (1.250,50)
+        # Caso 1: Tiene punto y coma (ej. 1.250,50 o 1,250.50)
         if '.' in val and ',' in val:
-            val = val.replace('.', '').replace(',', '.')
-        
-        # Caso 2: Solo coma (1250,50)
+            if val.rfind(',') > val.rfind('.'): 
+                # La coma está al final, es decimal (Formato Arg)
+                val = val.replace('.', '').replace(',', '.')
+            else: 
+                # El punto está al final, es decimal (Formato US)
+                val = val.replace(',', '')
+                
+        # Caso 2: Solo coma (ej. 1250,50)
         elif ',' in val:
             val = val.replace(',', '.')
             
-        # Caso 3: Solo punto (Puede ser 1.250 o 1250.50)
+        # Caso 3: Solo punto (ej. 1.250 o 1250.50)
         elif '.' in val:
             partes = val.split('.')
-            # Si tiene más de 2 dígitos tras el punto, es separador de miles (ej: 1.500)
-            if len(partes[-1]) != 2: 
+            if len(partes[-1]) == 3: 
+                # Si hay 3 números después del punto, probablemente era separador de miles (ej. 1.500)
                 val = val.replace('.', '')
-            # Si tiene 2, lo tratamos como decimal (ej: 1250.50)
-        
+            # Si tiene 2 (ej. 1250.50), lo deja intacto porque ya es un formato válido de Python
+            
         try:
             return float(val)
         except:
@@ -115,7 +120,6 @@ def ejecutar():
     
     sheet = client.open("Analisis Fudo").worksheet("Hoja 1")
     
-    # Leemos datos crudos para evitar que la API formatee mal los números
     data = sheet.get_all_values()
     if len(data) < 2:
         print("⚠️ La hoja está vacía.")
@@ -124,23 +128,34 @@ def ejecutar():
     headers = [h.strip() for h in data[0]]
     df = pd.DataFrame(data[1:], columns=headers)
 
-    # Limpieza de montos con la nueva lógica blindada
+    # Limpieza de montos de venta
     df['Total_Num'] = limpiar_dinero_blindado(df['Total'])
     
-    # Buscar columna de margen dinámicamente
-    col_margen = next((c for c in df.columns if 'Margen' in c), None)
-    if col_margen:
-        df['Margen_Num'] = limpiar_dinero_blindado(df[col_margen])
-    else:
-        df['Margen_Num'] = 0.0
-        print("⚠️ No se encontró columna de Margen.")
-
     # Filtrar solo ventas reales del día
     df_v = df[df['Total_Num'] > 0].copy()
     
     if df_v.empty:
         print("⚠️ No hay ventas para procesar en el reporte.")
         return
+
+    # --- NUEVA LÓGICA DE MARGEN MATEMÁTICO ---
+    def calcular_margen(row):
+        precio_venta = row['Total_Num']
+        costo_mercaderia = precio_venta * 0.35 # 35% fijo de costo
+        
+        # Detectar si el pedido es de Pedidos Ya (buscando en 'Origen' o 'Medio de Pago')
+        texto_busqueda = str(row.get('Origen', '')).lower() + " " + str(row.get('Medio de Pago', '')).lower()
+        
+        if 'pedidos ya' in texto_busqueda or 'pedidosya' in texto_busqueda:
+            comision = precio_venta * 0.35
+        else:
+            comision = 0.0
+            
+        # Margen = Precio de Venta - Costo - Comisión (si aplica)
+        return precio_venta - costo_mercaderia - comision
+
+    # Aplicamos la fórmula a cada venta
+    df_v['Margen_Num'] = df_v.apply(calcular_margen, axis=1)
 
     # Cálculos finales
     total_v = df_v['Total_Num'].sum()
