@@ -4,7 +4,7 @@ from google.oauth2.service_account import Credentials
 import os
 import json
 import numpy as np
-
+import re
 
 def parsear_numero_ar(s):
     """
@@ -32,7 +32,6 @@ def parsear_numero_ar(s):
     except ValueError:
         return 0
 
-
 def calcular_margen_detallado_big_salads():
     print("1. Conectando a Google Sheets...")
     scope = [
@@ -47,6 +46,8 @@ def calcular_margen_detallado_big_salads():
         creds = Credentials.from_service_account_file('credentials.json', scopes=scope)
 
     client = gspread.authorize(creds)
+    # IMPORTANTE: Asegúrate de que el nombre del documento coincida con el primer script
+    # El primer script decía "Quinta Analisis Fudo", el segundo dice "Analisis Fudo"
     spreadsheet = client.open("Analisis Fudo")
 
     sheet_ventas = spreadsheet.worksheet("Hoja 1")
@@ -57,8 +58,6 @@ def calcular_margen_detallado_big_salads():
     # -------------------------------------------------------
     print("2. Leyendo costos...")
 
-    # ✅ CLAVE: get_all_values() trae los strings TAL COMO los muestra Sheets
-    # get_all_records() convierte "4.712,67" → 471267 (entero), perdiendo decimales
     raw = sheet_costos.get_all_values()
     encabezados = raw[0]
     idx_nombre = encabezados.index('Nombre')
@@ -74,10 +73,7 @@ def calcular_margen_detallado_big_salads():
             dict_costos[nombre.lower()] = costo
 
     print(f"   Productos en Maestro_Costos: {len(dict_costos)}")
-    print("   Muestra de claves del diccionario:")
-    for k, v in list(dict_costos.items())[:5]:
-        print(f"     '{k}' → {v}")
-
+    
     # -------------------------------------------------------
     # 3. LEER VENTAS
     # -------------------------------------------------------
@@ -88,30 +84,16 @@ def calcular_margen_detallado_big_salads():
         print("⚠️ No hay ventas en Hoja 1. Fin del proceso.")
         return
 
-    # -------------------------------------------------------
-    # 4. DEBUG
-    # -------------------------------------------------------
-    print("\n--- DEBUG Detalle_Productos (primeras 5 filas) ---")
     no_encontrados = set()
 
-    for i, fila in df_ventas.head(5).iterrows():
-        celda = str(fila.get('Detalle_Productos', ''))
-        print(f"  Fila {i}: repr={repr(celda)}")
-        for item in celda.split(','):
-            key = item.strip().lower()
-            costo_debug = dict_costos.get(key, 'NO ENCONTRADO')
-            print(f"    → '{item.strip()}' → costo={costo_debug}")
-
-    print("--- FIN DEBUG ---\n")
-
     # -------------------------------------------------------
-    # 5. COSTO DE INSUMOS POR PEDIDO
+    # 5. COSTO DE INSUMOS POR PEDIDO (MODIFICADO PARA LEER MULTIPLICADORES)
     # -------------------------------------------------------
     def calcular_costo_acumulado(fila):
         celda_productos = fila.get('Detalle_Productos', '')
         venta = parsear_numero_ar(fila.get('Total', 0))
 
-        if not celda_productos or str(celda_productos).strip().lower() in ('', 'nan'):
+        if not celda_productos or str(celda_productos).strip().lower() in ('', 'nan', 'sin detalle'):
             return round(venta * 0.35)
 
         lista_items = [item.strip() for item in str(celda_productos).split(',')]
@@ -120,12 +102,26 @@ def calcular_margen_detallado_big_salads():
         alguno_no_encontrado = False
 
         for producto in lista_items:
-            key = producto.strip().lower()
+            # 1. Detectar si hay multiplicador al inicio (ej: "2x Wrap Tery")
+            match = re.match(r"^(\d+)x\s+(.*)", producto, flags=re.IGNORECASE)
+            if match:
+                cantidad = int(match.group(1))
+                nombre_base = match.group(2).strip()
+            else:
+                cantidad = 1
+                nombre_base = producto.strip()
+
+            # 2. Extraer solo el nombre base, ignorando el comentario entre paréntesis
+            # Esto convierte "Producto Genérico (Sprite Zero 500 Ml)" -> "Producto Genérico"
+            nombre_limpio = re.sub(r"\s*\(.*?\)$", "", nombre_base).strip()
+            key = nombre_limpio.lower()
+
             if key not in dict_costos:
-                no_encontrados.add(producto.strip())
+                no_encontrados.add(nombre_limpio)
                 alguno_no_encontrado = True
             else:
-                costo += dict_costos[key]
+                # Multiplicar costo base por la cantidad
+                costo += (dict_costos[key] * cantidad)
 
         # Fallback SOLO si ningún producto fue encontrado en el maestro
         if alguno_no_encontrado and costo == 0:
@@ -260,7 +256,6 @@ def calcular_margen_detallado_big_salads():
 
     print("✅ ¡Proceso completado!")
     print(f"   Columnas agregadas: {', '.join(columnas_al_final)}")
-
 
 if __name__ == "__main__":
     calcular_margen_detallado_big_salads()
