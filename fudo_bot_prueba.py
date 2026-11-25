@@ -112,11 +112,19 @@ try:
     driver.find_element(By.ID, "password").send_keys("bigsexta")
     driver.find_element(By.ID, "password").submit()
     
-    print("Login enviado, esperando carga de ventas...")
+    print("Login enviado, esperando carga de ventas (puede demorar en la nube)...")
     
-    # Espera a que el botón de exportar esté presente
-    time.sleep(5) # Pequeña pausa para asegurar carga inicial tras el login
-    export_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[ert-download-file='downloadSales()']")))
+    # Aumentamos la paciencia a 90 segundos porque la primera carga de Fudo es pesada
+    wait_largo = WebDriverWait(driver, 90)
+    
+    # Cambiamos a 'presence_of_element_located'. Al usar JS para clickear, 
+    # solo necesitamos que el botón exista en el código fuente, no que esté visible.
+    export_btn = wait_largo.until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[ert-download-file='downloadSales()']")))
+    
+    # Pausa de 3 segundos para que los scripts internos de Fudo se activen antes del clic
+    time.sleep(3)
+    
+    print("Botón encontrado. Iniciando descarga...")
     driver.execute_script("arguments[0].click();", export_btn)
 
     print("Esperando descarga del archivo ZIP...")
