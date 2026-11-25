@@ -65,10 +65,9 @@ chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
 chrome_options.add_argument('--disable-gpu')
 chrome_options.add_argument('--window-size=1920,1080')
-chrome_options.add_argument('--remote-debugging-port=9222') # Evita cuelgues de red en CI
+chrome_options.add_argument('--remote-debugging-port=9222')
 
 # --- CONFIGURACIÓN ANTI-BOTS ---
-# Le hace creer a Fudo que es un usuario real navegando desde Windows
 chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -83,7 +82,7 @@ chrome_options.add_experimental_option("prefs", {
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
-# Borrar rastros de automatización mediante un script oculto en el navegador
+# Borrar rastros de automatización
 driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
     'source': '''
         Object.defineProperty(navigator, 'webdriver', {
@@ -98,13 +97,9 @@ try:
     print("--- PASO: DESCARGA FUDO ---")
     driver.get("https://app-v2.fu.do/app/#!/sales")
     
-    # Pausa para dejar que los escudos anti-bot validen la conexión
     time.sleep(5) 
-    
     print(f"URL actual detectada: {driver.current_url}")
-    print(f"Título de la página: {driver.title}")
 
-    # Esperamos el campo de usuario
     print("Buscando formulario de login...")
     campo_usuario = wait.until(EC.presence_of_element_located((By.ID, "user")))
     campo_usuario.send_keys("admin@bigsaladssexta")
@@ -114,14 +109,13 @@ try:
     
     print("Login enviado, esperando carga de ventas (puede demorar en la nube)...")
     
-    # Aumentamos la paciencia a 90 segundos porque la primera carga de Fudo es pesada
     wait_largo = WebDriverWait(driver, 90)
     
-    # Cambiamos a 'presence_of_element_located'. Al usar JS para clickear, 
-    # solo necesitamos que el botón exista en el código fuente, no que esté visible.
-    export_btn = wait_largo.until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[ert-download-file='downloadSales()']")))
+    # -------------------------------------------------------------
+    # EL ERROR ESTABA AQUÍ: Hemos actualizado el selector al correcto
+    # -------------------------------------------------------------
+    export_btn = wait_largo.until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[ng-click='exportSalesAsync()']")))
     
-    # Pausa de 3 segundos para que los scripts internos de Fudo se activen antes del clic
     time.sleep(3)
     
     print("Botón encontrado. Iniciando descarga...")
@@ -130,10 +124,9 @@ try:
     print("Esperando descarga del archivo ZIP...")
     found_zip = False
     zips = []
-    for _ in range(60): # Aumentado a 60 segundos por si el servidor de Fudo es lento
+    for _ in range(60): 
         zips = [f for f in os.listdir(base_path) if f.lower().endswith(".zip")]
         if zips:
-            # Asegurarse de que el archivo terminó de descargarse
             time.sleep(2) 
             found_zip = True
             break
@@ -162,7 +155,6 @@ try:
     df_v['Hora_Exacta'] = df_v['Fecha_DT'].dt.strftime('%H:%M')
     df_v['Turno'] = df_v['Fecha_DT'].dt.hour.apply(lambda h: "Mañana" if h < 16 else "Noche")
 
-    # Filtro: solo filas con fecha de hoy
     hoy = datetime.now().date()
     df_v = df_v[df_v['Fecha_DT'].dt.date == hoy]
 
@@ -171,28 +163,22 @@ try:
     else:
         print(f"✅ Filas de hoy ({hoy.strftime('%d/%m/%Y')}): {len(df_v)}")
 
-        # --- HOJAS ADICIONALES ---
         df_a = pd.read_excel(ruta_excel, sheet_name='Adiciones')
         df_d = pd.read_excel(ruta_excel, sheet_name='Descuentos')
         df_e = pd.read_excel(ruta_excel, sheet_name='Costos de Envío')
 
-        # Detalle de productos por venta
         prod = df_a.groupby('Id. Venta')['Producto'].apply(lambda x: ', '.join(x.astype(str))).reset_index()
         prod.columns = ['Id', 'Detalle_Productos']
 
-        # Total bruto de productos por venta (suma de precios en Adiciones)
         total_bruto = df_a.groupby('Id. Venta')['Precio'].sum().reset_index()
         total_bruto.columns = ['Id', 'Total_Productos_Bruto']
 
-        # Descuentos por venta
         desc = df_d.groupby('Id. Venta')['Valor'].sum().reset_index()
         desc.columns = ['Id', 'Descuento_Total']
 
-        # Costos de envío por venta
         env = df_e.groupby('Id. Venta')['Valor'].sum().reset_index()
         env.columns = ['Id', 'Costo_Envio']
 
-        # --- CONSOLIDADO ---
         consolidado = df_v[['Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente', 'Total', 'Origen', 'Medio de Pago']].copy()
         consolidado = consolidado.merge(prod,        on='Id', how='left')
         consolidado = consolidado.merge(total_bruto, on='Id', how='left')
@@ -200,13 +186,11 @@ try:
         consolidado = consolidado.merge(env,         on='Id', how='left')
         consolidado = consolidado.fillna(0)
 
-        # --- LIMPIEZA DE DECIMALES ---
         cols_enteras = ['Id', 'Total', 'Total_Productos_Bruto', 'Descuento_Total', 'Costo_Envio']
         for col in cols_enteras:
             if col in consolidado.columns:
                 consolidado[col] = limpiar_a_entero_string(consolidado[col])
 
-        # --- ORDEN FINAL DE COLUMNAS ---
         orden = [
             'Id', 'Fecha_Texto', 'Hora_Exacta', 'Turno', 'Cliente',
             'Total', 'Origen', 'Medio de Pago', 'Detalle_Productos',
@@ -220,7 +204,21 @@ except Exception as e:
     print(f"❌ ERROR EN SELENIUM:")
     print(f"Tipo de error: {type(e).__name__}")
     print(f"URL en el momento del error: {driver.current_url}")
-    print(f"Detalle: {e}")
+    
+    # --- SISTEMA DE DIAGNÓSTICO: LECTURA DE PANTALLA ---
+    print("\n" + "="*50)
+    print("👀 ¿QUÉ ESTÁ VIENDO EL BOT EN LA PANTALLA AHORA MISMO?")
+    print("="*50)
+    try:
+        texto_pantalla = driver.find_element(By.TAG_NAME, "body").text
+        if not texto_pantalla.strip():
+            print("[La pantalla está completamente en blanco o tiene un icono de carga]")
+        else:
+            print(texto_pantalla[:3000]) 
+    except Exception as ex:
+        print(f"No se pudo extraer el texto de la pantalla: {ex}")
+    print("="*50 + "\n")
+    
 finally:
     driver.quit()
     print("--- PROCESO TERMINADO ---")
