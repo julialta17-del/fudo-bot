@@ -60,11 +60,20 @@ def subir_a_google(consolidado):
 
 # --- SELENIUM ---
 chrome_options = Options()
-chrome_options.add_argument('--headless=new') # Versión actualizada del modo headless
+chrome_options.add_argument('--headless=new')
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
-chrome_options.add_argument('--disable-gpu') # Recomendado en entornos CI
-chrome_options.add_argument('--window-size=1920,1080') # Evita que elementos se oculten por tamaño de ventana
+chrome_options.add_argument('--disable-gpu')
+chrome_options.add_argument('--window-size=1920,1080')
+chrome_options.add_argument('--remote-debugging-port=9222') # Evita cuelgues de red en CI
+
+# --- CONFIGURACIÓN ANTI-BOTS ---
+# Le hace creer a Fudo que es un usuario real navegando desde Windows
+chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+chrome_options.add_experimental_option("useAutomationExtension", False)
+
 chrome_options.add_experimental_option("prefs", {
     "download.default_directory": base_path,
     "download.prompt_for_download": False,
@@ -73,18 +82,40 @@ chrome_options.add_experimental_option("prefs", {
 })
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+
+# Borrar rastros de automatización mediante un script oculto en el navegador
+driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
+    'source': '''
+        Object.defineProperty(navigator, 'webdriver', {
+          get: () => undefined
+        })
+    '''
+})
+
 wait = WebDriverWait(driver, 30)
 
 try:
     print("--- PASO: DESCARGA FUDO ---")
     driver.get("https://app-v2.fu.do/app/#!/sales")
+    
+    # Pausa para dejar que los escudos anti-bot validen la conexión
+    time.sleep(5) 
+    
+    print(f"URL actual detectada: {driver.current_url}")
+    print(f"Título de la página: {driver.title}")
 
-    wait.until(EC.presence_of_element_located((By.ID, "user"))).send_keys("admin@bigsaladssexta")
+    # Esperamos el campo de usuario
+    print("Buscando formulario de login...")
+    campo_usuario = wait.until(EC.presence_of_element_located((By.ID, "user")))
+    campo_usuario.send_keys("admin@bigsaladssexta")
+    
     driver.find_element(By.ID, "password").send_keys("bigsexta")
     driver.find_element(By.ID, "password").submit()
-
-    # Espera a que el botón de exportar esté presente en lugar de un sleep fijo
-    time.sleep(5) # Pequeña pausa para asegurar carga inicial
+    
+    print("Login enviado, esperando carga de ventas...")
+    
+    # Espera a que el botón de exportar esté presente
+    time.sleep(5) # Pequeña pausa para asegurar carga inicial tras el login
     export_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[ert-download-file='downloadSales()']")))
     driver.execute_script("arguments[0].click();", export_btn)
 
@@ -94,7 +125,7 @@ try:
     for _ in range(60): # Aumentado a 60 segundos por si el servidor de Fudo es lento
         zips = [f for f in os.listdir(base_path) if f.lower().endswith(".zip")]
         if zips:
-            # Asegurarse de que el archivo terminó de descargarse (no es un .crdownload)
+            # Asegurarse de que el archivo terminó de descargarse
             time.sleep(2) 
             found_zip = True
             break
@@ -129,8 +160,6 @@ try:
 
     if df_v.empty:
         print(f"⚠️ No hay ventas para el día de hoy ({hoy.strftime('%d/%m/%Y')}). Deteniendo ejecución sin error.")
-        # Usamos sys.exit(0) si no queremos que GitHub Actions lo marque como fallo.
-        # Para usarlo hay que importar sys al inicio. Por ahora lo dejamos como print.
     else:
         print(f"✅ Filas de hoy ({hoy.strftime('%d/%m/%Y')}): {len(df_v)}")
 
@@ -180,7 +209,10 @@ try:
         subir_a_google(consolidado)
 
 except Exception as e:
-    print(f"❌ ERROR: {e}")
+    print(f"❌ ERROR EN SELENIUM:")
+    print(f"Tipo de error: {type(e).__name__}")
+    print(f"URL en el momento del error: {driver.current_url}")
+    print(f"Detalle: {e}")
 finally:
     driver.quit()
     print("--- PROCESO TERMINADO ---")
