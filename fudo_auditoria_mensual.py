@@ -82,21 +82,32 @@ try:
     
     print("Cambiando filtro de fechas a 'Mensual'...")
     try:
-        dropdown = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.data-filter-type select")))
+        # Buscamos que sea interactuable antes de hacer nada
+        dropdown = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "div.data-filter-type select")))
+        driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", dropdown)
+        time.sleep(1)
+        
         select_periodo = Select(dropdown)
-        select_periodo.select_by_visible_text("Mensual")
-        time.sleep(12) 
+        # Usamos el valor HTML interno en lugar del texto visible
+        select_periodo.select_by_value("string:m")
+        time.sleep(15) # Tiempo largo para que Angular cargue todo el mes
+        
+        # Validamos si realmente cambió
+        if dropdown.get_attribute("value") != "string:m":
+            raise Exception("El select no tomó el cambio.")
+            
     except Exception as e:
-        print("Forzando el filtro Mensual con JavaScript para Angular...")
+        print("Forzando el filtro Mensual con eventos profundos de JavaScript...")
         driver.execute_script("""
             var select = document.querySelector('div.data-filter-type select');
             if(select){
                 select.value = 'string:m';
-                var event = new Event('change', { bubbles: true });
-                select.dispatchEvent(event);
+                // Disparamos input y change para despertar a Angular
+                select.dispatchEvent(new Event('input', { bubbles: true }));
+                select.dispatchEvent(new Event('change', { bubbles: true }));
             }
         """)
-        time.sleep(12)
+        time.sleep(15)
         
     print("Scrolleando la tabla para cargar todos los días del mes...")
     last_count = 0
