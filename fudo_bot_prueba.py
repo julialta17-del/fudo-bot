@@ -140,7 +140,7 @@ try:
                 total_venta = panel.find_element(By.CSS_SELECTOR, ".total strong").text
             except: pass
 
-            # B. ORIGEN / TIPO
+            # B. ORIGEN / TIPO Y FECHA DEL PANEL
             try:
                 labels = panel.find_elements(By.CSS_SELECTOR, "ul.list.show li label")
                 for label in labels:
@@ -150,6 +150,10 @@ try:
                         elif "Mostrador" in texto_label: origen = ""
                     if "Origen" in texto_label and "Pedidos" in texto_label:
                         origen = "Pedidos Ya"
+                    
+                    # Extracción extra de la hora exacta de inicio directamente desde el panel
+                    if "Hora Inicio" in texto_label:
+                        hora_inicio_str = texto_label.replace("Hora Inicio", "").strip()
             except: pass
 
             # C. ADICIONES (PRODUCTOS)
@@ -196,9 +200,21 @@ try:
                 medio_pago = " | ".join(medios)
             except: pass
 
-            # --- FECHAS Y TURNOS ---
+            # --- FECHAS Y TURNOS BLINDADOS ---
             try:
-                dt_obj = datetime.strptime(hora_inicio_str, "%d/%m/%y %H:%M:%S")
+                # Buscamos una estructura de fecha y hora completa en el texto extraído
+                match_fecha = re.search(r'(\d{1,2}/\d{1,2}/\d{2,4}\s+\d{1,2}:\d{2}(?::\d{2})?)', hora_inicio_str)
+                if match_fecha:
+                    dt_obj = pd.to_datetime(match_fecha.group(1), dayfirst=True)
+                else:
+                    # Si no hay fecha (ej: dice "Hoy 14:52" o simplemente "14:52"), extraemos solo la hora y forzamos el día de hoy
+                    match_hora = re.search(r'(\d{1,2}:\d{2}(?::\d{2})?)', hora_inicio_str)
+                    if match_hora:
+                        hoy_str = datetime.now().strftime("%d/%m/%Y")
+                        dt_obj = pd.to_datetime(f"{hoy_str} {match_hora.group(1)}", dayfirst=True)
+                    else:
+                        dt_obj = datetime.now() # Fallback final a la hora actual de corrida si todo falla
+                
                 fecha_texto = dt_obj.strftime("%d/%m/%Y")
                 hora_exacta = dt_obj.strftime("%H:%M")
                 turno = "Mañana" if dt_obj.hour < 16 else "Noche"
