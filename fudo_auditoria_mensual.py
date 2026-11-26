@@ -33,8 +33,9 @@ def conectar_sheets():
         creds = Credentials.from_service_account_info(json.loads(creds_json), scopes=scope)
     else:
         creds = Credentials.from_service_account_file('credentials.json', scopes=scope)
-    # ATENCIÓN: Conecta al archivo por nombre (Asegúrate de que se llame exactamente así)
-    return gspread.authorize(creds).open("Analisis Fudo").worksheet("Hoja 1")
+    
+    # Conecta al archivo "Analisis Fudo" y específicamente a la pestaña "Historico"
+    return gspread.authorize(creds).open("Analisis Fudo").worksheet("Historico")
 
 print("--- PASO 1: LEYENDO DATOS EXISTENTES EN GOOGLE SHEETS ---")
 try:
@@ -46,7 +47,7 @@ try:
         llave = f"{fila.get('Fecha_Texto', '')}_{fila.get('Hora_Exacta', '')}_{limpiar_numero(fila.get('Total', '0'))}"
         mapa_sheets[llave] = idx
         
-    print(f"✅ Se encontraron {len(mapa_sheets)} registros en Google Sheets.")
+    print(f"✅ Se encontraron {len(mapa_sheets)} registros en la hoja 'Historico'.")
 except Exception as e:
     print(f"❌ Error leyendo Sheets: {e}")
     exit()
@@ -79,9 +80,6 @@ try:
     
     time.sleep(10)
     
-    # ---------------------------------------------------------
-    # 1. CAMBIAR FILTRO A MENSUAL (CON EL HTML CORRECTO)
-    # ---------------------------------------------------------
     print("Cambiando filtro de fechas a 'Mensual'...")
     try:
         dropdown = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.data-filter-type select")))
@@ -100,7 +98,6 @@ try:
         """)
         time.sleep(12)
         
-    # 2. SCROLL INFINITO DE LA TABLA
     print("Scrolleando la tabla para cargar todos los días del mes...")
     last_count = 0
     while True:
@@ -139,14 +136,12 @@ try:
             llave_actual = f"{fecha_texto}_{hora_exacta}_{limpiar_numero(total_str)}"
             llaves_encontradas_en_fudo.add(llave_actual)
             
-            # A) Si la venta fue cancelada o está en curso
             if estado.lower() != "cerrada":
                 if llave_actual in mapa_sheets:
                     print(f"🗑️ Venta Cancelada/Abierta detectada en Fudo que está en Sheets: {llave_actual}. Marcando para eliminar.")
                     filas_a_eliminar.add(mapa_sheets[llave_actual])
                 continue
                 
-            # B) Si es venta cerrada y NO está en el Sheets (¡VENTA FALTANTE!)
             if llave_actual not in mapa_sheets:
                 print(f"➕ Venta Faltante detectada: {fecha_texto} {hora_exacta} - ${total_str}. Extrayendo detalles...")
                 
@@ -229,7 +224,6 @@ try:
             print(f"⚠️ Error en fila {i}. Saltando... {error_fila}")
             continue
 
-    # C) Buscar huérfanos
     mes_actual = datetime.now().strftime("%m/%Y")
     for llave, fila_idx in mapa_sheets.items():
         if mes_actual in llave and llave not in llaves_encontradas_en_fudo:
