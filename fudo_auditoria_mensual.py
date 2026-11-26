@@ -43,7 +43,6 @@ try:
     
     mapa_sheets = {}
     for idx, fila in enumerate(registros_sheets, start=2):
-        # Llave compuesta: Fecha + Hora + Cliente (minúsculas para evitar errores)
         fecha_str = str(fila.get('Fecha_Texto', '')).strip()
         hora_str = str(fila.get('Hora_Exacta', '')).strip()
         cliente_str = str(fila.get('Cliente', '')).strip().lower()
@@ -89,27 +88,41 @@ try:
     driver.find_element(By.ID, "password").send_keys("bigsexta")
     driver.find_element(By.ID, "password").submit()
     
-    time.sleep(10)
+    print("Esperando a que la tabla inicial cargue...")
+    wait.until(EC.presence_of_element_located((By.XPATH, "//table/tbody/tr")))
+    time.sleep(5)
     
     print("Cambiando filtro de fechas a 'Mensual'...")
     try:
-        dropdown = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "div.data-filter-type select")))
-        driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", dropdown)
-        time.sleep(1)
-        select_periodo = Select(dropdown)
-        select_periodo.select_by_value("string:m")
-        time.sleep(15) 
-    except Exception as e:
-        print("Forzando el filtro Mensual con eventos profundos de JavaScript...")
+        # TRIPLE ATAQUE AL FILTRO: JS + Angular + Selenium
         driver.execute_script("""
-            var select = document.querySelector('div.data-filter-type select');
-            if(select){
-                select.value = 'string:m';
-                select.dispatchEvent(new Event('input', { bubbles: true }));
-                select.dispatchEvent(new Event('change', { bubbles: true }));
+            var selectElement = document.querySelector('div.data-filter-type select');
+            if (selectElement) {
+                // 1. Modificación de variables internas de AngularJS
+                if (window.angular) {
+                    var scope = angular.element(selectElement).scope();
+                    if(scope){
+                        scope.type = 'm';
+                        if (typeof scope.refreshType === 'function') { scope.refreshType(); }
+                        if (!scope.$$phase && scope.$root && !scope.$root.$$phase) { scope.$apply(); }
+                    }
+                }
+                // 2. Modificación del DOM para navegadores
+                selectElement.value = 'string:m';
+                selectElement.dispatchEvent(new Event('change', { bubbles: true }));
             }
         """)
-        time.sleep(15)
+        time.sleep(3)
+        
+        # 3. Respaldo Selenium Clásico (Sin esperas restrictivas que lo bloqueen)
+        dropdown = driver.find_element(By.CSS_SELECTOR, "div.data-filter-type select")
+        Select(dropdown).select_by_visible_text("Mensual")
+        
+    except Exception as filter_err:
+        print(f"Aviso de interaccion visual (normal en Headless): {filter_err}")
+    
+    print("Esperando 15 segundos para que los servidores de Fudo devuelvan el mes completo...")
+    time.sleep(15)
         
     print("Scrolleando la tabla para cargar todos los días del mes...")
     last_count = 0
@@ -139,7 +152,7 @@ try:
             cliente_str = celdas[5].text.strip()
             total_str = celdas[7].text.strip() 
             
-            # --- MOTOR DE FECHAS ROBUSTO (Igual al Diario) ---
+            # --- MOTOR DE FECHAS ---
             try:
                 match_fecha = re.search(r'(\d{1,2}/\d{1,2}/\d{2,4}\s+\d{1,2}:\d{2}(?::\d{2})?)', hora_inicio_str)
                 if match_fecha:
@@ -158,21 +171,18 @@ try:
                 fecha_texto = dt_obj.strftime("%d/%m/%Y")
                 hora_exacta = dt_obj.strftime("%H:%M")
                 turno = "Mañana" if dt_obj.hour < 16 else "Noche"
-            except Exception as e: 
-                print(f"⚠️ Error parseando fecha '{hora_inicio_str}'. Saltando fila.")
-                continue 
+            except: continue 
 
             llave_actual = f"{fecha_texto}_{hora_exacta}_{cliente_str.lower()}"
             llaves_encontradas_en_fudo.add(llave_actual)
             
-            # A) Si la venta fue cancelada o está en curso
             if estado.lower() != "cerrada":
                 if llave_actual in mapa_sheets:
                     print(f"🗑️ Venta Cancelada detectada en Fudo: {fecha_texto} {hora_exacta}. Marcando para eliminar.")
                     filas_a_eliminar.add(mapa_sheets[llave_actual]['fila'])
                 continue
                 
-            # B) AUDITORÍA INTELIGENTE: Decidimos si extraemos la info
+            # AUDITORÍA DE INTEGRIDAD
             necesita_extraer = False
             accion = ""
             fila_sheets = mapa_sheets.get(llave_actual)
@@ -180,30 +190,21 @@ try:
             if not fila_sheets:
                 necesita_extraer = True
                 accion = "AGREGAR"
-                print(f"➕ Faltante detectado: {fecha_texto} {hora_exacta} - {cliente_str}. Extrayendo...")
             else:
-                # Comparamos si la fila en Sheets está vacía o con Totales en 0
-                if (fila_sheets['total'] == "0" or 
-                    not fila_sheets['medio_pago'] or 
-                    not fila_sheets['detalle'] or
-                    not fila_sheets['id']):
+                if (fila_sheets['total'] == "0" or not fila_sheets['medio_pago'] or not fila_sheets['detalle']):
                     necesita_extraer = True
                     accion = "ACTUALIZAR"
-                    print(f"🔄 Fila con datos rotos o en 0 detectada ({fecha_texto} {hora_exacta}). Reparando...")
+                    print(f"🔄 Fila rota detectada en Google Sheets ({fecha_texto} {hora_exacta}). Reparando...")
 
-            # Si la fila está perfecta en Sheets, la salta para ahorrar tiempo.
             if necesita_extraer:
                 driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", fila)
-                time.sleep(1)
+                time.sleep(0.5)
                 driver.execute_script("arguments[0].click();", fila)
                 
                 panel = wait.until(EC.presence_of_element_located((By.TAG_NAME, "ert-sales-show")))
                 time.sleep(3)
                 
-                driver.execute_script("""
-                    var panel_content = document.querySelector('ert-sales-show .content');
-                    if (panel_content) { panel_content.scrollTo(0, panel_content.scrollHeight); }
-                """)
+                driver.execute_script("var p = document.querySelector('ert-sales-show .content'); if(p) { p.scrollTo(0, p.scrollHeight); }")
                 time.sleep(1.5)
                 
                 url_actual = driver.current_url
@@ -216,8 +217,7 @@ try:
                 except: pass
 
                 try:
-                    labels = panel.find_elements(By.CSS_SELECTOR, "ul.list.show li label")
-                    for label in labels:
+                    for label in panel.find_elements(By.CSS_SELECTOR, "ul.list.show li label"):
                         if "Tipo" in label.text:
                             if "Delivery" in label.text: origen = "Pedidos Ya"
                             elif "Mostrador" in label.text: origen = ""
@@ -225,9 +225,8 @@ try:
                 except: pass
 
                 try:
-                    adiciones = panel.find_elements(By.CSS_SELECTOR, "ul.additions li.addition")
                     prods = []
-                    for ad in adiciones:
+                    for ad in panel.find_elements(By.CSS_SELECTOR, "ul.additions li.addition"):
                         if "canceled" not in ad.get_attribute("class"):
                             try:
                                 qty = ad.find_element(By.CSS_SELECTOR, ".count").text.strip()
@@ -238,25 +237,20 @@ try:
                 except: pass
 
                 try:
-                    modifiers = panel.find_elements(By.CSS_SELECTOR, "li.bill-modifier")
-                    for mod in modifiers:
-                        text = mod.text.lower()
-                        try:
-                            price = mod.find_element(By.CSS_SELECTOR, ".price").text
-                            if "descuento" in text: descuento = price
-                            elif "envío" in text or "envio" in text: costo_envio = price
-                        except: pass
+                    for mod in panel.find_elements(By.CSS_SELECTOR, "li.bill-modifier"):
+                        t = mod.text.lower()
+                        p = mod.find_element(By.CSS_SELECTOR, ".price").text
+                        if "descuento" in t: descuento = p
+                        elif "envío" in t or "envio" in t: costo_envio = p
                 except: pass
 
                 try:
-                    pagos_seccion = panel.find_element(By.CSS_SELECTOR, "ui-view[name='edit_payments']")
-                    pagos_items = pagos_seccion.find_elements(By.CSS_SELECTOR, "li")
                     medios = []
-                    for p in pagos_items:
+                    for p in panel.find_element(By.CSS_SELECTOR, "ui-view[name='edit_payments']").find_elements(By.CSS_SELECTOR, "li"):
                         if "canceled" not in p.get_attribute("class"):
                             try:
-                                nombre_pago = p.find_element(By.CSS_SELECTOR, ".item-label").text.strip()
-                                if nombre_pago: medios.append(nombre_pago)
+                                nombre = p.find_element(By.CSS_SELECTOR, ".item-label").text.strip()
+                                if nombre: medios.append(nombre)
                             except: pass
                     medio_pago = " | ".join(medios)
                 except: pass
@@ -270,37 +264,28 @@ try:
                 if accion == "AGREGAR":
                     nuevas_ventas.append(fila_preparada)
                 elif accion == "ACTUALIZAR":
-                    ventas_a_actualizar.append({
-                        'fila_idx': fila_sheets['fila'],
-                        'datos': fila_preparada
-                    })
+                    ventas_a_actualizar.append({'fila_idx': fila_sheets['fila'], 'datos': fila_preparada})
 
         except Exception as error_fila:
-            print(f"⚠️ Error en fila {i}. Saltando... {error_fila}")
             continue
 
-    # C) Buscar huérfanos (fantamas en Sheets que ya no están en Fudo)
     mes_actual = datetime.now().strftime("%m/%Y")
     for llave, datos_sheet in mapa_sheets.items():
         if mes_actual in llave and llave not in llaves_encontradas_en_fudo:
-            print(f"👻 Registro fantasma en Sheets (no existe en Fudo): {llave}. Marcando para eliminar.")
+            print(f"👻 Registro fantasma (no existe en Fudo): {llave}. Marcando para eliminar.")
             filas_a_eliminar.add(datos_sheet['fila'])
 
     print("\n--- PASO 3: SINCRONIZANDO CON GOOGLE SHEETS ---")
     
-    # 1. ACTUALIZAR filas rotas (Lo hacemos primero para no arruinar los índices)
     if ventas_a_actualizar:
         print(f"Reparando {len(ventas_a_actualizar)} registros incompletos/en cero...")
-        for actualizacion in ventas_a_actualizar:
-            idx = actualizacion['fila_idx']
-            rango = f"A{idx}:R{idx}"
+        for act in ventas_a_actualizar:
+            idx = act['fila_idx']
             try:
-                sheet.update(range_name=rango, values=[actualizacion['datos']])
-                time.sleep(1.5) # Respetar cuota API
-            except Exception as e:
-                print(f"Error reparando fila {idx}: {e}")
+                sheet.update(range_name=f"A{idx}:R{idx}", values=[act['datos']])
+                time.sleep(1.5) 
+            except Exception as e: print(f"Error reparando fila {idx}: {e}")
                 
-    # 2. ELIMINAR filas (Siempre de abajo hacia arriba con reverse=True)
     if filas_a_eliminar:
         filas_ordenadas = sorted(list(filas_a_eliminar), reverse=True)
         print(f"Borrando {len(filas_ordenadas)} registros obsoletos/cancelados...")
@@ -308,10 +293,8 @@ try:
             try:
                 sheet.delete_rows(f_idx)
                 time.sleep(1.5) 
-            except Exception as e:
-                print(f"No se pudo borrar la fila {f_idx}: {e}")
+            except Exception as e: pass
 
-    # 3. AGREGAR nuevas ventas
     if nuevas_ventas:
         print(f"Agregando {len(nuevas_ventas)} ventas nuevas/faltantes al final del documento...")
         sheet.append_rows(nuevas_ventas, value_input_option='USER_ENTERED')
